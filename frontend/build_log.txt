@@ -1,0 +1,7 @@
+src/context/AuthContext.tsx(42,15): error TS6133: 'decoded' is declared but its value is never read.
+src/dashboards/CourseStructure.tsx(4,58): error TS6133: 'Clock' is declared but its value is never read.
+src/dashboards/EnhancedTrainerDashboard.tsx(8,5): error TS6133: 'Calendar' is declared but its value is never read.
+src/dashboards/EnhancedTrainerDashboard.tsx(8,30): error TS6133: 'Eye' is declared but its value is never read.
+src/dashboards/EnhancedTrainerDashboard.tsx(19,11): error TS6196: 'Student' is declared but never used.
+src/dashboards/HODDashboard.tsx(23,11): error TS6196: 'Resource' is declared but never used.
+src/dashboards/LessonEditor.tsx(7,53): error TS6133: 'ChevronLeft' is declared but its value is never read.

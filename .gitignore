@@ -1,0 +1,44 @@
+# Root .gitignore for LMS project
+
+# Node/Vite (Frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/*.tsbuildinfo
+
+# Django (Backend)
+backend/*.py[cod]
+backend/*$py.class
+backend/__pycache__/
+backend/.Python
+backend/env/
+backend/build/
+backend/develop-eggs/
+backend/dist/
+backend/downloads/
+backend/eggs/
+backend/.eggs/
+backend/lib/
+backend/lib64/
+backend/parts/
+backend/sdist/
+backend/var/
+backend/wheels/
+backend/*.egg-info/
+backend/.installed.cfg
+backend/*.egg
+backend/db.sqlite3
+backend/.env
+backend/staticfiles/
+backend/media/
+
+# IDEs/System
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
