@@ -6,7 +6,7 @@ from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Le
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
                           Question, QuestionOption, Answer, StudentAnswer)
 from .serializers import (
-    UserSerializer, SchoolSerializer, CourseSerializer, IntakeSerializer, 
+    UserSerializer, StudentRegistrationSerializer, SchoolSerializer, CourseSerializer, IntakeSerializer, 
     SemesterSerializer, CourseGroupSerializer, UnitSerializer, LessonSerializer, 
     ResourceSerializer, AssessmentSerializer, SubmissionSerializer,
     AttendanceSerializer, StudentEnrollmentSerializer, ModuleSerializer, LearningPathSerializer,
@@ -24,9 +24,22 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'me':
             return [permissions.IsAuthenticated()]
+        if self.action == 'register_student':
+            return [permissions.AllowAny()]
         if self.request.method in permissions.SAFE_METHODS:
             return [IsStaff()]
         return super().get_permissions()
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def register_student(self, request):
+        serializer = StudentRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                'status': 'registration pending',
+                'detail': 'Account created successfully. Please wait for admin activation.'
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def me(self, request):

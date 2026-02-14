@@ -17,6 +17,7 @@ import CourseManagement from './dashboards/CourseManagement';
 import TrainerCourseManagement from './dashboards/TrainerCourseManagement';
 import LessonEditor from './dashboards/LessonEditor';
 import AssessmentAuthoring from './dashboards/AssessmentAuthoring';
+import StudentRegistration from './dashboards/StudentRegistration';
 
 const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
@@ -38,6 +39,7 @@ const App: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register/student" element={<StudentRegistration />} />
 
           <Route path="/admin/*" element={
             <ProtectedRoute allowedRoles={['Admin']}>

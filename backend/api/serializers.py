@@ -22,6 +22,41 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class StudentRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    course_group = serializers.PrimaryKeyRelatedField(
+        queryset=CourseGroup.objects.all(), 
+        required=False, 
+        write_only=True
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'email', 'first_name', 'last_name', 'phone_number', 'course_group']
+
+    def create(self, validated_data):
+        course_group = validated_data.pop('course_group', None)
+        password = validated_data.pop('password')
+        
+        # Create user as inactive student
+        user = User.objects.create(
+            role=User.STUDENT,
+            is_activated=False,
+            **validated_data
+        )
+        user.set_password(password)
+        user.save()
+
+        # Create enrollment if course group provided
+        if course_group:
+            StudentEnrollment.objects.create(
+                student=user,
+                course_group=course_group,
+                is_active=True
+            )
+        
+        return user
+
 class SchoolSerializer(serializers.ModelSerializer):
     class Meta:
         model = School
