@@ -1,14 +1,16 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
     Users, BookOpen, Calendar, GraduationCap,
-    Settings, LogOut, LayoutDashboard, Database, CheckSquare, UserCheck
+    Settings, LogOut, LayoutDashboard, Database, CheckSquare, UserCheck,
+    MessageSquare, Bell, User as UserIcon, HelpCircle, FileText
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = () => {
         logout();
@@ -48,12 +50,24 @@ const Sidebar: React.FC = () => {
                 ];
             case 'Student':
                 return [
-                    { icon: <LayoutDashboard size={20} />, label: 'My Courses', path: '/student' },
-                    { icon: <GraduationCap size={20} />, label: 'Progress', path: '/student/progress' },
+                    { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/student?tab=overview' },
+                    { icon: <BookOpen size={20} />, label: 'My Courses', path: '/student?tab=courses' },
+                    { icon: <FileText size={20} />, label: 'Assessments', path: '/student?tab=assessments' },
+                    { icon: <MessageSquare size={20} />, label: 'Communication', path: '/student?tab=forum' },
+                    { icon: <Bell size={20} />, label: 'Notifications', path: '/student?tab=notifications' },
+                    { icon: <UserIcon size={20} />, label: 'Profile', path: '/student?tab=profile' },
+                    { icon: <HelpCircle size={20} />, label: 'Support', path: '/student?tab=support' },
                 ];
             default:
                 return [];
         }
+    };
+
+    const isItemActive = (path: string) => {
+        if (path.includes('?')) {
+            return location.pathname + location.search === path;
+        }
+        return location.pathname.startsWith(path);
     };
 
     return (
@@ -78,25 +92,27 @@ const Sidebar: React.FC = () => {
             </div>
 
             <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {getNavItems().map((item) => (
-                    <NavLink
-                        key={item.path}
-                        to={item.path}
-                        end={item.path.split('/').length <= 2}
-                        className="btn animate-fade-in"
-                        style={({ isActive }) => ({
-                            justifyContent: 'flex-start',
-                            background: isActive ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                            color: isActive ? 'var(--primary)' : 'rgba(255, 255, 255, 0.7)',
-                            transition: 'all 0.3s ease',
-                            width: '100%',
-                            padding: '0.75rem 1rem'
-                        })}
-                    >
-                        {item.icon}
-                        <span style={{ fontWeight: 500 }}>{item.label}</span>
-                    </NavLink>
-                ))}
+                {getNavItems().map((item) => {
+                    const active = isItemActive(item.path);
+                    return (
+                        <NavLink
+                            key={item.path}
+                            to={item.path}
+                            className="btn animate-fade-in"
+                            style={{
+                                justifyContent: 'flex-start',
+                                background: active ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                                color: active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.7)',
+                                transition: 'all 0.3s ease',
+                                width: '100%',
+                                padding: '0.75rem 1rem'
+                            }}
+                        >
+                            {item.icon}
+                            <span style={{ fontWeight: 500 }}>{item.label}</span>
+                        </NavLink>
+                    );
+                })}
             </nav>
 
             <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1.5rem' }}>
@@ -125,7 +141,9 @@ const Sidebar: React.FC = () => {
                         width: '100%',
                         justifyContent: 'flex-start',
                         background: 'rgba(244, 63, 94, 0.1)',
-                        color: '#fb7185'
+                        color: '#fb7185',
+                        border: 'none',
+                        cursor: 'pointer'
                     }}
                 >
                     <LogOut size={20} />

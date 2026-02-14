@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import {
     BookOpen, CheckCircle2, Clock, PlayCircle, Lock, AlertCircle,
-    LayoutDashboard, FileText, MessageSquare, Bell, User, HelpCircle,
+    FileText, MessageSquare, Bell, HelpCircle,
     ChevronRight, Plus, BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -39,10 +39,12 @@ interface Notification {
 const StudentDashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'overview';
+
     const [units, setUnits] = useState<Unit[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'assessments' | 'forum' | 'notifications' | 'profile' | 'support'>('overview');
     const [loading, setLoading] = useState(true);
 
     const fetchDashboardData = async () => {
@@ -340,16 +342,6 @@ const StudentDashboard: React.FC = () => {
         </div>
     );
 
-    const navItems = [
-        { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-        { id: 'courses', label: 'My Courses', icon: BookOpen },
-        { id: 'assessments', label: 'Assessments', icon: FileText },
-        { id: 'forum', label: 'Communication', icon: MessageSquare },
-        { id: 'notifications', label: 'Notifications', icon: Bell },
-        { id: 'profile', label: 'Profile', icon: User },
-        { id: 'support', label: 'Support', icon: HelpCircle },
-    ];
-
     return (
         <DashboardLayout>
             {loading ? (
@@ -357,57 +349,19 @@ const StudentDashboard: React.FC = () => {
                     <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
                 </div>
             ) : (
-                <div style={{ display: 'flex', gap: '2.5rem', minHeight: 'calc(100vh - 120px)' }}>
-                    {/* Sidebar */}
-                    <div style={{ width: '240px', flexShrink: 0 }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'sticky', top: '2rem' }}>
-                            {navItems.map(item => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => setActiveTab(item.id as any)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.75rem',
-                                        padding: '0.875rem 1.25rem',
-                                        borderRadius: '12px',
-                                        border: 'none',
-                                        background: activeTab === item.id ? 'var(--primary)' : 'transparent',
-                                        color: activeTab === item.id ? 'white' : 'var(--text-muted)',
-                                        fontWeight: 600,
-                                        fontSize: '0.9375rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        textAlign: 'left'
-                                    }}
-                                >
-                                    <item.icon size={20} />
-                                    {item.label}
-                                    {item.id === 'notifications' && notifications.filter(n => !n.is_read).length > 0 && (
-                                        <span style={{ marginLeft: 'auto', background: activeTab === item.id ? 'white' : 'var(--primary)', color: activeTab === item.id ? 'var(--primary)' : 'white', fontSize: '0.625rem', padding: '0.125rem 0.375rem', borderRadius: '10px' }}>
-                                            {notifications.filter(n => !n.is_read).length}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
+                <div className="animate-fade-in">
+                    {activeTab === 'overview' && renderOverview()}
+                    {activeTab === 'courses' && renderCourses()}
+                    {activeTab === 'forum' && renderForum()}
+                    {activeTab === 'notifications' && renderNotifications()}
+                    {activeTab === 'profile' && renderProfile()}
+                    {activeTab === 'support' && renderSupport()}
+                    {activeTab === 'assessments' && (
+                        <div className="animate-fade-in">
+                            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '2rem' }}>Assessments & Grading</h1>
+                            <p className="text-muted">Assessment functionality coming in the next update.</p>
                         </div>
-                    </div>
-
-                    {/* Main Content Area */}
-                    <div style={{ flex: 1, maxWidth: 'calc(100% - 280px)' }}>
-                        {activeTab === 'overview' && renderOverview()}
-                        {activeTab === 'courses' && renderCourses()}
-                        {activeTab === 'forum' && renderForum()}
-                        {activeTab === 'notifications' && renderNotifications()}
-                        {activeTab === 'profile' && renderProfile()}
-                        {activeTab === 'support' && renderSupport()}
-                        {activeTab === 'assessments' && (
-                            <div className="animate-fade-in">
-                                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '2rem' }}>Assessments & Grading</h1>
-                                <p className="text-muted">Assessment functionality coming in the next update.</p>
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
             )}
         </DashboardLayout>
