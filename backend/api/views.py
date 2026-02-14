@@ -4,13 +4,15 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, Resource, 
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
-                          Question, QuestionOption, Answer, StudentAnswer)
+                          Question, QuestionOption, Answer, StudentAnswer, Announcement, ForumTopic, 
+                          ForumMessage, Notification)
 from .serializers import (
     UserSerializer, StudentRegistrationSerializer, SchoolSerializer, CourseSerializer, IntakeSerializer, 
     SemesterSerializer, CourseGroupSerializer, UnitSerializer, LessonSerializer, 
     ResourceSerializer, AssessmentSerializer, SubmissionSerializer,
     AttendanceSerializer, StudentEnrollmentSerializer, ModuleSerializer, LearningPathSerializer,
-    QuestionSerializer, QuestionOptionSerializer, AnswerSerializer, StudentAnswerSerializer
+    QuestionSerializer, QuestionOptionSerializer, AnswerSerializer, StudentAnswerSerializer,
+    AnnouncementSerializer, ForumTopicSerializer, ForumMessageSerializer, NotificationSerializer
 )
 from .permissions import IsAdmin, IsCourseMaster, IsHOD, IsTrainer, IsStudent, IsStaff
 
@@ -74,6 +76,19 @@ class UserViewSet(viewsets.ModelViewSet):
         user.is_archived = False
         user.save()
         return Response({'status': 'user unarchived'})
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def change_password(self, request):
+        user = request.user
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+        
+        if not user.check_password(old_password):
+            return Response({'detail': 'Wrong old password.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.set_password(new_password)
+        user.save()
+        return Response({'status': 'password changed successfully'})
 
 class SchoolViewSet(viewsets.ModelViewSet):
     queryset = School.objects.all()
@@ -310,3 +325,78 @@ class StudentEnrollmentViewSet(viewsets.ModelViewSet):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
         return [IsHOD()]
+
+class AnnouncementViewSet(viewsets.ModelViewSet):
+    queryset = Announcement.objects.all()
+    serializer_class = AnnouncementSerializer
+
+    def get_queryset(self):
+        queryset = Announcement.objects.all()
+        # Filter for the student's group if applicable
+        if self.request.user.role == 'Student':
+            from core.models import StudentEnrollment
+            enrollment = StudentEnrollment.objects.filter(student=self.request.user, is_active=True).first()
+            if enrollment:
+                queryset = queryset.filter(models.Q(course_group=enrollment.course_group) | models.Q(course_group__isnull=True))
+            else:
+                queryset = queryset.filter(course_group__isnull=True)
+        return queryset
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return [IsStaff()]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+class ForumTopicViewSet(viewsets.ModelViewSet):
+    queryset = ForumTopic.objects.all()
+    serializer_class = ForumTopicSerializer
+
+    def get_queryset(self):
+        queryset = ForumTopic.objects.all()
+        unit_id = self.request.query_params.get('unit', None)
+        if unit_id:
+            queryset = queryset.filter(unit_id=unit_id)
+        return queryset
+
+    def get_permissions(self):
+        return [permissions.IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+class ForumMessageViewSet(viewsets.ModelViewSet):
+    queryset = ForumMessage.objects.all()
+    serializer_class = ForumMessageSerializer
+
+    def get_queryset(self):
+        queryset = ForumMessage.objects.all()
+        topic_id = self.request.query_params.get('topic', None)
+        if topic_id:
+            queryset = queryset.filter(topic_id=topic_id)
+        return queryset
+
+    def get_permissions(self):
+        return [permissions.IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def get_permissions(self):
+        return [permissions.IsAuthenticated()]
+
+    @action(detail=True, methods=['post'])
+    def mark_as_read(self, request, pk=None):
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({'status': 'notification marked as read'})

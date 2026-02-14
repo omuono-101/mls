@@ -273,3 +273,43 @@ class StudentEnrollment(models.Model):
 
     def __str__(self):
         return f"{self.student.username} enrolled in {self.course_group}"
+
+class Announcement(models.Model):
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    course_group = models.ForeignKey(CourseGroup, on_delete=models.CASCADE, related_name='announcements', null=True, blank=True, help_text="Null for global announcements")
+    created_at = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return self.title
+
+class ForumTopic(models.Model):
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='forum_topics')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.unit.code} - {self.title}"
+
+class ForumMessage(models.Model):
+    topic = models.ForeignKey(ForumTopic, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message by {self.user.username} on {self.topic.title}"
+
+class Notification(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    link = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.username}: {self.title}"

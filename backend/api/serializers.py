@@ -2,7 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, Resource, 
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
-                          Question, QuestionOption, Answer, StudentAnswer)
+                          Question, QuestionOption, Answer, StudentAnswer, Announcement, ForumTopic, 
+                          ForumMessage, Notification)
 
 User = get_user_model()
 
@@ -239,4 +240,33 @@ class StudentEnrollmentSerializer(serializers.ModelSerializer):
     course_name = serializers.ReadOnlyField(source='course_group.course.name')
     class Meta:
         model = StudentEnrollment
+        fields = '__all__'
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    author_name = serializers.ReadOnlyField(source='author.username')
+    class Meta:
+        model = Announcement
+        fields = '__all__'
+
+class ForumTopicSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.ReadOnlyField(source='created_by.username')
+    unit_name = serializers.ReadOnlyField(source='unit.name')
+    message_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ForumTopic
+        fields = '__all__'
+
+    def get_message_count(self, obj):
+        return obj.messages.count()
+
+class ForumMessageSerializer(serializers.ModelSerializer):
+    user_name = serializers.ReadOnlyField(source='user.username')
+    class Meta:
+        model = ForumMessage
+        fields = '__all__'
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
         fields = '__all__'

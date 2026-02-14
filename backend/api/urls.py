@@ -4,7 +4,8 @@ from .views import (
     UserViewSet, SchoolViewSet, CourseViewSet, IntakeViewSet,
     SemesterViewSet, CourseGroupViewSet, UnitViewSet, LessonViewSet,
     ResourceViewSet, AssessmentViewSet, SubmissionViewSet,
-    AttendanceViewSet, StudentEnrollmentViewSet, ModuleViewSet, LearningPathViewSet
+    AttendanceViewSet, StudentEnrollmentViewSet, ModuleViewSet, LearningPathViewSet,
+    AnnouncementViewSet, ForumTopicViewSet, ForumMessageViewSet, NotificationViewSet
 )
 from .question_views import (
     QuestionViewSet, QuestionOptionViewSet, AnswerViewSet, StudentAnswerViewSet
@@ -30,6 +31,10 @@ router.register(r'questions', QuestionViewSet)
 router.register(r'question-options', QuestionOptionViewSet)
 router.register(r'answers', AnswerViewSet)
 router.register(r'student-answers', StudentAnswerViewSet)
+router.register(r'announcements', AnnouncementViewSet)
+router.register(r'forum-topics', ForumTopicViewSet)
+router.register(r'forum-messages', ForumMessageViewSet)
+router.register(r'notifications', NotificationViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

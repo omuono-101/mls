@@ -5,6 +5,10 @@ import api from '../services/api';
 interface User {
     id: number;
     username: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone_number?: string;
     role: 'Admin' | 'CourseMaster' | 'HOD' | 'Trainer' | 'Student';
     is_activated: boolean;
 }
