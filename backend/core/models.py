@@ -22,6 +22,11 @@ class User(AbstractUser):
     is_archived = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
 
+    def save(self, *args, **kwargs):
+        if self.is_superuser:
+            self.is_activated = True
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.username} ({self.role})"
 
