@@ -86,28 +86,6 @@ class CourseGroupSerializer(serializers.ModelSerializer):
         model = CourseGroup
         fields = '__all__'
 
-class UnitSerializer(serializers.ModelSerializer):
-    course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
-    trainer_name = serializers.ReadOnlyField(source='trainer.username')
-    lessons_taught = serializers.SerializerMethodField()
-    total_lessons_count = serializers.ReadOnlyField(source='total_lessons')
-    notes_count = serializers.SerializerMethodField()
-    cats_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Unit
-        fields = '__all__'
-
-    def get_lessons_taught(self, obj):
-        return obj.lessons.filter(is_taught=True).count()
-
-    def get_notes_count(self, obj):
-        from core.models import Resource
-        return Resource.objects.filter(lesson__unit=obj).count()
-
-    def get_cats_count(self, obj):
-        return obj.assessments.filter(assessment_type='CAT').count()
-
 class ModuleSerializer(serializers.ModelSerializer):
     unit_name = serializers.ReadOnlyField(source='unit.name')
     class Meta:
@@ -138,6 +116,30 @@ class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = '__all__'
+
+class UnitSerializer(serializers.ModelSerializer):
+    course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
+    trainer_name = serializers.ReadOnlyField(source='trainer.username')
+    lessons_taught = serializers.SerializerMethodField()
+    total_lessons_count = serializers.ReadOnlyField(source='total_lessons')
+    notes_count = serializers.SerializerMethodField()
+    cats_count = serializers.SerializerMethodField()
+    modules = ModuleSerializer(many=True, read_only=True)
+    lessons = LessonSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Unit
+        fields = '__all__'
+
+    def get_lessons_taught(self, obj):
+        return obj.lessons.filter(is_taught=True).count()
+
+    def get_notes_count(self, obj):
+        from core.models import Resource
+        return Resource.objects.filter(lesson__unit=obj).count()
+
+    def get_cats_count(self, obj):
+        return obj.assessments.filter(assessment_type='CAT').count()
 
 class QuestionOptionSerializer(serializers.ModelSerializer):
     class Meta:

@@ -9,6 +9,21 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+interface Lesson {
+    id: number;
+    title: string;
+    order: number;
+    is_taught: boolean;
+    module?: number;
+}
+
+interface Module {
+    id: number;
+    title: string;
+    description: string;
+    order: number;
+}
+
 interface Unit {
     id: number;
     name: string;
@@ -18,6 +33,8 @@ interface Unit {
     lessons_taught: number;
     notes_count: number;
     cats_count: number;
+    modules: Module[];
+    lessons: Lesson[];
 }
 
 interface Announcement {
@@ -46,6 +63,7 @@ const StudentDashboard: React.FC = () => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
 
     const fetchDashboardData = async () => {
         if (!user || !user.is_activated) return;
@@ -69,6 +87,11 @@ const StudentDashboard: React.FC = () => {
     useEffect(() => {
         fetchDashboardData();
     }, [user?.is_activated]);
+
+    useEffect(() => {
+        // Clear selected unit when tab changes
+        setSelectedUnit(null);
+    }, [activeTab]);
 
     if (user && !user.is_activated) {
         return (
@@ -175,43 +198,150 @@ const StudentDashboard: React.FC = () => {
         </div>
     );
 
-    const renderCourses = () => (
-        <div className="animate-fade-in">
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>My Courses</h1>
-                <p style={{ color: 'var(--text-muted)' }}>Access your units and study materials.</p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                {units.map(u => (
-                    <div key={u.id} className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', background: '#eef2ff', padding: '0.25rem 0.75rem', borderRadius: '20px' }}>
-                                    {u.code}
-                                </span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.lessons_taught}/{u.total_lessons} Lessons</span>
-                            </div>
-                            <h4 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>{u.name}</h4>
-                            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{u.course_group_name}</p>
-                        </div>
-                        <div style={{ padding: '1.25rem 1.5rem', background: 'var(--bg-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <FileText size={14} /> {u.notes_count} Notes
-                                </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <CheckCircle2 size={14} /> {u.cats_count} CATs
-                                </div>
-                            </div>
-                            <button onClick={() => navigate(`/student/unit/${u.id}/lesson/1`)} className="btn btn-primary btn-sm">
-                                <PlayCircle size={14} /> Continue
-                            </button>
-                        </div>
+    const renderUnitContent = (unit: Unit) => {
+        const modules = [...unit.modules].sort((a, b) => a.order - b.order);
+        const orphanedLessons = unit.lessons.filter(l => !l.module).sort((a, b) => a.order - b.order);
+
+        return (
+            <div className="animate-fade-in">
+                <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <button onClick={() => setSelectedUnit(null)} className="btn glass btn-sm" style={{ padding: '0.5rem' }}>
+                        <ChevronRight size={20} style={{ transform: 'rotate(180deg)' }} />
+                    </button>
+                    <div>
+                        <span style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 600 }}>{unit.code} Content</span>
+                        <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>{unit.name}</h1>
                     </div>
-                ))}
+                </div>
+
+                <div style={{ display: 'grid', gap: '2rem' }}>
+                    {modules.map(module => {
+                        const moduleLessons = unit.lessons
+                            .filter(l => l.module === module.id)
+                            .sort((a, b) => a.order - b.order);
+
+                        return (
+                            <div key={module.id}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Module {module.order}: {module.title}</h3>
+                                    {module.description && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{module.description}</p>}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                                    {moduleLessons.map(lesson => (
+                                        <div
+                                            key={lesson.id}
+                                            className="card glass"
+                                            style={{
+                                                padding: '1.25rem',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                border: '1px solid var(--border)',
+                                                opacity: lesson.is_taught ? 1 : 0.6
+                                            }}
+                                            onClick={() => lesson.is_taught && navigate(`/student/unit/${unit.id}/lesson/${lesson.order}`)}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                    <div style={{ padding: '0.5rem', background: 'var(--bg-main)', borderRadius: '8px', color: 'var(--primary)' }}>
+                                                        <FileText size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Lesson {lesson.order}</p>
+                                                        <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>{lesson.title}</h4>
+                                                    </div>
+                                                </div>
+                                                {lesson.is_taught ? <PlayCircle size={18} className="text-primary" /> : <Lock size={18} className="text-muted" />}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {moduleLessons.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No lessons in this module yet.</p>}
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {orphanedLessons.length > 0 && (
+                        <div>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Additional Lessons</h3>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                                {orphanedLessons.map(lesson => (
+                                    <div
+                                        key={lesson.id}
+                                        className="card glass"
+                                        style={{
+                                            padding: '1.25rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            border: '1px solid var(--border)',
+                                            opacity: lesson.is_taught ? 1 : 0.6
+                                        }}
+                                        onClick={() => lesson.is_taught && navigate(`/student/unit/${unit.id}/lesson/${lesson.order}`)}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                <div style={{ padding: '0.5rem', background: 'var(--bg-main)', borderRadius: '8px', color: 'var(--primary)' }}>
+                                                    <FileText size={18} />
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Lesson {lesson.order}</p>
+                                                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>{lesson.title}</h4>
+                                                </div>
+                                            </div>
+                                            {lesson.is_taught ? <PlayCircle size={18} className="text-primary" /> : <Lock size={18} className="text-muted" />}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
+
+    const renderCourses = () => {
+        if (selectedUnit) return renderUnitContent(selectedUnit);
+
+        return (
+            <div className="animate-fade-in">
+                <div style={{ marginBottom: '2rem' }}>
+                    <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>My Courses</h1>
+                    <p style={{ color: 'var(--text-muted)' }}>Access your units and study materials.</p>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                    {units.map(u => (
+                        <div key={u.id} className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', background: '#eef2ff', padding: '0.25rem 0.75rem', borderRadius: '20px' }}>
+                                        {u.code}
+                                    </span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.lessons_taught}/{u.total_lessons} Lessons</span>
+                                </div>
+                                <h4 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>{u.name}</h4>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{u.course_group_name}</p>
+                            </div>
+                            <div style={{ padding: '1.25rem 1.5rem', background: 'var(--bg-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <FileText size={14} /> {u.notes_count} Notes
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <CheckCircle2 size={14} /> {u.cats_count} CATs
+                                    </div>
+                                </div>
+                                <button onClick={() => setSelectedUnit(u)} className="btn btn-primary btn-sm">
+                                    <BookOpen size={14} /> Explore Content
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     const renderForum = () => (
         <div className="animate-fade-in">

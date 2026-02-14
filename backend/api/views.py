@@ -139,6 +139,17 @@ class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
     
+    def get_queryset(self):
+        queryset = Unit.objects.all()
+        if self.request.user.role == 'Student':
+            from core.models import StudentEnrollment
+            enrollment = StudentEnrollment.objects.filter(student=self.request.user, is_active=True).first()
+            if enrollment:
+                queryset = queryset.filter(course_group=enrollment.course_group)
+            else:
+                queryset = queryset.none()
+        return queryset
+
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
