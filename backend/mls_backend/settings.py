@@ -93,10 +93,15 @@ DATABASES = {
 database_url = os.environ.get('DATABASE_URL')
 if database_url:
     try:
-        DATABASES['default'] = dj_database_url.parse(database_url, conn_max_age=600)
+        # dj_database_url.parse returns a dict. We must ensure it has a 'NAME'.
+        parsed_db = dj_database_url.parse(database_url, conn_max_age=600)
+        if parsed_db and parsed_db.get('NAME'):
+            DATABASES['default'] = parsed_db
+        else:
+            print("Warning: DATABASE_URL provided but missing 'NAME'. Falling back to sqlite.")
     except Exception as e:
         # Fallback to sqlite if DATABASE_URL is malformed during build
-        print(f"Warning: DATABASE_URL parsing failed: {e}. Falling back to default.")
+        print(f"Warning: DATABASE_URL parsing failed: {e}. Falling back to sqlite.")
 
 
 # Password validation
