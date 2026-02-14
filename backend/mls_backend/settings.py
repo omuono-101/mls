@@ -84,11 +84,19 @@ WSGI_APPLICATION = 'mls_backend.wsgi.application'
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
+
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    try:
+        DATABASES['default'] = dj_database_url.parse(database_url, conn_max_age=600)
+    except Exception as e:
+        # Fallback to sqlite if DATABASE_URL is malformed during build
+        print(f"Warning: DATABASE_URL parsing failed: {e}. Falling back to default.")
 
 
 # Password validation
