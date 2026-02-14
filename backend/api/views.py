@@ -81,7 +81,7 @@ class SchoolViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
-            return [permissions.IsAuthenticated()]
+            return [permissions.AllowAny()]
         return [IsCourseMaster()]
 
 class CourseViewSet(viewsets.ModelViewSet):
