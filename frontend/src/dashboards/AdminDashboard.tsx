@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
-import { Users, UserCheck, UserX, ShieldCheck, X, Plus, Archive, ArchiveRestore } from 'lucide-react';
+import { Users, UserCheck, UserX, ShieldCheck, X, Plus, Archive, ArchiveRestore, Edit2, Key } from 'lucide-react';
 
 interface User {
     id: number;
@@ -27,6 +27,10 @@ const AdminOverview: React.FC = () => {
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: 'Student' });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+    const [resetPasswordData, setResetPasswordData] = useState({ userId: 0, username: '', newPassword: '' });
 
     const fetchUsers = async () => {
         try {
@@ -95,6 +99,49 @@ const AdminOverview: React.FC = () => {
             console.error(`Failed to ${action} user`, error);
             alert(`Failed to ${action} user`);
         }
+    };
+
+    const handleUpdateUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingUser) return;
+        setIsSubmitting(true);
+        try {
+            await api.patch(`users/${editingUser.id}/`, editingUser);
+            setIsEditModalOpen(false);
+            setEditingUser(null);
+            fetchUsers();
+        } catch (error) {
+            console.error('Failed to update user', error);
+            alert('Failed to update user. Please check inputs.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            await api.patch(`users/${resetPasswordData.userId}/`, { password: resetPasswordData.newPassword });
+            setIsResetPasswordOpen(false);
+            setResetPasswordData({ userId: 0, username: '', newPassword: '' });
+            alert('Password reset successfully!');
+        } catch (error) {
+            console.error('Failed to reset password', error);
+            alert('Failed to reset password.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const openEditModal = (user: User) => {
+        setEditingUser({ ...user });
+        setIsEditModalOpen(true);
+    };
+
+    const openResetPasswordModal = (user: User) => {
+        setResetPasswordData({ userId: user.id, username: user.username, newPassword: '' });
+        setIsResetPasswordOpen(true);
     };
 
     return (
@@ -281,45 +328,53 @@ const AdminOverview: React.FC = () => {
                                             </span>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                <button
+                                                    onClick={() => openEditModal(u)}
+                                                    className="btn btn-sm"
+                                                    title="View/Edit"
+                                                    style={{ padding: '0.4rem', minWidth: 'auto', background: '#f3f4f6', color: '#374151' }}
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+
                                                 {!u.is_archived && (
                                                     <button
                                                         onClick={() => toggleActivation(u.id, u.is_activated)}
-                                                        className="btn"
+                                                        className="btn btn-sm"
+                                                        title={u.is_activated ? 'Deactivate' : 'Activate'}
                                                         style={{
-                                                            padding: '0.4rem 0.8rem',
-                                                            fontSize: '0.75rem',
+                                                            padding: '0.4rem',
+                                                            minWidth: 'auto',
                                                             background: u.is_activated ? '#fee2e2' : '#dcfce7',
                                                             color: u.is_activated ? '#b91c1c' : '#15803d'
                                                         }}
                                                     >
-                                                        {u.is_activated ? 'Deactivate' : 'Activate'}
+                                                        {u.is_activated ? <UserX size={16} /> : <UserCheck size={16} />}
                                                     </button>
                                                 )}
+
+                                                <button
+                                                    onClick={() => openResetPasswordModal(u)}
+                                                    className="btn btn-sm"
+                                                    title="Reset Password"
+                                                    style={{ padding: '0.4rem', minWidth: 'auto', background: '#fef3c7', color: '#92400e' }}
+                                                >
+                                                    <Key size={16} />
+                                                </button>
+
                                                 <button
                                                     onClick={() => handleArchiveUser(u.id, u.is_archived)}
-                                                    className="btn"
+                                                    className="btn btn-sm"
+                                                    title={u.is_archived ? 'Unarchive' : 'Archive'}
                                                     style={{
-                                                        padding: '0.4rem 0.8rem',
-                                                        fontSize: '0.75rem',
-                                                        background: u.is_archived ? '#dbeafe' : '#fef3c7',
-                                                        color: u.is_archived ? '#1e40af' : '#92400e',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.25rem'
+                                                        padding: '0.4rem',
+                                                        minWidth: 'auto',
+                                                        background: u.is_archived ? '#dbeafe' : '#f3f4f6',
+                                                        color: u.is_archived ? '#1e40af' : '#6b7280'
                                                     }}
                                                 >
-                                                    {u.is_archived ? (
-                                                        <>
-                                                            <ArchiveRestore size={14} />
-                                                            Unarchive
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Archive size={14} />
-                                                            Archive
-                                                        </>
-                                                    )}
+                                                    {u.is_archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
                                                 </button>
                                             </div>
                                         </td>
@@ -421,6 +476,143 @@ const AdminOverview: React.FC = () => {
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting ? 'Creating...' : 'Create User'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )
+            }
+
+            {
+                isEditModalOpen && editingUser && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(4px)'
+                    }}>
+                        <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '500px', position: 'relative' }}>
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Edit User: {editingUser.username}</h2>
+
+                            <form onSubmit={handleUpdateUser}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Email</label>
+                                    <input
+                                        type="email"
+                                        className="input"
+                                        value={editingUser.email}
+                                        onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Role</label>
+                                    <select
+                                        className="input"
+                                        value={editingUser.role}
+                                        onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
+                                    >
+                                        <option value="Student">Student</option>
+                                        <option value="Trainer">Trainer</option>
+                                        <option value="HOD">HOD</option>
+                                        <option value="CourseMaster">Course Master</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={() => setIsEditModalOpen(false)}
+                                        style={{ background: 'transparent', border: '1px solid var(--border)' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )
+            }
+
+            {
+                isResetPasswordOpen && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(4px)'
+                    }}>
+                        <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '500px', position: 'relative' }}>
+                            <button
+                                onClick={() => setIsResetPasswordOpen(false)}
+                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Reset Password</h2>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Set a new password for <strong>{resetPasswordData.username}</strong></p>
+
+                            <form onSubmit={handleResetPassword}>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>New Password</label>
+                                    <input
+                                        type="password"
+                                        className="input"
+                                        placeholder="Enter new password"
+                                        value={resetPasswordData.newPassword}
+                                        onChange={e => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={() => setIsResetPasswordOpen(false)}
+                                        style={{ background: 'transparent', border: '1px solid var(--border)' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-warning"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Resetting...' : 'Reset Password'}
                                     </button>
                                 </div>
                             </form>
