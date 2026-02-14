@@ -148,7 +148,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(course_group=enrollment.course_group)
         return queryset
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def enroll(self, request, pk=None):
         unit = self.get_object()
         user = request.user
