@@ -338,6 +338,13 @@ const StudentDashboard: React.FC = () => {
                             </div>
                         </div>
                     ))}
+                    {units.length === 0 && (
+                        <div className="card" style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', background: 'var(--bg-main)', border: '2px dashed var(--border)' }}>
+                            <BookOpen size={48} className="text-muted" style={{ margin: '0 auto 1.5rem', opacity: 0.2 }} />
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>No Units Found</h3>
+                            <p className="text-muted">You are not currently enrolled in any units. Please contact the administration if you believe this is an error.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         );

@@ -146,8 +146,6 @@ class UnitViewSet(viewsets.ModelViewSet):
             enrollment = StudentEnrollment.objects.filter(student=self.request.user, is_active=True).first()
             if enrollment:
                 queryset = queryset.filter(course_group=enrollment.course_group)
-            else:
-                queryset = queryset.none()
         return queryset
 
     def get_permissions(self):
