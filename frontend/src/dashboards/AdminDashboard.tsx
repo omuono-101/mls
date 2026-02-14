@@ -328,6 +328,18 @@ const AdminOverview: React.FC = () => {
                                             </span>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
+                                            <span style={{
+                                                padding: '0.25rem 0.625rem',
+                                                borderRadius: '20px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                background: u.is_archived ? '#f3f4f6' : (u.is_activated ? '#dcfce7' : '#fee2e2'),
+                                                color: u.is_archived ? '#6b7280' : (u.is_activated ? '#15803d' : '#b91c1c')
+                                            }}>
+                                                {u.is_archived ? 'Archived' : (u.is_activated ? 'Active' : 'Deactivated')}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                                                 <button
                                                     onClick={() => openEditModal(u)}
