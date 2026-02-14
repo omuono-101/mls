@@ -74,10 +74,22 @@ class IntakeSerializer(serializers.ModelSerializer):
         model = Intake
         fields = '__all__'
 
+    def validate(self, data):
+        if data.get('start_date') and data.get('end_date'):
+            if data['start_date'] >= data['end_date']:
+                raise serializers.ValidationError("End date must be after start date")
+        return data
+
 class SemesterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Semester
         fields = '__all__'
+
+    def validate(self, data):
+        if data.get('start_date') and data.get('end_date'):
+            if data['start_date'] >= data['end_date']:
+                raise serializers.ValidationError("End date must be after start date")
+        return data
 
 class CourseGroupSerializer(serializers.ModelSerializer):
     course_name = serializers.ReadOnlyField(source='course.name')

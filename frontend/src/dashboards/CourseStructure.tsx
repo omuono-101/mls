@@ -69,6 +69,12 @@ const CourseStructure: React.FC = () => {
     const handleCreateIntake = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedCourse) return;
+
+        if (intakeForm.start_date >= intakeForm.end_date) {
+            alert('End date must be after start date');
+            return;
+        }
+
         setLoading(true);
         try {
             await api.post('intakes/', { ...intakeForm, course: selectedCourse.id });
@@ -82,6 +88,12 @@ const CourseStructure: React.FC = () => {
     const handleCreateSemester = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedIntake) return;
+
+        if (semesterForm.start_date >= semesterForm.end_date) {
+            alert('End date must be after start date');
+            return;
+        }
+
         setLoading(true);
         try {
             await api.post('semesters/', { ...semesterForm, intake: selectedIntake.id });
