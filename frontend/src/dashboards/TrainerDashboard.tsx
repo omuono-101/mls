@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -40,6 +41,7 @@ interface Submission {
 }
 
 const TrainerDashboard: React.FC = () => {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
@@ -185,7 +187,7 @@ const TrainerDashboard: React.FC = () => {
                     <p style={{ color: 'var(--text-muted)' }}>Manage your assigned units, lessons, and student assessments.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button className="btn" onClick={() => window.location.href = '/trainer/authoring'}>
+                    <button className="btn" onClick={() => navigate('/trainer/authoring')}>
                         <FileText size={20} />
                         Course Authoring
                     </button>

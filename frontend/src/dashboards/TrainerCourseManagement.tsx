@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -32,6 +33,7 @@ interface Lesson {
 }
 
 const TrainerCourseManagement: React.FC = () => {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [units, setUnits] = useState<Unit[]>([]);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
@@ -279,7 +281,7 @@ const TrainerCourseManagement: React.FC = () => {
                                                                         style={{ padding: '0.25rem' }}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            window.location.href = `/trainer/authoring/lesson/${lesson.id}`;
+                                                                            navigate(`/trainer/authoring/lesson/${lesson.id}`);
                                                                         }}
                                                                     >
                                                                         <Edit2 size={14} />
