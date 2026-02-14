@@ -4,7 +4,7 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
-import { Save, Upload, Trash2, FileText, ChevronLeft } from 'lucide-react';
+import { Save, Upload, Trash2, FileText, ChevronLeft, X, Link as LinkIcon, FilePlus } from 'lucide-react';
 
 interface Lesson {
     id: number;
@@ -269,65 +269,158 @@ const LessonEditor: React.FC = () => {
 
             {/* Resource Upload Modal */}
             {showResourceModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '450px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem' }}>Upload Resource</h2>
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(8px)'
+                }}>
+                    <div className="card animate-fade-in" style={{
+                        width: '100%',
+                        maxWidth: '500px',
+                        position: 'relative',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        overflow: 'hidden'
+                    }}>
+                        <button
+                            onClick={() => setShowResourceModal(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', zIndex: 10 }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div style={{ marginBottom: '2rem' }}>
+                            <div style={{
+                                display: 'inline-flex',
+                                padding: '0.75rem',
+                                background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                                color: 'white',
+                                borderRadius: '12px',
+                                marginBottom: '1rem',
+                                boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.4)'
+                            }}>
+                                <FilePlus size={24} />
+                            </div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>Add Resource</h2>
+                            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Attach supporting materials to this lesson.</p>
+                        </div>
+
                         <form onSubmit={handleUploadResource}>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Title</label>
-                                <input
-                                    className="input"
-                                    required
-                                    value={resourceForm.title}
-                                    onChange={e => setResourceForm({ ...resourceForm, title: e.target.value })}
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Resource Title</label>
+                                    <input
+                                        className="input"
+                                        required
+                                        value={resourceForm.title}
+                                        onChange={e => setResourceForm({ ...resourceForm, title: e.target.value })}
+                                        placeholder="e.g. Course Handout"
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Type</label>
+                                    <select
+                                        className="input"
+                                        value={resourceForm.resource_type}
+                                        onChange={e => setResourceForm({ ...resourceForm, resource_type: e.target.value })}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <option value="PDF">PDF Document</option>
+                                        <option value="PPT">PowerPoint</option>
+                                        <option value="Video">Video</option>
+                                        <option value="Link">External Link</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Type</label>
-                                <select
-                                    className="input"
-                                    value={resourceForm.resource_type}
-                                    onChange={e => setResourceForm({ ...resourceForm, resource_type: e.target.value })}
-                                >
-                                    <option value="PDF">PDF</option>
-                                    <option value="PPT">PowerPoint</option>
-                                    <option value="Video">Video</option>
-                                    <option value="Link">External Link</option>
-                                </select>
-                            </div>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Description</label>
+
+                            <div style={{ marginBottom: '1.25rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Description (Optional)</label>
                                 <textarea
                                     className="input"
                                     value={resourceForm.description}
                                     onChange={e => setResourceForm({ ...resourceForm, description: e.target.value })}
+                                    placeholder="Provide context for this resource..."
+                                    style={{ minHeight: '80px', resize: 'vertical', width: '100%' }}
                                 />
                             </div>
 
                             {resourceForm.resource_type === 'Link' || resourceForm.resource_type === 'Video' ? (
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>URL</label>
+                                <div style={{ marginBottom: '1.25rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <LinkIcon size={14} /> URL Address
+                                        </div>
+                                    </label>
                                     <input
                                         type="url"
                                         className="input"
                                         value={resourceForm.url}
                                         onChange={e => setResourceForm({ ...resourceForm, url: e.target.value })}
+                                        placeholder="https://example.com/..."
+                                        style={{ width: '100%' }}
                                     />
                                 </div>
                             ) : null}
 
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>File</label>
-                                <input
-                                    type="file"
-                                    className="input"
-                                    onChange={e => setResourceForm({ ...resourceForm, file: e.target.files?.[0] || null })}
-                                />
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Resource File</label>
+                                <div style={{
+                                    border: '2px dashed var(--border)',
+                                    borderRadius: '12px',
+                                    padding: '1.5rem',
+                                    textAlign: 'center',
+                                    background: 'rgba(99, 102, 241, 0.05)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    position: 'relative'
+                                }}>
+                                    <input
+                                        type="file"
+                                        onChange={e => setResourceData({ ...resourceData, file: e.target.files?.[0] || null })}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            opacity: 0,
+                                            cursor: 'pointer'
+                                        }}
+                                    />
+                                    <Upload size={24} style={{ color: 'var(--primary)', marginBottom: '0.5rem' }} />
+                                    <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+                                        {resourceForm.file ? (resourceForm.file as File).name : 'Click or drag to upload file'}
+                                    </p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Max size 50MB</p>
+                                </div>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                <button type="button" className="btn" onClick={() => setShowResourceModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Upload</button>
+                            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setShowResourceModal(false)}
+                                    style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', justifyContent: 'center' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, justifyContent: 'center', boxShadow: '0 4px 6px -1px rgba(99, 102, 241, 0.4)' }}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Uploading...' : 'Upload Resource'}
+                                </button>
                             </div>
                         </form>
                     </div>

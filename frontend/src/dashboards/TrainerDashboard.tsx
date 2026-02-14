@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, FileText, Upload, Plus, CheckCircle, Check, Database, FilePlus } from 'lucide-react';
+import { BookOpen, FileText, Upload, Plus, CheckCircle, Check, Database, FilePlus, X, Link as LinkIcon, GraduationCap } from 'lucide-react';
 
 interface Lesson {
     id: number;
@@ -419,75 +419,157 @@ const TrainerDashboard: React.FC = () => {
 
             {/* Resource Upload Modal */}
             {showResourceModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '500px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem' }}>
-                            Upload Resource to "{selectedLesson?.title}"
-                        </h2>
-                        <form onSubmit={handleUploadResource}>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Resource Title</label>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    required
-                                    placeholder="Enter resource title (e.g., Week 1 Slides)"
-                                    value={resourceData.title}
-                                    onChange={(e) => setResourceData({ ...resourceData, title: e.target.value })}
-                                />
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(8px)'
+                }}>
+                    <div className="card animate-fade-in" style={{
+                        width: '100%',
+                        maxWidth: '500px',
+                        position: 'relative',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        overflow: 'hidden'
+                    }}>
+                        <button
+                            onClick={() => setShowResourceModal(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', zIndex: 10 }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div style={{ marginBottom: '2rem' }}>
+                            <div style={{
+                                display: 'inline-flex',
+                                padding: '0.75rem',
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                borderRadius: '12px',
+                                marginBottom: '1rem',
+                                boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.4)'
+                            }}>
+                                <FilePlus size={24} />
                             </div>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Type</label>
-                                <select
-                                    className="input"
-                                    required
-                                    value={resourceData.resource_type}
-                                    onChange={(e) => setResourceData({ ...resourceData, resource_type: e.target.value })}
-                                >
-                                    <option value="PDF">PDF Document</option>
-                                    <option value="PPT">PowerPoint Presentation</option>
-                                    <option value="Video">Video Link/File</option>
-                                    <option value="Link">External Reference Link</option>
-                                </select>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>Add Resource</h2>
+                            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Upload materials to "{selectedLesson?.title}"</p>
+                        </div>
+
+                        <form onSubmit={handleUploadResource}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Resource Title</label>
+                                    <input
+                                        className="input"
+                                        required
+                                        value={resourceData.title}
+                                        onChange={e => setResourceData({ ...resourceData, title: e.target.value })}
+                                        placeholder="e.g. Week 1 Slides"
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Type</label>
+                                    <select
+                                        className="input"
+                                        required
+                                        value={resourceData.resource_type}
+                                        onChange={e => setResourceData({ ...resourceData, resource_type: e.target.value })}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <option value="PDF">PDF Document</option>
+                                        <option value="PPT">PowerPoint</option>
+                                        <option value="Video">Video</option>
+                                        <option value="Link">External Link</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Description / References</label>
+                            <div style={{ marginBottom: '1.25rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Description (Optional)</label>
                                 <textarea
                                     className="input"
-                                    placeholder="Read more, video timestamps, or external references..."
                                     value={resourceData.description}
-                                    onChange={(e) => setResourceData({ ...resourceData, description: e.target.value })}
-                                    style={{ minHeight: '80px' }}
+                                    onChange={e => setResourceData({ ...resourceData, description: e.target.value })}
+                                    placeholder="Read more, video timestamps, or references..."
+                                    style={{ minHeight: '80px', resize: 'vertical', width: '100%' }}
                                 />
                             </div>
 
                             {resourceData.resource_type === 'Link' || resourceData.resource_type === 'Video' ? (
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>URL</label>
+                                <div style={{ marginBottom: '1.25rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <LinkIcon size={14} /> URL Address
+                                        </div>
+                                    </label>
                                     <input
                                         type="url"
                                         className="input"
-                                        placeholder="https://example.com/video"
                                         value={resourceData.url}
-                                        onChange={(e) => setResourceData({ ...resourceData, url: e.target.value })}
+                                        onChange={e => setResourceData({ ...resourceData, url: e.target.value })}
+                                        placeholder="https://example.com/..."
+                                        style={{ width: '100%' }}
                                     />
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Or upload a file below</p>
                                 </div>
                             ) : null}
 
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>File</label>
-                                <input
-                                    type="file"
-                                    className="input"
-                                    onChange={(e) => setResourceData({ ...resourceData, file: e.target.files?.[0] || null })}
-                                />
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Resource File</label>
+                                <div style={{
+                                    border: '2px dashed var(--border)',
+                                    borderRadius: '12px',
+                                    padding: '1.5rem',
+                                    textAlign: 'center',
+                                    background: 'rgba(16, 185, 129, 0.05)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    position: 'relative'
+                                }}>
+                                    <input
+                                        type="file"
+                                        onChange={e => setResourceData({ ...resourceData, file: e.target.files?.[0] || null })}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            opacity: 0,
+                                            cursor: 'pointer'
+                                        }}
+                                    />
+                                    <Upload size={24} style={{ color: '#10b981', marginBottom: '0.5rem' }} />
+                                    <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+                                        {resourceData.file ? (resourceData.file as File).name : 'Click or drag to upload file'}
+                                    </p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Max size 50MB</p>
+                                </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                <button type="button" className="btn" onClick={() => setShowResourceModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setShowResourceModal(false)}
+                                    style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', justifyContent: 'center' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, background: '#10b981', border: 'none', color: 'white', justifyContent: 'center', boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.4)' }}
+                                    disabled={loading}
+                                >
                                     {loading ? 'Uploading...' : 'Upload Resource'}
                                 </button>
                             </div>
@@ -497,48 +579,98 @@ const TrainerDashboard: React.FC = () => {
             )}
 
             {/* Grade Modal */}
-            {
-                showGradeModal && (
-                    <div className="modal-overlay">
-                        <div className="modal-content" style={{ maxWidth: '450px' }}>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Grade Submission</h2>
-                            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                                Student: {selectedSubmission?.student_name}
-                            </p>
-                            <form onSubmit={handleGradeSubmission}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Score (out of 100)</label>
-                                    <input
-                                        type="number"
-                                        className="input"
-                                        required
-                                        min="0"
-                                        max="100"
-                                        value={gradeData.grade}
-                                        onChange={(e) => setGradeData({ ...gradeData, grade: e.target.value })}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Feedback</label>
-                                    <textarea
-                                        className="input"
-                                        placeholder="Enter feedback for student..."
-                                        value={gradeData.feedback}
-                                        onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
-                                        style={{ minHeight: '120px', resize: 'vertical' }}
-                                    />
-                                </div>
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                    <button type="button" className="btn" onClick={() => setShowGradeModal(false)}>Cancel</button>
-                                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                                        {loading ? 'Submitting...' : 'Submit Grade'}
-                                    </button>
-                                </div>
-                            </form>
+            {showGradeModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(8px)'
+                }}>
+                    <div className="card animate-fade-in" style={{
+                        width: '100%',
+                        maxWidth: '450px',
+                        position: 'relative',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        overflow: 'hidden'
+                    }}>
+                        <button
+                            onClick={() => setShowGradeModal(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', zIndex: 10 }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div style={{ marginBottom: '2rem' }}>
+                            <div style={{
+                                display: 'inline-flex',
+                                padding: '0.75rem',
+                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                color: 'white',
+                                borderRadius: '12px',
+                                marginBottom: '1rem',
+                                boxShadow: '0 4px 6px -1px rgba(245, 158, 11, 0.4)'
+                            }}>
+                                <GraduationCap size={24} />
+                            </div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>Grade Submission</h2>
+                            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Student: {selectedSubmission?.student_name}</p>
                         </div>
+
+                        <form onSubmit={handleGradeSubmission}>
+                            <div style={{ marginBottom: '1.25rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Score (out of 100)</label>
+                                <input
+                                    type="number"
+                                    className="input"
+                                    required
+                                    min="0"
+                                    max="100"
+                                    value={gradeData.grade}
+                                    onChange={(e) => setGradeData({ ...gradeData, grade: e.target.value })}
+                                    placeholder="Enter points given"
+                                    style={{ width: '100%', fontSize: '1.1rem', fontWeight: 700 }}
+                                />
+                            </div>
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Feedback</label>
+                                <textarea
+                                    className="input"
+                                    placeholder="Provide encouraging feedback or areas for improvement..."
+                                    value={gradeData.feedback}
+                                    onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
+                                    style={{ minHeight: '120px', resize: 'vertical', width: '100%' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setShowGradeModal(false)}
+                                    style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', justifyContent: 'center' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, background: '#f59e0b', border: 'none', color: 'white', justifyContent: 'center', boxShadow: '0 4px 6px -1px rgba(245, 158, 11, 0.4)' }}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Submitting...' : 'Submit Grade'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )}
         </DashboardLayout >
     );
 };
