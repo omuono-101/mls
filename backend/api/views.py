@@ -148,6 +148,29 @@ class UnitViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(course_group=enrollment.course_group)
         return queryset
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def enroll(self, request, pk=None):
+        unit = self.get_object()
+        user = request.user
+        
+        if user.role != 'Student':
+            return Response({'error': 'Only students can enroll'}, status=status.HTTP_403_FORBIDDEN)
+            
+        from core.models import StudentEnrollment
+        # Check if already enrolled in this course group
+        if StudentEnrollment.objects.filter(student=user, course_group=unit.course_group, is_active=True).exists():
+            return Response({'message': 'Already enrolled'}, status=status.HTTP_200_OK)
+            
+        # Optional: Deactivate other enrollments if you want only one active at a time
+        # StudentEnrollment.objects.filter(student=user, is_active=True).update(is_active=False)
+        
+        StudentEnrollment.objects.create(
+            student=user,
+            course_group=unit.course_group,
+            is_active=True
+        )
+        return Response({'message': 'Enrollment successful'}, status=status.HTTP_201_CREATED)
+
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]

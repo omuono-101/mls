@@ -35,6 +35,7 @@ interface Unit {
     cats_count: number;
     modules: Module[];
     lessons: Lesson[];
+    is_enrolled: boolean;
 }
 
 interface Announcement {
@@ -64,6 +65,7 @@ const StudentDashboard: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+    const [enrolling, setEnrolling] = useState<number | null>(null);
 
     const fetchDashboardData = async () => {
         if (!user || !user.is_activated) return;
@@ -81,6 +83,18 @@ const StudentDashboard: React.FC = () => {
             console.error('Failed to fetch dashboard data', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleEnroll = async (unitId: number) => {
+        setEnrolling(unitId);
+        try {
+            await api.post(`units/${unitId}/enroll/`);
+            await fetchDashboardData();
+        } catch (error) {
+            console.error('Failed to enroll in unit', error);
+        } finally {
+            setEnrolling(null);
         }
     };
 
@@ -332,9 +346,27 @@ const StudentDashboard: React.FC = () => {
                                         <CheckCircle2 size={14} /> {u.cats_count} CATs
                                     </div>
                                 </div>
-                                <button onClick={() => setSelectedUnit(u)} className="btn btn-primary btn-sm">
-                                    <BookOpen size={14} /> Explore Content
-                                </button>
+                                {u.is_enrolled ? (
+                                    <button onClick={() => setSelectedUnit(u)} className="btn btn-primary btn-sm">
+                                        <BookOpen size={14} /> Explore Content
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEnroll(u.id);
+                                        }}
+                                        className="btn btn-primary btn-sm"
+                                        disabled={enrolling === u.id}
+                                    >
+                                        {enrolling === u.id ? (
+                                            <div className="animate-spin" style={{ width: '14px', height: '14px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                                        ) : (
+                                            <Plus size={14} />
+                                        )}
+                                        {enrolling === u.id ? 'Enrolling...' : 'Enroll Now'}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}

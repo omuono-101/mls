@@ -127,9 +127,22 @@ class UnitSerializer(serializers.ModelSerializer):
     modules = ModuleSerializer(many=True, read_only=True)
     lessons = LessonSerializer(many=True, read_only=True)
 
+    is_enrolled = serializers.SerializerMethodField()
+
     class Meta:
         model = Unit
         fields = '__all__'
+
+    def get_is_enrolled(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        from core.models import StudentEnrollment
+        return StudentEnrollment.objects.filter(
+            student=request.user, 
+            course_group=obj.course_group,
+            is_active=True
+        ).exists()
 
     def get_lessons_taught(self, obj):
         return obj.lessons.filter(is_taught=True).count()
