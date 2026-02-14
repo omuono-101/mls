@@ -385,7 +385,7 @@ const LessonEditor: React.FC = () => {
                                 }}>
                                     <input
                                         type="file"
-                                        onChange={e => setResourceData({ ...resourceData, file: e.target.files?.[0] || null })}
+                                        onChange={e => setResourceForm({ ...resourceForm, file: e.target.files?.[0] || null })}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
