@@ -4,7 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
     BookOpen, Plus, Edit2,
-    ChevronRight, ChevronDown, FileText, Layers
+    ChevronRight, ChevronDown, FileText, Layers, X
 } from 'lucide-react';
 
 interface Unit {
@@ -328,32 +328,74 @@ const TrainerCourseManagement: React.FC = () => {
 
             {/* Create Module Modal */}
             {showModuleModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '500px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem' }}>Create New Module</h2>
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(5px)'
+                }}>
+                    <div className="card animate-fade-in" style={{
+                        width: '100%',
+                        maxWidth: '450px',
+                        position: 'relative',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)'
+                    }}>
+                        <button
+                            onClick={() => setShowModuleModal(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div style={{ marginBottom: '2rem' }}>
+                            <div style={{
+                                display: 'inline-flex',
+                                padding: '0.75rem',
+                                background: 'var(--primary)',
+                                color: 'white',
+                                borderRadius: '12px',
+                                marginBottom: '1rem',
+                                boxShadow: '0 4px 6px -1px rgba(99, 102, 241, 0.4)'
+                            }}>
+                                <Layers size={24} />
+                            </div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>New Module</h2>
+                            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Organize your content into a new logical module.</p>
+                        </div>
+
                         <form onSubmit={handleCreateModule}>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Module Title</label>
+                            <div style={{ marginBottom: '1.25rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Module Title</label>
                                 <input
+                                    type="text"
                                     className="input"
+                                    placeholder="e.g. Introduction to Networking"
                                     required
                                     value={moduleForm.title}
                                     onChange={e => setModuleForm({ ...moduleForm, title: e.target.value })}
-                                    placeholder="e.g., Introduction to Networking"
+                                    style={{ width: '100%' }}
                                 />
                             </div>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Description</label>
+                            <div style={{ marginBottom: '1.25rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Description</label>
                                 <textarea
                                     className="input"
+                                    placeholder="Brief description of what this module covers..."
                                     value={moduleForm.description}
                                     onChange={e => setModuleForm({ ...moduleForm, description: e.target.value })}
-                                    placeholder="Brief description of what this module covers..."
-                                    style={{ minHeight: '80px' }}
+                                    style={{ minHeight: '100px', resize: 'vertical', width: '100%' }}
                                 />
                             </div>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Order Sequence</label>
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Order Sequence</label>
                                 <input
                                     type="number"
                                     className="input"
@@ -361,11 +403,26 @@ const TrainerCourseManagement: React.FC = () => {
                                     min="1"
                                     value={moduleForm.order}
                                     onChange={e => setModuleForm({ ...moduleForm, order: parseInt(e.target.value) })}
+                                    style={{ width: '100%' }}
                                 />
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                <button type="button" className="btn" onClick={() => setShowModuleModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Create Module</button>
+                            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setShowModuleModal(false)}
+                                    style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', justifyContent: 'center' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, justifyContent: 'center', boxShadow: '0 4px 6px -1px rgba(99, 102, 241, 0.4)' }}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Creating...' : 'Create Module'}
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -374,22 +431,64 @@ const TrainerCourseManagement: React.FC = () => {
 
             {/* Create Lesson Modal */}
             {showLessonModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '500px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem' }}>Create New Lesson</h2>
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(5px)'
+                }}>
+                    <div className="card animate-fade-in" style={{
+                        width: '100%',
+                        maxWidth: '450px',
+                        position: 'relative',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)'
+                    }}>
+                        <button
+                            onClick={() => setShowLessonModal(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div style={{ marginBottom: '2rem' }}>
+                            <div style={{
+                                display: 'inline-flex',
+                                padding: '0.75rem',
+                                background: 'var(--primary)',
+                                color: 'white',
+                                borderRadius: '12px',
+                                marginBottom: '1rem',
+                                boxShadow: '0 4px 6px -1px rgba(99, 102, 241, 0.4)'
+                            }}>
+                                <FileText size={24} />
+                            </div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>New Lesson</h2>
+                            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Add a new learning session to your module.</p>
+                        </div>
+
                         <form onSubmit={handleCreateLesson}>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Lesson Title</label>
+                            <div style={{ marginBottom: '1.25rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Lesson Title</label>
                                 <input
+                                    type="text"
                                     className="input"
+                                    placeholder="e.g. Understanding TCP/IP"
                                     required
                                     value={lessonForm.title}
                                     onChange={e => setLessonForm({ ...lessonForm, title: e.target.value })}
-                                    placeholder="e.g., Understanding TCP/IP"
+                                    style={{ width: '100%' }}
                                 />
                             </div>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Order</label>
+                            <div style={{ marginBottom: '1.25rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Order</label>
                                 <input
                                     type="number"
                                     className="input"
@@ -397,20 +496,34 @@ const TrainerCourseManagement: React.FC = () => {
                                     min="1"
                                     value={lessonForm.order}
                                     onChange={e => setLessonForm({ ...lessonForm, order: parseInt(e.target.value) })}
+                                    style={{ width: '100%' }}
                                 />
                             </div>
-                            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <input
                                     type="checkbox"
                                     id="is_lab"
                                     checked={lessonForm.is_lab}
                                     onChange={e => setLessonForm({ ...lessonForm, is_lab: e.target.checked })}
+                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                                 />
-                                <label htmlFor="is_lab" style={{ fontWeight: 600 }}>Is this a Lab Session?</label>
+                                <label htmlFor="is_lab" style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)', cursor: 'pointer' }}>Is this a Lab Session?</label>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                <button type="button" className="btn" onClick={() => setShowLessonModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setShowLessonModal(false)}
+                                    style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', justifyContent: 'center' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, justifyContent: 'center', boxShadow: '0 4px 6px -1px rgba(99, 102, 241, 0.4)' }}
+                                    disabled={loading}
+                                >
                                     {loading ? 'Creating...' : 'Create Lesson'}
                                 </button>
                             </div>
