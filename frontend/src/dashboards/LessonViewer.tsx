@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import {
-    FileText, Download, PlayCircle, Link as LinkIcon,
-    ArrowLeft, ArrowRight, ChevronLeft
+    FileText, PlayCircle, Link as LinkIcon,
+    ArrowLeft, ArrowRight, ChevronLeft, X, ExternalLink
 } from 'lucide-react';
 
 interface Resource {
@@ -27,6 +27,8 @@ const LessonViewer: React.FC = () => {
     const navigate = useNavigate();
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+    const [showViewer, setShowViewer] = useState(false);
 
     useEffect(() => {
         const fetchLesson = async () => {
@@ -46,6 +48,17 @@ const LessonViewer: React.FC = () => {
 
         fetchLesson();
     }, [unitId, lessonOrder]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (showViewer && (e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p')) {
+                e.preventDefault();
+                alert('Downloading and printing are disabled for this resource.');
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showViewer]);
 
     if (loading) return <DashboardLayout><div>Loading lesson...</div></DashboardLayout>;
     if (!lesson) return <DashboardLayout><div>Lesson not found.</div></DashboardLayout>;
@@ -100,11 +113,16 @@ const LessonViewer: React.FC = () => {
                         <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.25rem' }}>Resources</h3>
                         <div style={{ display: 'grid', gap: '1rem' }}>
                             {lesson.resources.map(res => (
-                                <a
+                                <button
                                     key={res.id}
-                                    href={res.file || res.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    onClick={() => {
+                                        if (res.resource_type === 'Link') {
+                                            window.open(res.url, '_blank');
+                                        } else {
+                                            setSelectedResource(res);
+                                            setShowViewer(true);
+                                        }
+                                    }}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -113,7 +131,10 @@ const LessonViewer: React.FC = () => {
                                         background: 'white',
                                         borderRadius: 'var(--radius)',
                                         border: '1px solid var(--border)',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        cursor: 'pointer'
                                     }}
                                     className="resource-item"
                                 >
@@ -129,11 +150,11 @@ const LessonViewer: React.FC = () => {
                                         {res.resource_type === 'PPT' && <FileText size={20} />}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>{res.title}</p>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{res.resource_type}</p>
+                                        <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>{res.title}</p>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{res.resource_type === 'Link' ? 'External Reference' : `View ${res.resource_type}`}</p>
                                     </div>
-                                    <Download size={16} style={{ color: 'var(--text-muted)' }} />
-                                </a>
+                                    {res.resource_type === 'Link' ? <ExternalLink size={16} style={{ color: 'var(--text-muted)' }} /> : <ArrowRight size={16} style={{ color: 'var(--text-muted)' }} />}
+                                </button>
                             ))}
                             {lesson.resources.length === 0 && (
                                 <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', textAlign: 'center' }}>No additional resources for this lesson.</p>
@@ -152,6 +173,119 @@ const LessonViewer: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Resource Viewer Modal */}
+            {showViewer && selectedResource && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.85)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    zIndex: 2000,
+                    backdropFilter: 'blur(10px)'
+                }} onContextMenu={e => e.preventDefault()}>
+                    {/* Viewer Header */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1rem 2rem',
+                        background: 'rgba(0,0,0,0.5)',
+                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white'
+                    }}>
+                        <div>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{selectedResource.title}</h2>
+                            <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>Secure View - Downloading Disabled</p>
+                        </div>
+                        <button
+                            onClick={() => setShowViewer(false)}
+                            style={{
+                                background: 'rgba(255,255,255,0.1)',
+                                border: 'none',
+                                color: 'white',
+                                padding: '0.5rem',
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    {/* Viewer Content */}
+                    <div style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '2rem',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        {selectedResource.resource_type === 'PDF' && (
+                            <iframe
+                                src={`${selectedResource.file}#toolbar=0&navpanes=0&scrollbar=0`}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    background: 'white'
+                                }}
+                                title={selectedResource.title}
+                            />
+                        )}
+
+                        {selectedResource.resource_type === 'Video' && (
+                            <video
+                                controls
+                                controlsList="nodownload"
+                                onContextMenu={e => e.preventDefault()}
+                                style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '100%',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+                                }}
+                            >
+                                <source src={selectedResource.file} type="video/mp4" />
+                                Your browser does not support the video tag.
+                            </video>
+                        )}
+
+                        {(selectedResource.resource_type === 'PPT' || selectedResource.resource_type === 'PDF') && (
+                            <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                pointerEvents: 'none',
+                                zIndex: 10,
+                                background: 'transparent'
+                            }} />
+                        )}
+                    </div>
+
+                    {/* Footer Info */}
+                    <div style={{
+                        padding: '1rem',
+                        textAlign: 'center',
+                        fontSize: '0.75rem',
+                        color: 'rgba(255,255,255,0.5)'
+                    }}>
+                        Prohibited from unauthorized distribution or downloading.
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 };
