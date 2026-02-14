@@ -90,7 +90,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
-            return [permissions.IsAuthenticated()]
+            return [permissions.AllowAny()]
         return [IsCourseMaster()]
 
 class IntakeViewSet(viewsets.ModelViewSet):
@@ -99,7 +99,7 @@ class IntakeViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
-            return [permissions.IsAuthenticated()]
+            return [permissions.AllowAny()]
         return [IsCourseMaster()]
 
 class SemesterViewSet(viewsets.ModelViewSet):
@@ -108,7 +108,7 @@ class SemesterViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
-            return [permissions.IsAuthenticated()]
+            return [permissions.AllowAny()]
         return [IsCourseMaster()]
 
 class CourseGroupViewSet(viewsets.ModelViewSet):
@@ -117,7 +117,7 @@ class CourseGroupViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
-            return [permissions.IsAuthenticated()]
+            return [permissions.AllowAny()]
         return [IsHOD()]
 
 class UnitViewSet(viewsets.ModelViewSet):
