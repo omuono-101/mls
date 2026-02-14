@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
-import { Database, Users, Play, Plus, Book, CheckSquare } from 'lucide-react';
+import { Database, Users, Play, Plus, Book, CheckSquare, CheckCircle, Edit2, UserPlus } from 'lucide-react';
 
 interface Unit {
     id: number;
@@ -76,6 +76,7 @@ const HODDashboard: React.FC = () => {
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
     const [isTrainerModalOpen, setIsTrainerModalOpen] = useState(false);
     const [isUnitAssignmentModalOpen, setIsUnitAssignmentModalOpen] = useState(false);
+    const [isEditUnitModalOpen, setIsEditUnitModalOpen] = useState(false);
 
     // Form States
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
@@ -86,6 +87,7 @@ const HODDashboard: React.FC = () => {
     const [verificationTab, setVerificationTab] = useState<'lessons' | 'resources' | 'assessments'>('lessons');
     const [groupForm, setGroupForm] = useState({ course: '', intake: '', semester: '', course_code: '' });
     const [unitForm, setUnitForm] = useState({ name: '', code: '', course_group: '', total_lessons: 10, cat_frequency: 3, cat_total_points: 30, assessment_total_points: 20 });
+    const [editUnitForm, setEditUnitForm] = useState({ id: 0, name: '', code: '', course_group: '', total_lessons: 10, cat_frequency: 3, cat_total_points: 30, assessment_total_points: 20 });
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [courseGroups, setCourseGroups] = useState<any[]>([]);
     const [trainerId, setTrainerId] = useState('');
@@ -221,6 +223,37 @@ const HODDashboard: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const openEditUnitModal = (unit: Unit) => {
+        setEditUnitForm({
+            id: unit.id,
+            name: unit.name,
+            code: unit.code,
+            course_group: (unit as any).course_group?.toString() || '',
+            total_lessons: unit.total_lessons,
+            cat_frequency: unit.cat_frequency,
+            cat_total_points: unit.cat_total_points,
+            assessment_total_points: unit.assessment_total_points
+        });
+        setIsEditUnitModalOpen(true);
+    };
+
+    const handleUpdateUnit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await api.patch(`units/${editUnitForm.id}/`, editUnitForm);
+            alert('Unit updated successfully');
+            setIsEditUnitModalOpen(false);
+            fetchData();
+        } catch (error) {
+            console.error('Failed to update unit', error);
+            alert('Failed to update unit');
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const isTrainersPage = location.pathname.includes('/hod/trainers');
     const isVerificationPage = location.pathname.includes('/hod/verifications');
@@ -359,11 +392,19 @@ const HODDashboard: React.FC = () => {
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <button
                                                     className="btn btn-sm"
-                                                    style={{ background: '#10b981', color: 'white' }}
+                                                    title="Approve Lesson"
+                                                    style={{
+                                                        padding: '0.4rem',
+                                                        minWidth: 'auto',
+                                                        background: '#dcfce7',
+                                                        color: '#15803d',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #bbf7d0'
+                                                    }}
                                                     onClick={() => handleApproveLesson(l.id)}
                                                     disabled={loading}
                                                 >
-                                                    Approve
+                                                    <CheckCircle size={18} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -536,27 +577,35 @@ const HODDashboard: React.FC = () => {
                                                 <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 500 }}>Unassigned</span>
                                             )}
                                         </td>
-                                        <td style={{ padding: '1rem 1.5rem', display: 'flex', gap: '0.5rem' }}>
+                                        <td style={{ padding: '1rem 1.5rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                                             <button
                                                 onClick={() => handleGenerateCats(u.id)}
                                                 className="btn btn-sm"
-                                                style={{ fontSize: '0.75rem', background: '#f5f3ff', color: '#6d28d9', borderRadius: '8px' }}
+                                                title="Generate CATs"
+                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#f5f3ff', color: '#6d28d9', borderRadius: '8px', border: '1px solid #ddd6fe' }}
                                                 disabled={loading}
                                             >
-                                                <Play size={14} />
-                                                CATs
+                                                <Play size={16} />
                                             </button>
                                             <button
                                                 className="btn btn-sm"
-                                                style={{ fontSize: '0.75rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border)' }}
+                                                title="Assign Trainer"
+                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#f0f9ff', color: '#0369a1', borderRadius: '8px', border: '1px solid #bae6fd' }}
                                                 onClick={() => {
                                                     setSelectedUnit(u);
                                                     setTrainerId(u.trainer?.toString() || '');
                                                     setIsTrainerModalOpen(true);
                                                 }}
                                             >
-                                                <Users size={14} />
-                                                Assign
+                                                <UserPlus size={16} />
+                                            </button>
+                                            <button
+                                                className="btn btn-sm"
+                                                title="Edit Unit"
+                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#f3f4f6', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                                                onClick={() => openEditUnitModal(u)}
+                                            >
+                                                <Edit2 size={16} />
                                             </button>
                                         </td>
                                     </tr>
@@ -1149,6 +1198,90 @@ const HODDashboard: React.FC = () => {
                             )}
                         </div>
                         <button className="btn" style={{ width: '100%', marginTop: '1.5rem', background: 'var(--bg-alt)', borderRadius: '10px' }} onClick={() => setIsAssessmentAuditOpen(false)}>Close</button>
+                    </div>
+                </div>
+            )}
+            {/* Edit Unit Modal */}
+            {isEditUnitModalOpen && (
+                <div className="modal-overlay" style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <div className="modal-content" style={{
+                        maxWidth: '500px', width: '90%', backgroundColor: 'var(--bg-main)',
+                        padding: '2.5rem', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        border: '1px solid var(--border)', position: 'relative'
+                    }}>
+                        <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 700 }}>Edit Unit Configuration</h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.925rem' }}>Update basic unit parameters and scoring configuration.</p>
+
+                        <form onSubmit={handleUpdateUnit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <div className="form-group">
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>Unit Name</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    required
+                                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1.5px solid var(--border)', backgroundColor: 'var(--bg-alt)' }}
+                                    value={editUnitForm.name}
+                                    onChange={e => setEditUnitForm({ ...editUnitForm, name: e.target.value })}
+                                />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>Unit Code</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        required
+                                        style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1.5px solid var(--border)', backgroundColor: 'var(--bg-alt)' }}
+                                        value={editUnitForm.code}
+                                        onChange={e => setEditUnitForm({ ...editUnitForm, code: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>Lessons Count</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        required
+                                        style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1.5px solid var(--border)', backgroundColor: 'var(--bg-alt)' }}
+                                        value={editUnitForm.total_lessons}
+                                        onChange={e => setEditUnitForm({ ...editUnitForm, total_lessons: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>CAT Total Points</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        required
+                                        style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1.5px solid var(--border)', backgroundColor: 'var(--bg-alt)' }}
+                                        value={editUnitForm.cat_total_points}
+                                        onChange={e => setEditUnitForm({ ...editUnitForm, cat_total_points: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>Assignment Points</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        required
+                                        style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1.5px solid var(--border)', backgroundColor: 'var(--bg-alt)' }}
+                                        value={editUnitForm.assessment_total_points}
+                                        onChange={e => setEditUnitForm({ ...editUnitForm, assessment_total_points: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                                <button type="button" className="btn" style={{ flex: 1, padding: '0.875rem', borderRadius: '12px' }} onClick={() => setIsEditUnitModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" style={{ flex: 2, padding: '0.875rem', borderRadius: '12px' }} disabled={loading}>Update Unit</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

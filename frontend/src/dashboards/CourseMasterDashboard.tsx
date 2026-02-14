@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
-import { BookOpen, Calendar, Plus, Search, X, GraduationCap } from 'lucide-react';
+import { BookOpen, Calendar, Plus, Search, X, GraduationCap, Edit2 } from 'lucide-react';
 
 interface Course {
     id: number;
@@ -241,11 +241,12 @@ const CourseMasterOverview: React.FC = () => {
                                         <td style={{ padding: '1rem 1.5rem' }}>{c.duration}</td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <button
-                                                className="btn"
-                                                style={{ fontSize: '0.75rem', background: 'var(--bg-main)' }}
+                                                className="btn btn-sm"
+                                                title="Edit Course"
+                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#f3f4f6', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb' }}
                                                 onClick={() => handleEditCourse(c)}
                                             >
-                                                Edit
+                                                <Edit2 size={16} />
                                             </button>
                                         </td>
                                     </tr>
@@ -268,11 +269,12 @@ const CourseMasterOverview: React.FC = () => {
                                         <td style={{ padding: '1rem 1.5rem' }}>{s.description || 'No description'}</td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <button
-                                                className="btn"
-                                                style={{ fontSize: '0.75rem', background: 'var(--bg-main)' }}
+                                                className="btn btn-sm"
+                                                title="Edit School"
+                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#f3f4f6', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb' }}
                                                 onClick={() => handleEditSchool(s)}
                                             >
-                                                Edit
+                                                <Edit2 size={16} />
                                             </button>
                                         </td>
                                     </tr>

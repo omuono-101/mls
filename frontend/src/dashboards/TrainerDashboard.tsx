@@ -273,22 +273,26 @@ const TrainerDashboard: React.FC = () => {
                                                             <CheckCircle size={10} /> Verified
                                                         </span>
                                                     )}
-                                                    <button
-                                                        className="btn"
-                                                        style={{ padding: '0.35rem', background: 'transparent' }}
-                                                        onClick={() => { setSelectedLesson(l); setShowResourceModal(true); }}
-                                                    >
-                                                        <Upload size={16} />
-                                                    </button>
-                                                    {!l.is_taught && (
+                                                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                                                         <button
-                                                            className="btn"
-                                                            style={{ padding: '0.35rem', background: '#10b981', color: 'white', borderRadius: '6px' }}
-                                                            onClick={() => handleMarkAsTaught(l.id)}
+                                                            className="btn btn-sm"
+                                                            title="Upload Resource"
+                                                            style={{ padding: '0.4rem', minWidth: 'auto', background: '#f3f4f6', color: '#374151', borderRadius: '8px' }}
+                                                            onClick={() => { setSelectedLesson(l); setShowResourceModal(true); }}
                                                         >
-                                                            <Check size={14} />
+                                                            <Upload size={16} />
                                                         </button>
-                                                    )}
+                                                        {!l.is_taught && (
+                                                            <button
+                                                                className="btn btn-sm"
+                                                                title="Mark as Taught"
+                                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#dcfce7', color: '#15803d', borderRadius: '8px' }}
+                                                                onClick={() => handleMarkAsTaught(l.id)}
+                                                            >
+                                                                <Check size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
