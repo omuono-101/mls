@@ -166,6 +166,7 @@ class Assessment(models.Model):
     due_date = models.DateTimeField()
     duration_minutes = models.PositiveIntegerField(null=True, blank=True, help_text="Time limit in minutes")
     show_answers_after_submission = models.BooleanField(default=False)
+    scheduled_at = models.DateTimeField(null=True, blank=True, help_text="When the assessment becomes available to students")
 
     def __str__(self):
         return f"{self.assessment_type}: {self.title} for {self.unit.name}"

@@ -36,6 +36,7 @@ interface Assessment {
     points: number;
     due_date: string;
     duration_minutes?: number;
+    scheduled_at?: string;
 }
 
 const AssessmentAuthoring: React.FC = () => {
@@ -246,10 +247,22 @@ const AssessmentAuthoring: React.FC = () => {
                         <p style={{ color: 'var(--text-muted)' }}>{assessment?.title}</p>
                     </div>
                 </div>
-                <button className="btn btn-primary" onClick={saveAssessment} disabled={loading}>
-                    <Save size={20} />
-                    {loading ? 'Saving...' : 'Save Assessment'}
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Scheduled Start (Optional)</label>
+                        <input
+                            type="datetime-local"
+                            className="input"
+                            style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                            value={assessment?.scheduled_at ? new Date(assessment.scheduled_at).toISOString().slice(0, 16) : ''}
+                            onChange={(e) => setAssessment({ ...assessment!, scheduled_at: e.target.value })}
+                        />
+                    </div>
+                    <button className="btn btn-primary" onClick={saveAssessment} disabled={loading}>
+                        <Save size={20} />
+                        {loading ? 'Saving...' : 'Save Assessment'}
+                    </button>
+                </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem' }}>

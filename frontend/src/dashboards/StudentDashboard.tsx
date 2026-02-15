@@ -44,6 +44,7 @@ interface Assessment {
     due_date: string;
     duration_minutes: number;
     lesson?: number;
+    scheduled_at?: string;
 }
 
 interface Unit {
@@ -76,6 +77,32 @@ interface Notification {
     is_read: boolean;
     created_at: string;
 }
+
+const CountdownTimer: React.FC<{ targetDate: string }> = ({ targetDate }) => {
+    const [timeLeft, setTimeLeft] = useState('');
+
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const difference = +new Date(targetDate) - +new Date();
+            if (difference > 0) {
+                const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+                const minutes = Math.floor((difference / 1000 / 60) % 60);
+                const seconds = Math.floor((difference / 1000) % 60);
+                return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }
+            return 'Starting...';
+        };
+
+        const timer = setInterval(() => {
+            setTimeLeft(calculateTimeLeft());
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [targetDate]);
+
+    return <span>{timeLeft}</span>;
+};
 
 const StudentDashboard: React.FC = () => {
     const { user, logout } = useAuth();
@@ -446,7 +473,8 @@ const StudentDashboard: React.FC = () => {
                                                                     padding: '1.25rem',
                                                                     borderRadius: '16px',
                                                                     background: 'var(--bg-main)',
-                                                                    border: '1px solid rgba(99, 102, 241, 0.1)'
+                                                                    border: '1px solid rgba(99, 102, 241, 0.1)',
+                                                                    opacity: (assessment.scheduled_at && new Date(assessment.scheduled_at) > new Date()) ? 0.7 : 1
                                                                 }}
                                                             >
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
@@ -454,13 +482,21 @@ const StudentDashboard: React.FC = () => {
                                                                     <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>{assessment.points} Pts</span>
                                                                 </div>
                                                                 <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '1rem' }}>{assessment.title}</h4>
-                                                                <button
-                                                                    className="btn btn-primary btn-sm"
-                                                                    style={{ width: '100%', padding: '0.6rem' }}
-                                                                    onClick={() => navigate(`/student/assessment/${assessment.id}`)}
-                                                                >
-                                                                    Dive In
-                                                                </button>
+
+                                                                {assessment.scheduled_at && new Date(assessment.scheduled_at) > new Date() ? (
+                                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.5rem', background: 'rgba(0,0,0,0.03)', borderRadius: '8px' }}>
+                                                                        <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>Opens In:</div>
+                                                                        <CountdownTimer targetDate={assessment.scheduled_at} />
+                                                                    </div>
+                                                                ) : (
+                                                                    <button
+                                                                        className="btn btn-primary btn-sm"
+                                                                        style={{ width: '100%', padding: '0.6rem' }}
+                                                                        onClick={() => navigate(`/student/assessment/${assessment.id}`)}
+                                                                    >
+                                                                        Dive In
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         ))}
                                                     </div>
@@ -482,20 +518,28 @@ const StudentDashboard: React.FC = () => {
                         </h2>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
                             {assessmentsByLesson['unit'].map(assessment => (
-                                <div key={assessment.id} className="card-premium glass hover-scale" style={{ padding: '2rem', borderRadius: '24px' }}>
+                                <div key={assessment.id} className="card-premium glass hover-scale" style={{ padding: '2rem', borderRadius: '24px', opacity: (assessment.scheduled_at && new Date(assessment.scheduled_at) > new Date()) ? 0.7 : 1 }}>
                                     <span className="badge badge-primary" style={{ marginBottom: '1rem', display: 'inline-block' }}>{assessment.assessment_type}</span>
                                     <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>{assessment.title}</h4>
                                     <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={16} /> {assessment.duration_minutes || 'Flexible'}</div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Star size={16} /> {assessment.points} Pts</div>
                                     </div>
-                                    <button
-                                        className="btn btn-primary"
-                                        style={{ width: '100%' }}
-                                        onClick={() => navigate(`/student/assessment/${assessment.id}`)}
-                                    >
-                                        Begin Assessment
-                                    </button>
+
+                                    {assessment.scheduled_at && new Date(assessment.scheduled_at) > new Date() ? (
+                                        <div style={{ textAlign: 'center', padding: '0.75rem', background: 'rgba(0,0,0,0.03)', borderRadius: '12px' }}>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Available In</div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary)' }}><CountdownTimer targetDate={assessment.scheduled_at} /></div>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            className="btn btn-primary"
+                                            style={{ width: '100%' }}
+                                            onClick={() => navigate(`/student/assessment/${assessment.id}`)}
+                                        >
+                                            Begin Assessment
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -795,89 +839,100 @@ const StudentDashboard: React.FC = () => {
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Due: {new Date(a.due_date).toLocaleDateString()}</div>
                                         </td>
                                         <td style={{ padding: '1.5rem 2rem', textAlign: 'center' }}>
-                                            <button
-                                                onClick={() => navigate(`/student/assessment/${a.id}`)}
-                                                className="btn btn-sm btn-primary"
-                                                style={{ borderRadius: '8px', padding: '0.5rem 1.25rem' }}
-                                            >
-                                                Start
-                                            </button>
+                                            {a.scheduled_at && new Date(a.scheduled_at) > new Date() ? (
+                                                <span className="badge badge-warning" style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                    <Clock size={12} /> <CountdownTimer targetDate={a.scheduled_at} />
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => navigate(`/student/assessment/${a.id}`)}
+                                                    className="btn btn-sm btn-primary"
+                                                    style={{ borderRadius: '10px', padding: '0.5rem 1rem' }}
+                                                >
+                                                    Start
+                                                </button>
+                                            )}
                                         </td>
-                                    </tr>
+                                        style={{ borderRadius: '8px', padding: '0.5rem 1.25rem' }}
+                                            >
+                                        Start
+                                    </button>
+                                        </td>
+                        </tr>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                    </tbody>
+                </table>
             </div>
+                </div >
+            </div >
         );
     };
 
-    const renderSupport = () => (
-        <div className="animate-fade-in">
-            <div style={{ marginBottom: '3.5rem' }}>
-                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Help & Support</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We're here to help you succeed in your studies.</p>
+const renderSupport = () => (
+    <div className="animate-fade-in">
+        <div style={{ marginBottom: '3.5rem' }}>
+            <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Help & Support</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We're here to help you succeed in your studies.</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
+            <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                <div style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                    <HelpCircle size={32} />
+                </div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Knowledge Base</h3>
+                <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Browse our extensive library of guides, tutorials, and frequently asked questions.</p>
+                <button className="btn btn-primary" style={{ width: '100%' }}>Explore Guides</button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
-                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
-                    <div style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
-                        <HelpCircle size={32} />
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Knowledge Base</h3>
-                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Browse our extensive library of guides, tutorials, and frequently asked questions.</p>
-                    <button className="btn btn-primary" style={{ width: '100%' }}>Explore Guides</button>
+            <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                    <MessageSquare size={32} />
                 </div>
-
-                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
-                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
-                        <MessageSquare size={32} />
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Direct Chat</h3>
-                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Our support team is available Monday to Friday, 8am - 5pm to help with any technical issues.</p>
-                    <button className="btn btn-primary" style={{ width: '100%', background: '#10b981' }}>Start Conversing</button>
-                </div>
-
-                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
-                    <div style={{ background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
-                        <AlertCircle size={32} />
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Report Issue</h3>
-                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Encountered a bug or a problem with unit access? Let us know and we'll fix it quickly.</p>
-                    <button className="btn btn-primary" style={{ width: '100%', background: '#f43f5e' }}>Submit Report</button>
-                </div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Direct Chat</h3>
+                <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Our support team is available Monday to Friday, 8am - 5pm to help with any technical issues.</p>
+                <button className="btn btn-primary" style={{ width: '100%', background: '#10b981' }}>Start Conversing</button>
             </div>
 
-            <div className="card-premium glass" style={{ marginTop: '4rem', padding: '2.5rem', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.25rem' }}>Contact Administration</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>For enrollment and academic requests</p>
+            <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                <div style={{ background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                    <AlertCircle size={32} />
                 </div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--primary)' }}>admin@kisecollege.ac.ke</div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Report Issue</h3>
+                <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Encountered a bug or a problem with unit access? Let us know and we'll fix it quickly.</p>
+                <button className="btn btn-primary" style={{ width: '100%', background: '#f43f5e' }}>Submit Report</button>
             </div>
         </div>
-    );
 
-    return (
-        <DashboardLayout>
-            {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                    <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
-                </div>
-            ) : (
-                <div className="animate-fade-in">
-                    {activeTab === 'overview' && renderOverview()}
-                    {activeTab === 'courses' && renderCourses()}
-                    {activeTab === 'forum' && renderForum()}
-                    {activeTab === 'notifications' && renderNotifications()}
-                    {activeTab === 'profile' && renderProfile()}
-                    {activeTab === 'support' && renderSupport()}
-                    {activeTab === 'assessments' && renderAssessments()}
-                </div>
-            )}
-        </DashboardLayout>
-    );
+        <div className="card-premium glass" style={{ marginTop: '4rem', padding: '2.5rem', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.25rem' }}>Contact Administration</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>For enrollment and academic requests</p>
+            </div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--primary)' }}>admin@kisecollege.ac.ke</div>
+        </div>
+    </div>
+);
+
+return (
+    <DashboardLayout>
+        {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+                <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
+            </div>
+        ) : (
+            <div className="animate-fade-in">
+                {activeTab === 'overview' && renderOverview()}
+                {activeTab === 'courses' && renderCourses()}
+                {activeTab === 'forum' && renderForum()}
+                {activeTab === 'notifications' && renderNotifications()}
+                {activeTab === 'profile' && renderProfile()}
+                {activeTab === 'support' && renderSupport()}
+                {activeTab === 'assessments' && renderAssessments()}
+            </div>
+        )}
+    </DashboardLayout>
+);
 };
 
 export default StudentDashboard;
