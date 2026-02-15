@@ -116,9 +116,19 @@ class LearningPathSerializer(serializers.ModelSerializer):
         read_only_fields = ['trainer']
 
 class ResourceSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+    
     class Meta:
         model = Resource
         fields = '__all__'
+    
+    def get_file(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
 
 class LessonSerializer(serializers.ModelSerializer):
     resources = ResourceSerializer(many=True, read_only=True)
