@@ -432,7 +432,11 @@ const StudentDashboard: React.FC = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <button className="btn btn-primary" style={{ width: '100%' }}>
+                                        <button
+                                            className="btn btn-primary"
+                                            style={{ width: '100%' }}
+                                            onClick={() => navigate(`/student/assessment/${assessment.id}`)}
+                                        >
                                             {assessment.assessment_type === 'Assignment' ? 'Submit Work' : 'Start Assessment'}
                                         </button>
                                     </div>
@@ -617,6 +621,107 @@ const StudentDashboard: React.FC = () => {
         </div>
     );
 
+    const renderAssessments = () => {
+        const allAssessments = units
+            .filter(u => u.is_enrolled)
+            .flatMap(u => (u.assessments || []).map(a => ({ ...a, unitName: u.name, unitCode: u.code })))
+            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+
+        return (
+            <div className="animate-fade-in">
+                <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+                    <div>
+                        <h1 style={{ fontSize: '2.25rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Assessments & Grading</h1>
+                        <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Track your academic progress and upcoming evaluative tasks.</p>
+                    </div>
+                    <div className="card glass" style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ textAlign: 'right' }}>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Points Earned</p>
+                            <p style={{ fontWeight: 800, fontSize: '1.125rem', color: 'var(--primary)' }}>0 / 0</p>
+                        </div>
+                        <BarChart3 size={24} className="text-primary" />
+                    </div>
+                </div>
+
+                <div className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--border)', background: 'white' }}>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0' }}>
+                            <thead>
+                                <tr style={{ background: '#f8fafc' }}>
+                                    <th style={{ textAlign: 'left', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Assessment / Unit</th>
+                                    <th style={{ textAlign: 'left', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Type</th>
+                                    <th style={{ textAlign: 'left', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Deadline</th>
+                                    <th style={{ textAlign: 'left', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Weight</th>
+                                    <th style={{ textAlign: 'right', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {allAssessments.map((a, idx) => {
+                                    const isPastSelection = new Date(a.due_date) < new Date();
+                                    return (
+                                        <tr key={`${a.id}-${idx}`} style={{ transition: 'background 0.2s', background: idx % 2 === 0 ? 'white' : '#fafafa' }} onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'} onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? 'white' : '#fafafa'}>
+                                            <td style={{ padding: '1.25rem 2rem', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                    <div style={{ padding: '0.5rem', background: 'var(--primary-light)', borderRadius: '10px', color: 'var(--primary)' }}>
+                                                        <FileText size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>{a.title}</div>
+                                                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{a.unitCode}: {a.unitName}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '1.25rem 2rem', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)' }}>
+                                                <span style={{
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    padding: '0.375rem 0.875rem',
+                                                    borderRadius: '20px',
+                                                    background: a.assessment_type === 'CAT' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(99, 102, 241, 0.1)',
+                                                    color: a.assessment_type === 'CAT' ? '#ef4444' : 'var(--primary)',
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {a.assessment_type}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '1.25rem 2rem', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isPastSelection ? '#ef4444' : 'var(--text-main)', fontWeight: isPastSelection ? 600 : 400 }}>
+                                                    <Clock size={16} />
+                                                    {new Date(a.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '1.25rem 2rem', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)', fontWeight: 600 }}>
+                                                {a.points} Pts
+                                            </td>
+                                            <td style={{ padding: '1.25rem 2rem', textAlign: 'right', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)' }}>
+                                                <button
+                                                    onClick={() => navigate(`/student/assessment/${a.id}`)}
+                                                    className={`btn btn-sm ${isPastSelection ? 'glass' : 'btn-primary'}`}
+                                                    style={{ borderRadius: '8px', padding: '0.5rem 1.25rem' }}
+                                                >
+                                                    {a.assessment_type === 'Assignment' ? 'Submit' : 'Take Test'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    {allAssessments.length === 0 && (
+                        <div style={{ padding: '6rem 2rem', textAlign: 'center' }}>
+                            <div style={{ width: '80px', height: '80px', background: 'var(--bg-main)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', border: '1px solid var(--border)' }}>
+                                <BarChart3 size={40} className="text-muted" style={{ opacity: 0.3 }} />
+                            </div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>No Assessments Yet</h3>
+                            <p className="text-muted" style={{ maxWidth: '400px', margin: '0.5rem auto 0' }}>Enrolled units will appear here once they have active CATs or assignments assigned to you.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     const renderSupport = () => (
         <div className="animate-fade-in">
             <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '2rem' }}>Support & Help Desk</h1>
@@ -655,12 +760,7 @@ const StudentDashboard: React.FC = () => {
                     {activeTab === 'notifications' && renderNotifications()}
                     {activeTab === 'profile' && renderProfile()}
                     {activeTab === 'support' && renderSupport()}
-                    {activeTab === 'assessments' && (
-                        <div className="animate-fade-in">
-                            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '2rem' }}>Assessments & Grading</h1>
-                            <p className="text-muted">Assessment functionality coming in the next update.</p>
-                        </div>
-                    )}
+                    {activeTab === 'assessments' && renderAssessments()}
                 </div>
             )}
         </DashboardLayout>
