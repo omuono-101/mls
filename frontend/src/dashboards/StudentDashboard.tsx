@@ -853,11 +853,6 @@ const StudentDashboard: React.FC = () => {
                                                 </button>
                                             )}
                                         </td>
-                                        style={{ borderRadius: '8px', padding: '0.5rem 1.25rem' }}
-                                            >
-                                        Start
-                                    </button>
-                                        </td>
                         </tr>
                                 ))}
                     </tbody>
