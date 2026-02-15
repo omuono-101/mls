@@ -333,7 +333,12 @@ const TrainerDashboard: React.FC = () => {
                                                     <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{s.student_name}</div>
                                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.assessment_name}</div>
                                                 </div>
-                                                <button className="btn btn-sm" style={{ background: 'var(--primary)', color: 'white' }} onClick={() => { setSelectedSubmission(s); setShowGradeModal(true); }}>Grade</button>
+                                                <button
+                                                    className="btn btn-sm btn-primary"
+                                                    onClick={() => navigate(`/trainer/grade/${s.assessment}`)}
+                                                >
+                                                    Grade Submissions
+                                                </button>
                                             </div>
                                         ))}
                                     </div>

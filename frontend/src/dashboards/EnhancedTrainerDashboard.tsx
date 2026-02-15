@@ -441,6 +441,14 @@ const EnhancedTrainerDashboard: React.FC = () => {
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                                                 <button
+                                                    className="btn btn-sm btn-primary"
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                                    onClick={() => navigate(`/trainer/grade/${assessment.id}`)}
+                                                >
+                                                    <ClipboardList size={16} />
+                                                    Grade Submissions
+                                                </button>
+                                                <button
                                                     className="btn"
                                                     onClick={() => {
                                                         setSelectedAssessment(assessment);

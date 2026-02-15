@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -343,6 +344,52 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(student=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def by_assessment(self, request):
+        """Get all submissions for a specific assessment"""
+        assessment_id = request.query_params.get('assessment_id')
+        if not assessment_id:
+            return Response({'error': 'assessment_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        submissions = Submission.objects.filter(
+            assessment_id=assessment_id
+        ).select_related('student', 'assessment')
+        
+        serializer = self.get_serializer(submissions, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def grade_answers(self, request, pk=None):
+        """Grade specific answers and update final score"""
+        submission = self.get_object()
+        graded_answers = request.data.get('graded_answers', [])
+        general_feedback = request.data.get('feedback', '')
+        
+        for answer_data in graded_answers:
+            answer_id = answer_data.get('answer_id')
+            points_earned = answer_data.get('points_earned')
+            feedback = answer_data.get('feedback', '')
+            
+            StudentAnswer.objects.filter(
+                id=answer_id,
+                submission=submission
+            ).update(
+                points_earned=points_earned,
+                feedback=feedback
+            )
+        
+        # Calculate final score (auto-graded + manual)
+        total_earned = StudentAnswer.objects.filter(
+            submission=submission
+        ).aggregate(total=Sum('points_earned'))['total'] or 0
+        
+        submission.grade = total_earned
+        submission.feedback = general_feedback
+        submission.is_graded = True
+        submission.save()
+        
+        return Response(self.get_serializer(submission).data)
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.all()

@@ -247,20 +247,31 @@ class UnitSerializer(serializers.ModelSerializer):
 class StudentAnswerSerializer(serializers.ModelSerializer):
     question_text = serializers.ReadOnlyField(source='question.question_text')
     question_type = serializers.ReadOnlyField(source='question.question_type')
+    question_points = serializers.ReadOnlyField(source='question.points')
+    selected_option_text = serializers.SerializerMethodField()
     
     class Meta:
         model = StudentAnswer
         fields = '__all__'
+    
+    def get_selected_option_text(self, obj):
+        if obj.selected_option:
+            return obj.selected_option.option_text
+        return None
 
 class SubmissionSerializer(serializers.ModelSerializer):
     student_name = serializers.ReadOnlyField(source='student.username')
+    student_email = serializers.ReadOnlyField(source='student.email')
     assessment_name = serializers.SerializerMethodField()
+    assessment_title = serializers.ReadOnlyField(source='assessment.title')
+    assessment_type = serializers.ReadOnlyField(source='assessment.assessment_type')
     student_answers = StudentAnswerSerializer(many=True, read_only=True)
+    total_points = serializers.ReadOnlyField(source='assessment.points')
     
     class Meta:
         model = Submission
         fields = '__all__'
-        read_only_fields = ['student']
+        read_only_fields = ['student', 'auto_graded_score']
     
     def get_assessment_name(self, obj):
         return f"{obj.assessment.assessment_type}: {obj.assessment.title}"

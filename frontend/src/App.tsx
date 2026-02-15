@@ -18,6 +18,7 @@ import TrainerCourseManagement from './dashboards/TrainerCourseManagement';
 import LessonEditor from './dashboards/LessonEditor';
 import AssessmentAuthoring from './dashboards/AssessmentAuthoring';
 import StudentRegistration from './dashboards/StudentRegistration';
+import SubmissionGrading from './dashboards/SubmissionGrading';
 
 const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
@@ -92,6 +93,12 @@ const App: React.FC = () => {
           <Route path="/trainer/assessment/:assessmentId/author" element={
             <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
               <AssessmentAuthoring />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/trainer/grade/:assessmentId" element={
+            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+              <SubmissionGrading />
             </ProtectedRoute>
           } />
 
