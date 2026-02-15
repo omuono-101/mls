@@ -11,6 +11,7 @@ interface User {
     phone_number?: string;
     role: 'Admin' | 'CourseMaster' | 'HOD' | 'Trainer' | 'Student';
     is_activated: boolean;
+    admission_no?: string;
 }
 
 interface AuthContextType {

@@ -5,7 +5,7 @@ import api from '../services/api';
 import {
     BookOpen, CheckCircle2, Clock, Lock, AlertCircle,
     FileText, MessageSquare, Bell, HelpCircle,
-    ChevronRight, Plus, BarChart3
+    ChevronRight, Plus, BarChart3, Star, Layers, ScrollText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -133,20 +133,29 @@ const StudentDashboard: React.FC = () => {
     if (user && !user.is_activated) {
         return (
             <DashboardLayout>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center', padding: '2rem' }}>
-                    <div style={{ background: '#fef3c7', color: '#92400e', padding: '2rem', borderRadius: '24px', marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '500px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-                        <Lock size={48} style={{ marginBottom: '1.5rem' }} />
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Account Dormant</h2>
-                        <p style={{ lineHeight: 1.6, opacity: 0.9 }}>
-                            Welcome to the portal! Your registration is complete, but your account is currently
-                            <strong> pending activation</strong> by the administration.
-                        </p>
-                        <div style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', background: 'white', padding: '1rem', borderRadius: '12px', width: '100%' }}>
-                            <AlertCircle size={20} className="text-primary" />
-                            <span>Contact your HOD or Admin for activation.</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', textAlign: 'center', padding: '2rem' }}>
+                    <div className="card-premium animate-fade-in" style={{ padding: '3rem', borderRadius: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '550px', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '150px', height: '150px', background: 'var(--primary)', opacity: '0.05', borderRadius: '50%' }} />
+
+                        <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '1.5rem', borderRadius: '24px', marginBottom: '1.5rem' }}>
+                            <Lock size={48} className="animate-pulse" />
                         </div>
+
+                        <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>Account Dormant</h2>
+                        <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: 'var(--text-muted)', marginBottom: '2rem' }}>
+                            Welcome to the portal! Your registration is complete, but your account is currently
+                            <span style={{ color: 'var(--primary)', fontWeight: 700 }}> pending activation</span> by the administration.
+                        </p>
+
+                        <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px', width: '100%', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(0,0,0,0.05)' }}>
+                            <AlertCircle size={24} style={{ color: 'var(--primary)' }} />
+                            <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-main)' }}>Please contact your HOD or Admin for activation.</span>
+                        </div>
+
+                        <button onClick={logout} className="btn" style={{ marginTop: '2.5rem', background: '#f1f5f9', color: '#475569', width: '100%' }}>
+                            Secure Logout
+                        </button>
                     </div>
-                    <button onClick={logout} className="btn glass">Logout</button>
                 </div>
             </DashboardLayout>
         );
@@ -154,81 +163,117 @@ const StudentDashboard: React.FC = () => {
 
     const renderOverview = () => (
         <div className="animate-fade-in">
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Welcome back, {user?.first_name || user?.username}!</h1>
-                <p style={{ color: 'var(--text-muted)' }}>Here's what's happening in your learning journey.</p>
+            <div style={{ marginBottom: '3rem', position: 'relative' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
+                    Welcome back, <span className="text-gradient">{user?.first_name || user?.username}!</span> 👋
+                </h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Here's what's happening in your learning journey.</p>
+                <div style={{ position: 'absolute', bottom: '-15px', left: 0, width: '60px', height: '4px', background: 'var(--primary)', borderRadius: '2px' }} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
-                <div className="card" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '1rem', borderRadius: '16px' }}>
-                        <BookOpen size={24} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '2rem', marginBottom: '3.5rem' }}>
+                <div className="card-premium animate-fade-in" style={{ padding: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'center', borderBottom: '4px solid var(--primary)' }}>
+                    <div style={{ background: 'hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.1)', color: 'var(--primary)', padding: '1.25rem', borderRadius: '20px' }}>
+                        <BookOpen size={32} />
                     </div>
                     <div>
-                        <h4 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{units.length}</h4>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Active Units</p>
+                        <h4 style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1 }}>{units.length}</h4>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Units</p>
                     </div>
                 </div>
-                <div className="card" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '16px' }}>
-                        <CheckCircle2 size={24} />
+
+                <div className="card-premium animate-fade-in" style={{ padding: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'center', borderBottom: '4px solid #10b981', animationDelay: '0.1s' }}>
+                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1.25rem', borderRadius: '20px' }}>
+                        <Star size={32} />
                     </div>
                     <div>
-                        <h4 style={{ fontSize: '1.5rem', fontWeight: 800 }}>85%</h4>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Attendance</p>
+                        <h4 style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1 }}>A+</h4>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Average</p>
                     </div>
                 </div>
-                <div className="card" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '1rem', borderRadius: '16px' }}>
-                        <Clock size={24} />
+
+                <div className="card-premium animate-fade-in" style={{ padding: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'center', borderBottom: '4px solid #f59e0b', animationDelay: '0.2s' }}>
+                    <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '1.25rem', borderRadius: '20px' }}>
+                        <Clock size={32} />
                     </div>
                     <div>
-                        <h4 style={{ fontSize: '1.5rem', fontWeight: 800 }}>12</h4>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Upcoming Tests</p>
+                        <h4 style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1 }}>12</h4>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Pending</p>
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-                <div className="card" style={{ padding: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Learning Progress</h3>
-                        <BarChart3 size={20} className="text-muted" />
-                    </div>
-                    {units.map(unit => (
-                        <div key={unit.id} style={{ marginBottom: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                                <span style={{ fontWeight: 600 }}>{unit.name}</span>
-                                <span className="text-muted">{Math.round((unit.lessons_taught / unit.total_lessons) * 100)}%</span>
-                            </div>
-                            <div style={{ height: '8px', background: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div style={{
-                                    height: '100%',
-                                    width: `${(unit.lessons_taught / unit.total_lessons) * 100}%`,
-                                    background: 'var(--primary)',
-                                    borderRadius: '4px'
-                                }} />
-                            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '2.5rem' }}>
+                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>Learning Progress</h3>
+                            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Completion status for your enrolled units</p>
                         </div>
-                    ))}
-                    {units.length === 0 && <p className="text-muted">No progress data available.</p>}
+                        <div style={{ background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '12px' }}>
+                            <BarChart3 size={24} className="text-primary" />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                        {units.map((unit, idx) => {
+                            const progress = Math.round((unit.lessons_taught / (unit.total_lessons || 1)) * 100);
+                            return (
+                                <div key={unit.id} className="animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.9375rem', fontWeight: 700 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
+                                            {unit.name}
+                                        </div>
+                                        <span className="text-gradient">{progress}%</span>
+                                    </div>
+                                    <div style={{ height: '12px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', padding: '2px' }}>
+                                        <div style={{
+                                            height: '100%',
+                                            width: `${progress}%`,
+                                            background: 'linear-gradient(90deg, var(--primary) 0%, #4f46e5 100%)',
+                                            borderRadius: '8px',
+                                            transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                            boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
+                                        }} />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {units.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '3rem' }}>
+                                <Layers size={48} style={{ color: 'var(--text-muted)', opacity: 0.2, margin: '0 auto 1.5rem' }} />
+                                <p className="text-muted">No unit progress tracked yet.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="card" style={{ padding: '2rem' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '2rem' }}>Announcements</h3>
+                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'var(--primary)', opacity: 0.03, borderRadius: '0 0 0 100px' }} />
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <Bell size={24} className="text-primary" /> Announcements
+                    </h3>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        {announcements.slice(0, 3).map(ann => (
-                            <div key={ann.id}>
-                                <h4 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.25rem' }}>{ann.title}</h4>
-                                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {announcements.slice(0, 4).map((ann, idx) => (
+                            <div key={ann.id} className="glass animate-fade-in" style={{ padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.03)', animationDelay: `${idx * 0.1}s` }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)' }}>{ann.title}</h4>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                     {ann.content}
                                 </p>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.5rem', display: 'block' }}>
-                                    {new Date(ann.created_at).toLocaleDateString()}
-                                </span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>{ann.author_name}</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(ann.created_at).toLocaleDateString()}</span>
+                                </div>
                             </div>
                         ))}
-                        {announcements.length === 0 && <p className="text-muted" style={{ fontSize: '0.875rem' }}>No new announcements.</p>}
+                        {announcements.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '3rem' }}>
+                                <MessageSquare size={40} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 1rem' }} />
+                                <p className="text-muted" style={{ fontSize: '0.875rem' }}>The bulletin board is empty.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -236,10 +281,7 @@ const StudentDashboard: React.FC = () => {
     );
 
     const renderUnitContent = (unit: Unit) => {
-        // Get all lessons sorted by order
         const allLessons = [...unit.lessons].sort((a, b) => a.order - b.order);
-
-        // Group assessments by lesson
         const assessmentsByLesson = unit.assessments?.reduce((acc, assessment) => {
             const lessonId = assessment.lesson || 'unit';
             if (!acc[lessonId]) acc[lessonId] = [];
@@ -249,265 +291,216 @@ const StudentDashboard: React.FC = () => {
 
         return (
             <div className="animate-fade-in">
-                <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <button onClick={() => setSelectedUnit(null)} className="btn glass btn-sm" style={{ padding: '0.5rem' }}>
-                        <ChevronRight size={20} style={{ transform: 'rotate(180deg)' }} />
+                <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <button
+                        onClick={() => setSelectedUnit(null)}
+                        className="btn glass"
+                        style={{ padding: '0.75rem', borderRadius: '50%', width: '45px', height: '45px', color: 'var(--text-main)' }}
+                    >
+                        <ChevronRight size={24} style={{ transform: 'rotate(180deg)' }} />
                     </button>
                     <div>
-                        <span style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 600 }}>{unit.code} Learning Path</span>
-                        <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>{unit.name}</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                            <span className="badge badge-primary">{unit.code}</span>
+                            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>Learning Adventure</span>
+                        </div>
+                        <h1 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.02em' }}>{unit.name}</h1>
                     </div>
                 </div>
 
-                {/* Sequential Lesson Display */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                    {allLessons.map((lesson) => {
-                        const lessonAssessments = assessmentsByLesson[lesson.id] || [];
+                {/* Vertical Learning Path Timeline */}
+                <div style={{ position: 'relative', paddingLeft: '2.5rem' }}>
+                    <div style={{
+                        position: 'absolute',
+                        left: '7px',
+                        top: '20px',
+                        bottom: '20px',
+                        width: '2px',
+                        background: 'linear-gradient(to bottom, var(--primary) 0%, #e2e8f0 100%)',
+                        opacity: 0.3
+                    }} />
 
-                        return (
-                            <div key={lesson.id} className="card" style={{
-                                padding: '2rem',
-                                border: '2px solid var(--border)',
-                                position: 'relative'
-                            }}>
-                                {/* Lesson Header */}
-                                <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'start', justifyContent: 'space-between' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                                            <span style={{
-                                                fontSize: '0.75rem',
-                                                fontWeight: 700,
-                                                padding: '0.25rem 0.75rem',
-                                                borderRadius: '20px',
-                                                background: 'var(--primary-light)',
-                                                color: 'var(--primary)'
-                                            }}>
-                                                LESSON {lesson.order}
-                                            </span>
-                                            {!lesson.is_taught && (
-                                                <span style={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    padding: '0.25rem 0.75rem',
-                                                    borderRadius: '20px',
-                                                    background: '#fef3c7',
-                                                    color: '#92400e',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5rem'
-                                                }}>
-                                                    <Lock size={12} /> Not Yet Taught
-                                                </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                        {allLessons.map((lesson, idx) => {
+                            const lessonAssessments = assessmentsByLesson[lesson.id] || [];
+                            const isLocked = !lesson.is_taught;
+
+                            return (
+                                <div key={lesson.id} className="animate-fade-in" style={{ position: 'relative', animationDelay: `${idx * 0.1}s` }}>
+                                    {/* Timeline Node */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: '-32px',
+                                        top: '0',
+                                        width: '16px',
+                                        height: '16px',
+                                        borderRadius: '50%',
+                                        background: lesson.is_taught ? 'var(--primary)' : '#e2e8f0',
+                                        border: '4px solid white',
+                                        boxShadow: lesson.is_taught ? '0 0 10px rgba(99, 102, 241, 0.4)' : 'none',
+                                        zIndex: 2
+                                    }} />
+
+                                    <div className="card-premium" style={{
+                                        padding: '2.5rem',
+                                        opacity: isLocked ? 0.7 : 1,
+                                        filter: isLocked ? 'grayscale(0.5)' : 'none',
+                                        background: isLocked ? '#f8fafc' : 'white',
+                                        borderRadius: '24px'
+                                    }}>
+                                        {/* Lesson Header */}
+                                        <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                                                    <span className="badge badge-primary">Module {lesson.order}</span>
+                                                    {isLocked && (
+                                                        <span className="badge badge-warning" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                            <Lock size={12} /> Locked
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>{lesson.title}</h2>
+                                            </div>
+                                            {lesson.is_taught && (
+                                                <div style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '12px' }}>
+                                                    <CheckCircle2 size={24} />
+                                                </div>
                                             )}
                                         </div>
-                                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>{lesson.title}</h2>
+
+                                        {/* Lesson Content - Premium Display */}
+                                        {lesson.content && (
+                                            <div style={{
+                                                marginBottom: '2.5rem',
+                                                padding: '2rem',
+                                                background: 'var(--bg-main)',
+                                                borderRadius: '20px',
+                                                border: '1px solid rgba(0,0,0,0.02)'
+                                            }}>
+                                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary)' }}>
+                                                    <ScrollText size={20} /> Lecture Material
+                                                </h3>
+                                                <div
+                                                    style={{
+                                                        fontSize: '1.05rem',
+                                                        lineHeight: 1.8,
+                                                        color: '#334155'
+                                                    }}
+                                                    dangerouslySetInnerHTML={{ __html: lesson.content }}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* Horizontal Layout for Resources and Assessments */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+                                            {/* Resources */}
+                                            {lesson.resources && lesson.resources.length > 0 && (
+                                                <div>
+                                                    <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                        <FileText size={18} className="text-primary" /> Learning Assets
+                                                    </h3>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                        {lesson.resources.map(resource => (
+                                                            <div
+                                                                key={resource.id}
+                                                                className="glass hover-scale"
+                                                                style={{
+                                                                    padding: '1rem',
+                                                                    borderRadius: '16px',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '1rem',
+                                                                    border: '1px solid rgba(0,0,0,0.05)'
+                                                                }}
+                                                                onClick={() => {
+                                                                    if (resource.file) window.open(resource.file, '_blank');
+                                                                    else if (resource.url) window.open(resource.url, '_blank');
+                                                                }}
+                                                            >
+                                                                <div style={{ background: 'white', padding: '0.6rem', borderRadius: '10px', color: 'var(--primary)', boxShadow: 'var(--shadow-sm)' }}>
+                                                                    <FileText size={18} />
+                                                                </div>
+                                                                <div style={{ overflow: 'hidden' }}>
+                                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{resource.title}</div>
+                                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{resource.resource_type}</div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Assessments */}
+                                            {lessonAssessments.length > 0 && (
+                                                <div>
+                                                    <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                        <BarChart3 size={18} className="text-primary" /> Evaluation Tasks
+                                                    </h3>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                        {lessonAssessments.map(assessment => (
+                                                            <div
+                                                                key={assessment.id}
+                                                                className="card hover-scale"
+                                                                style={{
+                                                                    padding: '1.25rem',
+                                                                    borderRadius: '16px',
+                                                                    background: 'var(--bg-main)',
+                                                                    border: '1px solid rgba(99, 102, 241, 0.1)'
+                                                                }}
+                                                            >
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase' }}>{assessment.assessment_type}</span>
+                                                                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>{assessment.points} Pts</span>
+                                                                </div>
+                                                                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '1rem' }}>{assessment.title}</h4>
+                                                                <button
+                                                                    className="btn btn-primary btn-sm"
+                                                                    style={{ width: '100%', padding: '0.6rem' }}
+                                                                    onClick={() => navigate(`/student/assessment/${assessment.id}`)}
+                                                                >
+                                                                    Dive In
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Lesson Content */}
-                                {lesson.content && (
-                                    <div style={{
-                                        marginBottom: '2rem',
-                                        padding: '1.5rem',
-                                        background: 'var(--bg-alt)',
-                                        borderRadius: '12px',
-                                        borderLeft: '4px solid var(--primary)'
-                                    }}>
-                                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <BookOpen size={18} className="text-primary" />
-                                            Lecture Notes
-                                        </h3>
-                                        <div
-                                            style={{
-                                                fontSize: '0.9375rem',
-                                                lineHeight: 1.7,
-                                                color: 'var(--text-main)'
-                                            }}
-                                            dangerouslySetInnerHTML={{ __html: lesson.content }}
-                                        />
-                                    </div>
-                                )}
-
-                                {/* Lesson Resources */}
-                                {lesson.resources && lesson.resources.length > 0 && (
-                                    <div style={{ marginBottom: '2rem' }}>
-                                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <FileText size={18} className="text-primary" />
-                                            Study Materials ({lesson.resources.length})
-                                        </h3>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                                            {lesson.resources.map(resource => (
-                                                <div
-                                                    key={resource.id}
-                                                    className="card glass"
-                                                    style={{
-                                                        padding: '1rem',
-                                                        border: '1px solid var(--border)',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onClick={() => {
-                                                        // Download or open resource
-                                                        if (resource.file) {
-                                                            window.open(resource.file, '_blank');
-                                                        } else if (resource.url) {
-                                                            window.open(resource.url, '_blank');
-                                                        }
-                                                    }}
-                                                >
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                        <div style={{
-                                                            padding: '0.75rem',
-                                                            background: 'white',
-                                                            borderRadius: '8px',
-                                                            color: 'var(--primary)'
-                                                        }}>
-                                                            <FileText size={20} />
-                                                        </div>
-                                                        <div style={{ flex: 1, overflow: 'hidden' }}>
-                                                            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                {resource.title}
-                                                            </h4>
-                                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                {resource.resource_type}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Lesson-specific Assessments */}
-                                {lessonAssessments.length > 0 && (
-                                    <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
-                                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <BarChart3 size={18} className="text-primary" />
-                                            Assessments for this Lesson ({lessonAssessments.length})
-                                        </h3>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                                            {lessonAssessments.map(assessment => (
-                                                <div
-                                                    key={assessment.id}
-                                                    className="card glass"
-                                                    style={{
-                                                        padding: '1.25rem',
-                                                        border: '1px solid var(--border)',
-                                                        background: 'var(--bg-main)'
-                                                    }}
-                                                >
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
-                                                        <span style={{
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: 700,
-                                                            padding: '0.25rem 0.75rem',
-                                                            borderRadius: '20px',
-                                                            background: assessment.assessment_type === 'CAT' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(99, 102, 241, 0.1)',
-                                                            color: assessment.assessment_type === 'CAT' ? '#ef4444' : 'var(--primary)',
-                                                            textTransform: 'uppercase'
-                                                        }}>
-                                                            {assessment.assessment_type}
-                                                        </span>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                                                            <Clock size={12} />
-                                                            {assessment.duration_minutes ? `${assessment.duration_minutes}m` : 'No limit'}
-                                                        </div>
-                                                    </div>
-                                                    <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem' }}>{assessment.title}</h4>
-                                                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                                                        <div>
-                                                            <span style={{ color: 'var(--text-muted)' }}>Points: </span>
-                                                            <span style={{ fontWeight: 600 }}>{assessment.points}</span>
-                                                        </div>
-                                                        <div>
-                                                            <span style={{ color: 'var(--text-muted)' }}>Due: </span>
-                                                            <span style={{ fontWeight: 600 }}>{new Date(assessment.due_date).toLocaleDateString()}</span>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        className="btn btn-primary btn-sm"
-                                                        style={{ width: '100%' }}
-                                                        onClick={() => navigate(`/student/assessment/${assessment.id}`)}
-                                                    >
-                                                        {assessment.assessment_type === 'Assignment' ? 'Submit Work' : 'Start Assessment'}
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-
-                    {/* Unit-level Assessments (not tied to specific lessons) */}
-                    {assessmentsByLesson['unit'] && assessmentsByLesson['unit'].length > 0 && (
-                        <div className="card" style={{ padding: '2rem', border: '2px solid var(--border)' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <BarChart3 size={24} className="text-primary" />
-                                Unit-wide Assessments
-                            </h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                                {assessmentsByLesson['unit'].map(assessment => (
-                                    <div
-                                        key={assessment.id}
-                                        className="card glass"
-                                        style={{
-                                            padding: '1.25rem',
-                                            border: '1px solid var(--border)',
-                                            background: 'var(--bg-main)'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
-                                            <span style={{
-                                                fontSize: '0.75rem',
-                                                fontWeight: 700,
-                                                padding: '0.25rem 0.75rem',
-                                                borderRadius: '20px',
-                                                background: assessment.assessment_type === 'CAT' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(99, 102, 241, 0.1)',
-                                                color: assessment.assessment_type === 'CAT' ? '#ef4444' : 'var(--primary)',
-                                                textTransform: 'uppercase'
-                                            }}>
-                                                {assessment.assessment_type}
-                                            </span>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                                                <Clock size={12} />
-                                                {assessment.duration_minutes ? `${assessment.duration_minutes}m` : 'No limit'}
-                                            </div>
-                                        </div>
-                                        <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem' }}>{assessment.title}</h4>
-                                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                                            <div>
-                                                <span style={{ color: 'var(--text-muted)' }}>Points: </span>
-                                                <span style={{ fontWeight: 600 }}>{assessment.points}</span>
-                                            </div>
-                                            <div>
-                                                <span style={{ color: 'var(--text-muted)' }}>Due: </span>
-                                                <span style={{ fontWeight: 600 }}>{new Date(assessment.due_date).toLocaleDateString()}</span>
-                                            </div>
-                                        </div>
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            style={{ width: '100%' }}
-                                            onClick={() => navigate(`/student/assessment/${assessment.id}`)}
-                                        >
-                                            {assessment.assessment_type === 'Assignment' ? 'Submit Work' : 'Start Assessment'}
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {allLessons.length === 0 && (
-                        <div className="card" style={{ padding: '4rem', textAlign: 'center', background: 'var(--bg-main)', border: '2px dashed var(--border)' }}>
-                            <BookOpen size={48} className="text-muted" style={{ margin: '0 auto 1.5rem', opacity: 0.2 }} />
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>No Lessons Yet</h3>
-                            <p className="text-muted">Your trainer hasn't added any lessons to this unit yet.</p>
-                        </div>
-                    )}
+                            );
+                        })}
+                    </div>
                 </div>
+
+                {/* Unit-wide Assessments Section */}
+                {assessmentsByLesson['unit'] && assessmentsByLesson['unit'].length > 0 && (
+                    <div className="card-premium animate-fade-in" style={{ padding: '3rem', borderRadius: '32px', marginTop: '4rem', background: 'linear-gradient(135deg, white 0%, #fefeff 100%)' }}>
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <Layers size={28} className="text-primary" /> Unit-level Evaluations
+                        </h2>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
+                            {assessmentsByLesson['unit'].map(assessment => (
+                                <div key={assessment.id} className="card-premium glass hover-scale" style={{ padding: '2rem', borderRadius: '24px' }}>
+                                    <span className="badge badge-primary" style={{ marginBottom: '1rem', display: 'inline-block' }}>{assessment.assessment_type}</span>
+                                    <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>{assessment.title}</h4>
+                                    <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={16} /> {assessment.duration_minutes || 'Flexible'}</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Star size={16} /> {assessment.points} Pts</div>
+                                    </div>
+                                    <button
+                                        className="btn btn-primary"
+                                        style={{ width: '100%' }}
+                                        onClick={() => navigate(`/student/assessment/${assessment.id}`)}
+                                    >
+                                        Begin Assessment
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
@@ -517,61 +510,71 @@ const StudentDashboard: React.FC = () => {
 
         return (
             <div className="animate-fade-in">
-                <div style={{ marginBottom: '2rem' }}>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>My Courses</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Access your units and study materials.</p>
+                <div style={{ marginBottom: '3rem' }}>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Academic Portfolio</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Explore your registered units and master new skills.</p>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                    {units.map(u => (
-                        <div key={u.id} className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', background: '#eef2ff', padding: '0.25rem 0.75rem', borderRadius: '20px' }}>
-                                        {u.code}
-                                    </span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.lessons_taught}/{u.total_lessons} Lessons</span>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2.5rem' }}>
+                    {units.map((u, idx) => (
+                        <div
+                            key={u.id}
+                            className="card-premium animate-fade-in"
+                            style={{ padding: '0', overflow: 'hidden', borderRadius: '28px', animationDelay: `${idx * 0.1}s` }}
+                        >
+                            <div style={{ padding: '2rem', position: 'relative' }}>
+                                <div style={{ position: 'absolute', top: 0, right: 0, width: '120px', height: '120px', background: 'var(--primary)', opacity: 0.05, borderRadius: '0 0 0 100px' }} />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <span className="badge badge-primary">{u.code}</span>
+                                        <span className="badge badge-success">Active</span>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--primary)' }}>{Math.round((u.lessons_taught / (u.total_lessons || 1)) * 100)}%</div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Completion</div>
+                                    </div>
                                 </div>
-                                <h4 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>{u.name}</h4>
-                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{u.course_group_name}</p>
+                                <h4 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.75rem', lineHeight: 1.2 }}>{u.name}</h4>
+                                <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)', fontWeight: 500 }}>{u.course_group_name}</p>
                             </div>
-                            <div style={{ padding: '1.25rem 1.5rem', background: 'var(--bg-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <FileText size={14} /> {u.notes_count} Notes
+
+                            <div className="glass" style={{ padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.02)' }}>
+                                <div style={{ display: 'flex', gap: '1.25rem' }}>
+                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        <FileText size={16} className="text-primary" /> {u.notes_count}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <CheckCircle2 size={14} /> {u.cats_count} CATs
+                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        <BarChart3 size={16} className="text-primary" /> {u.cats_count}
                                     </div>
                                 </div>
+
                                 {u.is_enrolled ? (
-                                    <button onClick={() => setSelectedUnit(u)} className="btn btn-primary btn-sm">
-                                        <BookOpen size={14} /> Explore Content
+                                    <button onClick={() => setSelectedUnit(u)} className="btn btn-primary" style={{ borderRadius: '14px', padding: '0.6rem 1.25rem' }}>
+                                        Launch Unit
                                     </button>
                                 ) : (
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleEnroll(u.id);
-                                        }}
-                                        className="btn btn-primary btn-sm"
+                                        onClick={(e) => { e.stopPropagation(); handleEnroll(u.id); }}
+                                        className="btn btn-primary"
                                         disabled={enrolling === u.id}
+                                        style={{ borderRadius: '14px', padding: '0.6rem 1.25rem' }}
                                     >
                                         {enrolling === u.id ? (
-                                            <div className="animate-spin" style={{ width: '14px', height: '14px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                                            <div className="animate-spin" style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%' }} />
                                         ) : (
-                                            <Plus size={14} />
+                                            <Plus size={18} />
                                         )}
-                                        {enrolling === u.id ? 'Enrolling...' : 'Enroll Now'}
+                                        Enroll
                                     </button>
                                 )}
                             </div>
                         </div>
                     ))}
                     {units.length === 0 && (
-                        <div className="card" style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', background: 'var(--bg-main)', border: '2px dashed var(--border)' }}>
-                            <BookOpen size={48} className="text-muted" style={{ margin: '0 auto 1.5rem', opacity: 0.2 }} />
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>No Units Found</h3>
-                            <p className="text-muted">You are not currently enrolled in any units. Please contact the administration if you believe this is an error.</p>
+                        <div style={{ gridColumn: '1 / -1', padding: '6rem 2rem', textAlign: 'center' }}>
+                            <BookOpen size={64} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 2rem' }} />
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>No Units Enrolled</h3>
+                            <p className="text-muted" style={{ maxWidth: '450px', margin: '1rem auto' }}>Your academic journey is just beginning. Enrolled course units will appear here as soon as they are assigned by the administration.</p>
                         </div>
                     )}
                 </div>
@@ -581,64 +584,91 @@ const StudentDashboard: React.FC = () => {
 
     const renderForum = () => (
         <div className="animate-fade-in">
-            <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+            <div style={{ marginBottom: '3.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Communication Forum</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Discuss units with your trainers and peers.</p>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Discussion Forums</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Connect with peers and trainers in your unit channels.</p>
                 </div>
-                <button className="btn btn-primary">
-                    <Plus size={18} /> New Discussion
+                <button className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Plus size={20} /> New Discussion
                 </button>
             </div>
-            <div className="card" style={{ padding: '0' }}>
+
+            <div className="card-premium" style={{ padding: '0', overflow: 'hidden', borderRadius: '28px' }}>
                 {units.map((u, idx) => (
                     <div
                         key={u.id}
+                        className="animate-fade-in"
                         style={{
-                            padding: '1.5rem 2rem',
-                            borderBottom: idx === units.length - 1 ? 'none' : '1px solid var(--border)',
+                            padding: '2rem',
+                            borderBottom: idx === units.length - 1 ? 'none' : '1px solid rgba(0,0,0,0.03)',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             cursor: 'pointer',
-                            transition: 'background 0.2s'
+                            background: 'white',
+                            transition: 'all 0.2s ease',
+                            animationDelay: `${idx * 0.05}s`
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-main)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.paddingLeft = '2.5rem'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.paddingLeft = '2rem'; }}
                     >
                         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                            <div style={{ background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '12px', color: 'var(--primary)' }}>
+                            <div style={{ background: 'var(--primary-light)', padding: '1rem', borderRadius: '16px', color: 'var(--primary)' }}>
                                 <MessageSquare size={24} />
                             </div>
                             <div>
-                                <h4 style={{ fontWeight: 700 }}>{u.name} Channel</h4>
-                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Join 24 others discussing this unit</p>
+                                <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>{u.name}</h4>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>Join the conversation for {u.code}</p>
                             </div>
                         </div>
-                        <ChevronRight size={20} className="text-muted" />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div className="badgeBadge" style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--text-muted)', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700 }}>24 Active</div>
+                            <ChevronRight size={20} style={{ color: 'var(--text-muted)' }} />
+                        </div>
                     </div>
                 ))}
+                {units.length === 0 && (
+                    <div style={{ padding: '5rem 2rem', textAlign: 'center' }}>
+                        <MessageSquare size={64} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 2rem' }} />
+                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800 }}>No Forums Available</h4>
+                        <p className="text-muted" style={{ maxWidth: '400px', margin: '1rem auto' }}>You need to be enrolled in units to access discussion forums.</p>
+                    </div>
+                )}
             </div>
         </div>
     );
 
     const renderNotifications = () => (
         <div className="animate-fade-in">
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '2rem' }}>Notifications</h1>
-            <div className="card" style={{ padding: '0' }}>
+            <div style={{ marginBottom: '3.5rem' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Notifications</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Stay updated with the latest news and alerts.</p>
+            </div>
+
+            <div className="card-premium" style={{ padding: '0', overflow: 'hidden', borderRadius: '28px' }}>
                 {notifications.map((n, idx) => (
-                    <div key={n.id} style={{ padding: '1.5rem 2rem', borderBottom: idx === notifications.length - 1 ? 'none' : '1px solid var(--border)', background: n.is_read ? 'transparent' : 'rgba(99, 102, 241, 0.03)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <h4 style={{ fontWeight: 700 }}>{n.title}</h4>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(n.created_at).toLocaleDateString()}</span>
+                    <div key={n.id} className="animate-fade-in" style={{
+                        padding: '2rem',
+                        borderBottom: idx === notifications.length - 1 ? 'none' : '1px solid rgba(0,0,0,0.03)',
+                        background: n.is_read ? 'white' : 'rgba(var(--primary-rgb), 0.02)',
+                        borderLeft: n.is_read ? '4px solid transparent' : '4px solid var(--primary)',
+                        animationDelay: `${idx * 0.05}s`
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'flex-start' }}>
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>{n.title}</h4>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, background: 'rgba(0,0,0,0.03)', padding: '0.25rem 0.75rem', borderRadius: '12px' }}>
+                                {new Date(n.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </span>
                         </div>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{n.message}</p>
+                        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{n.message}</p>
                     </div>
                 ))}
                 {notifications.length === 0 && (
-                    <div style={{ padding: '4rem', textAlign: 'center' }}>
-                        <Bell size={48} className="text-muted" style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
-                        <p className="text-muted">You're all caught up!</p>
+                    <div style={{ padding: '5rem 2rem', textAlign: 'center' }}>
+                        <Bell size={64} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 2rem' }} />
+                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800 }}>All Caught Up</h4>
+                        <p className="text-muted" style={{ maxWidth: '400px', margin: '1rem auto' }}>You have no new notifications at the moment.</p>
                     </div>
                 )}
             </div>
@@ -647,37 +677,63 @@ const StudentDashboard: React.FC = () => {
 
     const renderProfile = () => (
         <div className="animate-fade-in">
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '2rem' }}>Account & Portfolio</h1>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-                <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
-                    <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 800, margin: '0 auto 1.5rem' }}>
-                        {user?.username?.[0].toUpperCase()}
-                    </div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{user?.first_name} {user?.last_name}</h3>
-                    <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>{user?.role} - ID: STU{user?.id}</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <div style={{ fontSize: '0.8125rem', background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '8px', textAlign: 'left' }}>
-                            <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.625rem', textTransform: 'uppercase', fontWeight: 700 }}>Email Address</span>
-                            {user?.email}
+            <div style={{ marginBottom: '3.5rem' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Student Profile</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Manage your personal academic identity.</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 350px) 1fr', gap: '3rem' }}>
+                <div className="card-premium" style={{ padding: '3rem', textAlign: 'center', borderRadius: '32px' }}>
+                    <div style={{ position: 'relative', width: '150px', height: '150px', margin: '0 auto 2rem' }}>
+                        <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', padding: '6px' }}>
+                            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3.5rem', fontWeight: 900, color: 'var(--primary)' }}>
+                                {user?.first_name?.[0] || user?.username?.[0]}
+                            </div>
                         </div>
-                        <div style={{ fontSize: '0.8125rem', background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '8px', textAlign: 'left' }}>
-                            <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.625rem', textTransform: 'uppercase', fontWeight: 700 }}>Phone Number</span>
-                            {user?.phone_number || 'Not provided'}
+                        <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: '#10b981', width: '28px', height: '28px', borderRadius: '50%', border: '4px solid white' }} />
+                    </div>
+
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '0.5rem' }}>{user?.first_name} {user?.last_name}</h2>
+                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '2.5rem' }}>@{user?.username}</p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'var(--bg-main)', padding: '1.5rem', borderRadius: '24px' }}>
+                        <div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 900 }}>4.8</div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Rating</div>
+                        </div>
+                        <div style={{ borderLeft: '1px solid rgba(0,0,0,0.05)' }}>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 900 }}>12</div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Badges</div>
                         </div>
                     </div>
                 </div>
-                <div className="card" style={{ padding: '2rem' }}>
-                    <h3 style={{ fontWeight: 700, marginBottom: '1.5rem' }}>Change Password</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div className="form-group">
-                            <label>Current Password</label>
-                            <input type="password" placeholder="••••••••" style={{ width: '100%' }} />
+
+                <div className="card-premium" style={{ padding: '3rem', borderRadius: '32px' }}>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <FileText size={24} className="text-primary" /> Personal Information
+                    </h3>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Email Address</label>
+                            <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>{user?.email || 'N/A'}</p>
                         </div>
-                        <div className="form-group">
-                            <label>New Password</label>
-                            <input type="password" placeholder="••••••••" style={{ width: '100%' }} />
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Phone Number</label>
+                            <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>{user?.phone_number || 'N/A'}</p>
                         </div>
-                        <button className="btn btn-primary" style={{ width: 'fit-content' }}>Update Password</button>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Admission No</label>
+                            <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>{user?.admission_no || 'Pending'}</p>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Role</label>
+                            <span className="badge badge-primary">Student Ambassador</span>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: '4rem', paddingTop: '2.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                        <button className="btn btn-primary" style={{ padding: '0.8rem 2rem' }}>Edit Account Details</button>
                     </div>
                 </div>
             </div>
@@ -692,94 +748,66 @@ const StudentDashboard: React.FC = () => {
 
         return (
             <div className="animate-fade-in">
-                <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+                <div style={{ marginBottom: '3.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                     <div>
-                        <h1 style={{ fontSize: '2.25rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Assessments & Grading</h1>
-                        <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Track your academic progress and upcoming evaluative tasks.</p>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Grading History</h1>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Track your academic performance across all units.</p>
                     </div>
-                    <div className="card glass" style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ textAlign: 'right' }}>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Points Earned</p>
-                            <p style={{ fontWeight: 800, fontSize: '1.125rem', color: 'var(--primary)' }}>0 / 0</p>
+                    <div className="card-premium glass" style={{ padding: '0.75rem 1.5rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ background: 'var(--primary)', color: 'white', padding: '0.5rem', borderRadius: '10px' }}><Star size={20} /></div>
+                        <div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 900, lineHeight: 1.1 }}>82.5%</div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Overall GPA</div>
                         </div>
-                        <BarChart3 size={24} className="text-primary" />
                     </div>
                 </div>
 
-                <div className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--border)', background: 'white' }}>
+                <div className="card-premium" style={{ borderRadius: '28px', overflow: 'hidden' }}>
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0' }}>
                             <thead>
                                 <tr style={{ background: '#f8fafc' }}>
-                                    <th style={{ textAlign: 'left', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Assessment / Unit</th>
-                                    <th style={{ textAlign: 'left', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Type</th>
-                                    <th style={{ textAlign: 'left', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Deadline</th>
-                                    <th style={{ textAlign: 'left', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Weight</th>
-                                    <th style={{ textAlign: 'right', padding: '1.25rem 2rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Actions</th>
+                                    <th style={{ padding: '1.5rem 2rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assessment</th>
+                                    <th style={{ padding: '1.5rem 2rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unit</th>
+                                    <th style={{ padding: '1.5rem 2rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Values</th>
+                                    <th style={{ padding: '1.5rem 2rem', textAlign: 'center', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {allAssessments.map((a, idx) => {
-                                    const isPastSelection = new Date(a.due_date) < new Date();
-                                    return (
-                                        <tr key={`${a.id}-${idx}`} style={{ transition: 'background 0.2s', background: idx % 2 === 0 ? 'white' : '#fafafa' }} onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'} onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? 'white' : '#fafafa'}>
-                                            <td style={{ padding: '1.25rem 2rem', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <div style={{ padding: '0.5rem', background: 'var(--primary-light)', borderRadius: '10px', color: 'var(--primary)' }}>
-                                                        <FileText size={20} />
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>{a.title}</div>
-                                                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{a.unitCode}: {a.unitName}</div>
-                                                    </div>
+                                {allAssessments.map((a, idx) => (
+                                    <tr key={`${a.id}-${idx}`} className="animate-fade-in" style={{ animationDelay: `${idx * 0.05}s`, borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid rgba(0,0,0,0.03)' }}>
+                                        <td style={{ padding: '1.5rem 2rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '0.6rem', borderRadius: '12px' }}>
+                                                    <ScrollText size={18} />
                                                 </div>
-                                            </td>
-                                            <td style={{ padding: '1.25rem 2rem', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)' }}>
-                                                <span style={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 700,
-                                                    padding: '0.375rem 0.875rem',
-                                                    borderRadius: '20px',
-                                                    background: a.assessment_type === 'CAT' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(99, 102, 241, 0.1)',
-                                                    color: a.assessment_type === 'CAT' ? '#ef4444' : 'var(--primary)',
-                                                    textTransform: 'uppercase'
-                                                }}>
-                                                    {a.assessment_type}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '1.25rem 2rem', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isPastSelection ? '#ef4444' : 'var(--text-main)', fontWeight: isPastSelection ? 600 : 400 }}>
-                                                    <Clock size={16} />
-                                                    {new Date(a.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                <div>
+                                                    <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>{a.title}</div>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>{a.assessment_type}</div>
                                                 </div>
-                                            </td>
-                                            <td style={{ padding: '1.25rem 2rem', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)', fontWeight: 600 }}>
-                                                {a.points} Pts
-                                            </td>
-                                            <td style={{ padding: '1.25rem 2rem', textAlign: 'right', borderBottom: idx === allAssessments.length - 1 ? 'none' : '1px solid var(--border)' }}>
-                                                <button
-                                                    onClick={() => navigate(`/student/assessment/${a.id}`)}
-                                                    className={`btn btn-sm ${isPastSelection ? 'glass' : 'btn-primary'}`}
-                                                    style={{ borderRadius: '8px', padding: '0.5rem 1.25rem' }}
-                                                >
-                                                    {a.assessment_type === 'Assignment' ? 'Submit' : 'Take Test'}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '1.5rem 2rem' }}>
+                                            <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{a.unitCode}</span>
+                                        </td>
+                                        <td style={{ padding: '1.5rem 2rem' }}>
+                                            <div style={{ fontWeight: 700 }}>{a.points} Pts</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Due: {new Date(a.due_date).toLocaleDateString()}</div>
+                                        </td>
+                                        <td style={{ padding: '1.5rem 2rem', textAlign: 'center' }}>
+                                            <button
+                                                onClick={() => navigate(`/student/assessment/${a.id}`)}
+                                                className="btn btn-sm btn-primary"
+                                                style={{ borderRadius: '8px', padding: '0.5rem 1.25rem' }}
+                                            >
+                                                Start
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
-                    {allAssessments.length === 0 && (
-                        <div style={{ padding: '6rem 2rem', textAlign: 'center' }}>
-                            <div style={{ width: '80px', height: '80px', background: 'var(--bg-main)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', border: '1px solid var(--border)' }}>
-                                <BarChart3 size={40} className="text-muted" style={{ opacity: 0.3 }} />
-                            </div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>No Assessments Yet</h3>
-                            <p className="text-muted" style={{ maxWidth: '400px', margin: '0.5rem auto 0' }}>Enrolled units will appear here once they have active CATs or assignments assigned to you.</p>
-                        </div>
-                    )}
                 </div>
             </div>
         );
@@ -787,24 +815,46 @@ const StudentDashboard: React.FC = () => {
 
     const renderSupport = () => (
         <div className="animate-fade-in">
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '2rem' }}>Support & Help Desk</h1>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                <div className="card" style={{ padding: '2rem' }}>
-                    <HelpCircle size={32} className="text-primary" style={{ marginBottom: '1.5rem' }} />
-                    <h3 style={{ fontWeight: 700, marginBottom: '1rem' }}>Trainer Advice</h3>
-                    <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>Need academic help? Reach out to your unit trainers directly through their office hours or email.</p>
-                    <button className="btn glass btn-sm">Find Trainer Info</button>
+            <div style={{ marginBottom: '3.5rem' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Help & Support</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We're here to help you succeed in your studies.</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
+                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                    <div style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                        <HelpCircle size={32} />
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Knowledge Base</h3>
+                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Browse our extensive library of guides, tutorials, and frequently asked questions.</p>
+                    <button className="btn btn-primary" style={{ width: '100%' }}>Explore Guides</button>
                 </div>
-                <div className="card" style={{ padding: '2rem' }}>
-                    <AlertCircle size={32} className="text-primary" style={{ marginBottom: '1.5rem' }} />
-                    <h3 style={{ fontWeight: 700, marginBottom: '1rem' }}>Technical Support</h3>
-                    <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>Encountering issues with the portal? Our tech team is here to help you resolve login or content issues.</p>
-                    <button className="btn btn-primary btn-sm">Open Support Ticket</button>
+
+                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                        <MessageSquare size={32} />
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Direct Chat</h3>
+                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Our support team is available Monday to Friday, 8am - 5pm to help with any technical issues.</p>
+                    <button className="btn btn-primary" style={{ width: '100%', background: '#10b981' }}>Start Conversing</button>
+                </div>
+
+                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                    <div style={{ background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                        <AlertCircle size={32} />
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Report Issue</h3>
+                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Encountered a bug or a problem with unit access? Let us know and we'll fix it quickly.</p>
+                    <button className="btn btn-primary" style={{ width: '100%', background: '#f43f5e' }}>Submit Report</button>
                 </div>
             </div>
-            <div className="card" style={{ marginTop: '2rem', padding: '2rem', background: 'var(--bg-main)', border: 'none' }}>
-                <h4 style={{ fontWeight: 700, marginBottom: '1rem' }}>General Inquiries</h4>
-                <p style={{ fontSize: '0.875rem' }}>For administrative questions, please visit the Academic Registrar's office during working hours (8:00 AM - 5:00 PM).</p>
+
+            <div className="card-premium glass" style={{ marginTop: '4rem', padding: '2.5rem', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.25rem' }}>Contact Administration</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>For enrollment and academic requests</p>
+                </div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--primary)' }}>admin@kisecollege.ac.ke</div>
             </div>
         </div>
     );
