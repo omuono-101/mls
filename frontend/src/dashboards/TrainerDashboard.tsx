@@ -315,6 +315,30 @@ const TrainerDashboard: React.FC = () => {
                                             </div>
                                         ))}
                                     </div>
+
+                                    <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '2rem', marginBottom: '1rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <CheckCircle size={16} /> Graded Submissions
+                                    </h3>
+                                    <div style={{ display: 'grid', gap: '0.75rem' }}>
+                                        {submissions.filter(s => s.grade !== null).map(s => (
+                                            <div key={s.id} className="glass" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #10b981' }}>
+                                                <div>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{s.student_name}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.assessment_name}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#10b981' }}>{s.grade}%</div>
+                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Graded</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {submissions.filter(s => s.grade !== null).length === 0 && (
+                                            <div style={{ padding: '1rem', textAlign: 'center', background: 'var(--bg-alt)', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                                No graded submissions yet.
+                                            </div>
+                                        )}
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
