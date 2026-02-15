@@ -259,7 +259,7 @@ const StudentDashboard: React.FC = () => {
 
                 {/* Sequential Lesson Display */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                    {allLessons.map((lesson, index) => {
+                    {allLessons.map((lesson) => {
                         const lessonAssessments = assessmentsByLesson[lesson.id] || [];
                         const isLocked = !lesson.is_taught;
 
