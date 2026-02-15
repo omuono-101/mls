@@ -14,6 +14,8 @@ interface Resource {
     title: string;
     resource_type: string;
     lesson: number;
+    file?: string;
+    url?: string;
 }
 
 interface Lesson {
@@ -315,14 +317,14 @@ const StudentDashboard: React.FC = () => {
                                             <BookOpen size={18} className="text-primary" />
                                             Lecture Notes
                                         </h3>
-                                        <div style={{
-                                            fontSize: '0.9375rem',
-                                            lineHeight: 1.7,
-                                            color: 'var(--text-main)',
-                                            whiteSpace: 'pre-wrap'
-                                        }}>
-                                            {lesson.content}
-                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: '0.9375rem',
+                                                lineHeight: 1.7,
+                                                color: 'var(--text-main)'
+                                            }}
+                                            dangerouslySetInnerHTML={{ __html: lesson.content }}
+                                        />
                                     </div>
                                 )}
 
@@ -345,8 +347,12 @@ const StudentDashboard: React.FC = () => {
                                                         transition: 'all 0.2s'
                                                     }}
                                                     onClick={() => {
-                                                        // TODO: Open resource viewer modal
-                                                        console.log('View resource:', resource);
+                                                        // Download or open resource
+                                                        if (resource.file) {
+                                                            window.open(resource.file, '_blank');
+                                                        } else if (resource.url) {
+                                                            window.open(resource.url, '_blank');
+                                                        }
                                                     }}
                                                 >
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
