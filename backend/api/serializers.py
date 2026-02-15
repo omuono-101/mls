@@ -138,6 +138,7 @@ class UnitSerializer(serializers.ModelSerializer):
     cats_count = serializers.SerializerMethodField()
     modules = ModuleSerializer(many=True, read_only=True)
     lessons = LessonSerializer(many=True, read_only=True)
+    assessments = AssessmentSerializer(many=True, read_only=True)
 
     is_enrolled = serializers.SerializerMethodField()
 

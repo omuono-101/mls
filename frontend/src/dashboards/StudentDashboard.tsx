@@ -9,12 +9,20 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+interface Resource {
+    id: number;
+    title: string;
+    resource_type: string;
+    lesson: number;
+}
+
 interface Lesson {
     id: number;
     title: string;
     order: number;
     is_taught: boolean;
     module?: number;
+    resources?: Resource[];
 }
 
 interface Module {
@@ -22,6 +30,16 @@ interface Module {
     title: string;
     description: string;
     order: number;
+}
+
+interface Assessment {
+    id: number;
+    title: string;
+    assessment_type: string;
+    instructions: string;
+    points: number;
+    due_date: string;
+    duration_minutes: number;
 }
 
 interface Unit {
@@ -35,6 +53,7 @@ interface Unit {
     cats_count: number;
     modules: Module[];
     lessons: Lesson[];
+    assessments: Assessment[];
     is_enrolled: boolean;
 }
 
@@ -216,6 +235,9 @@ const StudentDashboard: React.FC = () => {
         const modules = [...unit.modules].sort((a, b) => a.order - b.order);
         const orphanedLessons = unit.lessons.filter(l => !l.module).sort((a, b) => a.order - b.order);
 
+        // Aggregate unit materials (resources from all lessons)
+        const unitMaterials = unit.lessons.flatMap(l => (l.resources || []).map(r => ({ ...r, lessonOrder: l.order })));
+
         return (
             <div className="animate-fade-in">
                 <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -305,6 +327,114 @@ const StudentDashboard: React.FC = () => {
                                             </div>
                                             {lesson.is_taught ? <PlayCircle size={18} className="text-primary" /> : <Lock size={18} className="text-muted" />}
                                         </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {unitMaterials.length > 0 && (
+                        <div style={{ marginTop: '2rem' }}>
+                            <div style={{ marginBottom: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <BookOpen size={24} className="text-primary" />
+                                    Study Materials
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>All lecture notes and resources for this unit.</p>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
+                                {unitMaterials.map((res, ridx) => (
+                                    <div
+                                        key={`${res.id}-${ridx}`}
+                                        className="card glass"
+                                        style={{
+                                            padding: '1rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '1rem',
+                                            cursor: 'pointer',
+                                            border: '1px solid var(--border)',
+                                            background: 'var(--bg-main)'
+                                        }}
+                                        onClick={() => navigate(`/student/unit/${unit.id}/lesson/${res.lessonOrder}`)}
+                                    >
+                                        <div style={{
+                                            padding: '0.5rem',
+                                            background: 'white',
+                                            borderRadius: '8px',
+                                            color: 'var(--primary)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <FileText size={18} />
+                                        </div>
+                                        <div style={{ overflow: 'hidden' }}>
+                                            <h5 style={{ fontSize: '0.875rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.title}</h5>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{res.resource_type}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {unit.assessments && unit.assessments.length > 0 && (
+                        <div style={{ marginTop: '2rem' }}>
+                            <div style={{ marginBottom: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <BarChart3 size={24} className="text-primary" />
+                                    Assessments & Assignments
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Tests, CATs and lab tasks for this unit.</p>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+                                {unit.assessments.map(assessment => (
+                                    <div
+                                        key={assessment.id}
+                                        className="card glass"
+                                        style={{
+                                            padding: '1.5rem',
+                                            border: '1px solid var(--border)',
+                                            background: 'var(--bg-main)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'space-between'
+                                        }}
+                                    >
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                                                <span style={{
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    padding: '0.25rem 0.75rem',
+                                                    borderRadius: '20px',
+                                                    background: 'rgba(99, 102, 241, 0.1)',
+                                                    color: 'var(--primary)',
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {assessment.assessment_type}
+                                                </span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                                                    <Clock size={14} />
+                                                    {assessment.duration_minutes ? `${assessment.duration_minutes}m` : 'No limit'}
+                                                </div>
+                                            </div>
+                                            <h4 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>{assessment.title}</h4>
+                                            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Points</p>
+                                                    <p style={{ fontWeight: 600 }}>{assessment.points}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Due Date</p>
+                                                    <p style={{ fontWeight: 600 }}>{new Date(assessment.due_date).toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button className="btn btn-primary" style={{ width: '100%' }}>
+                                            {assessment.assessment_type === 'Assignment' ? 'Submit Work' : 'Start Assessment'}
+                                        </button>
                                     </div>
                                 ))}
                             </div>
