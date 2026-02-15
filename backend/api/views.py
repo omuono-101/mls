@@ -174,7 +174,10 @@ class UnitViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
+        if self.action == 'enroll':
+            return [permissions.IsAuthenticated()]
         return [IsHOD()]
+
 
     @action(detail=True, methods=['post'])
     def generate_cats(self, request, pk=None):
