@@ -129,44 +129,6 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = '__all__'
 
-class UnitSerializer(serializers.ModelSerializer):
-    course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
-    trainer_name = serializers.ReadOnlyField(source='trainer.username')
-    lessons_taught = serializers.SerializerMethodField()
-    total_lessons_count = serializers.ReadOnlyField(source='total_lessons')
-    notes_count = serializers.SerializerMethodField()
-    cats_count = serializers.SerializerMethodField()
-    modules = ModuleSerializer(many=True, read_only=True)
-    lessons = LessonSerializer(many=True, read_only=True)
-    assessments = AssessmentSerializer(many=True, read_only=True)
-
-    is_enrolled = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Unit
-        fields = '__all__'
-
-    def get_is_enrolled(self, obj):
-        request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            return False
-        from core.models import StudentEnrollment
-        return StudentEnrollment.objects.filter(
-            student=request.user, 
-            course_group=obj.course_group,
-            is_active=True
-        ).exists()
-
-    def get_lessons_taught(self, obj):
-        return obj.lessons.filter(is_taught=True).count()
-
-    def get_notes_count(self, obj):
-        from core.models import Resource
-        return Resource.objects.filter(lesson__unit=obj).count()
-
-    def get_cats_count(self, obj):
-        return obj.assessments.filter(assessment_type='CAT').count()
-
 class QuestionOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionOption
@@ -232,6 +194,44 @@ class AssessmentSerializer(serializers.ModelSerializer):
     
     def get_question_count(self, obj):
         return obj.questions.count()
+
+class UnitSerializer(serializers.ModelSerializer):
+    course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
+    trainer_name = serializers.ReadOnlyField(source='trainer.username')
+    lessons_taught = serializers.SerializerMethodField()
+    total_lessons_count = serializers.ReadOnlyField(source='total_lessons')
+    notes_count = serializers.SerializerMethodField()
+    cats_count = serializers.SerializerMethodField()
+    modules = ModuleSerializer(many=True, read_only=True)
+    lessons = LessonSerializer(many=True, read_only=True)
+    assessments = AssessmentSerializer(many=True, read_only=True)
+
+    is_enrolled = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Unit
+        fields = '__all__'
+
+    def get_is_enrolled(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        from core.models import StudentEnrollment
+        return StudentEnrollment.objects.filter(
+            student=request.user, 
+            course_group=obj.course_group,
+            is_active=True
+        ).exists()
+
+    def get_lessons_taught(self, obj):
+        return obj.lessons.filter(is_taught=True).count()
+
+    def get_notes_count(self, obj):
+        from core.models import Resource
+        return Resource.objects.filter(lesson__unit=obj).count()
+
+    def get_cats_count(self, obj):
+        return obj.assessments.filter(assessment_type='CAT').count()
 
 class StudentAnswerSerializer(serializers.ModelSerializer):
     question_text = serializers.ReadOnlyField(source='question.question_text')
