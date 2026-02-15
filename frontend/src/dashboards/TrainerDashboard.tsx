@@ -39,6 +39,7 @@ interface Submission {
     grade: number | null;
     feedback: string;
     submitted_at: string;
+    total_points: number;
 }
 
 const TrainerDashboard: React.FC = () => {
@@ -319,24 +320,56 @@ const TrainerDashboard: React.FC = () => {
                                     <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '2rem', marginBottom: '1rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <CheckCircle size={16} /> Graded Submissions
                                     </h3>
-                                    <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                        {submissions.filter(s => s.grade !== null).map(s => (
-                                            <div key={s.id} className="glass" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #10b981' }}>
-                                                <div>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{s.student_name}</div>
-                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.assessment_name}</div>
-                                                </div>
-                                                <div style={{ textAlign: 'right' }}>
-                                                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#10b981' }}>{s.grade}%</div>
-                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Graded</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {submissions.filter(s => s.grade !== null).length === 0 && (
-                                            <div style={{ padding: '1rem', textAlign: 'center', background: 'var(--bg-alt)', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                                                No graded submissions yet.
-                                            </div>
-                                        )}
+
+                                    <div className="glass" style={{ padding: 0, borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                            <thead>
+                                                <tr style={{ background: 'var(--bg-alt)', borderBottom: '1px solid var(--border)' }}>
+                                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Student</th>
+                                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Assessment</th>
+                                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Score</th>
+                                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Percentage</th>
+                                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Graded Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {submissions.filter(s => s.grade !== null).map(s => {
+                                                    const percentage = s.total_points > 0 ? Math.round((Number(s.grade) / s.total_points) * 100) : 0;
+                                                    return (
+                                                        <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                            <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}>{s.student_name}</td>
+                                                            <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{s.assessment_name}</td>
+                                                            <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.875rem', fontWeight: 700 }}>
+                                                                {Number(s.grade).toFixed(1)} <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 400 }}>/ {s.total_points}</span>
+                                                            </td>
+                                                            <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                                                                <span style={{
+                                                                    display: 'inline-block',
+                                                                    padding: '0.2rem 0.5rem',
+                                                                    borderRadius: '4px',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: 700,
+                                                                    background: percentage >= 50 ? '#d1fae5' : '#fee2e2',
+                                                                    color: percentage >= 50 ? '#065f46' : '#991b1b'
+                                                                }}>
+                                                                    {percentage}%
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                                {new Date(s.submitted_at).toLocaleDateString()}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                                {submissions.filter(s => s.grade !== null).length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                                            No graded submissions found.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
 
                                 </div>
