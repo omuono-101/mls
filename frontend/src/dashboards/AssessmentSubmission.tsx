@@ -195,13 +195,27 @@ const AssessmentSubmission: React.FC = () => {
                                             {q.question_type === 'TF' && (
                                                 <div style={{ display: 'flex', gap: '1rem' }}>
                                                     {['True', 'False'].map(val => (
-                                                        <label key={val} style={{ flex: 1, textAlign: 'center', padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', background: answers[q.id] === val ? 'var(--primary-light)' : 'transparent' }}>
+                                                        <label
+                                                            key={val}
+                                                            style={{
+                                                                flex: 1,
+                                                                textAlign: 'center',
+                                                                padding: '1rem',
+                                                                border: `2px solid ${answers[q.id] === val ? 'var(--primary)' : 'var(--border)'}`,
+                                                                borderRadius: '8px',
+                                                                cursor: 'pointer',
+                                                                background: answers[q.id] === val ? 'var(--primary-light)' : 'white',
+                                                                fontWeight: answers[q.id] === val ? 700 : 400,
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onClick={() => handleAnswerChange(q.id, val)}
+                                                        >
                                                             <input
                                                                 type="radio"
                                                                 name={`q-${q.id}`}
                                                                 value={val}
-                                                                onChange={() => handleAnswerChange(q.id, val)}
                                                                 checked={answers[q.id] === val}
+                                                                onChange={() => { }} // Handled by label onClick
                                                                 style={{ display: 'none' }}
                                                                 required
                                                             />
