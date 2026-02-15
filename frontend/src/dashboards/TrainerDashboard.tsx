@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, FileText, Upload, Plus, CheckCircle, Check, Database, FilePlus, X, Link as LinkIcon, GraduationCap } from 'lucide-react';
+import { BookOpen, FileText, Upload, Plus, CheckCircle, Check, Database, FilePlus, X, Link as LinkIcon } from 'lucide-react';
 
 interface Lesson {
     id: number;
@@ -33,6 +33,7 @@ interface Assessment {
 interface Submission {
     id: number;
     student_name: string;
+    assessment: number;
     assessment_name: string;
     file: string;
     grade: number | null;
@@ -49,9 +50,7 @@ const TrainerDashboard: React.FC = () => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [showResourceModal, setShowResourceModal] = useState(false);
-    const [showGradeModal, setShowGradeModal] = useState(false);
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-    const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [loading, setLoading] = useState(false);
 
     // Form states
@@ -70,11 +69,6 @@ const TrainerDashboard: React.FC = () => {
         file: null as File | null,
         url: '',
         description: ''
-    });
-
-    const [gradeData, setGradeData] = useState({
-        grade: '',
-        feedback: ''
     });
 
     const fetchData = async () => {
@@ -137,27 +131,6 @@ const TrainerDashboard: React.FC = () => {
         } catch (error) {
             console.error('Failed to upload resource', error);
             alert('Failed to upload resource.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleGradeSubmission = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedSubmission) return;
-        setLoading(true);
-        try {
-            await api.patch(`submissions/${selectedSubmission.id}/`, {
-                grade: parseInt(gradeData.grade),
-                feedback: gradeData.feedback
-            });
-            setShowGradeModal(false);
-            setGradeData({ grade: '', feedback: '' });
-            fetchData();
-            alert('Grade submitted successfully!');
-        } catch (error) {
-            console.error('Failed to submit grade', error);
-            alert('Failed to submit grade.');
         } finally {
             setLoading(false);
         }
@@ -606,76 +579,6 @@ const TrainerDashboard: React.FC = () => {
                         border: '1px solid rgba(255, 255, 255, 0.2)',
                         overflow: 'hidden'
                     }}>
-                        <button
-                            onClick={() => setShowGradeModal(false)}
-                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', zIndex: 10 }}
-                        >
-                            <X size={24} />
-                        </button>
-
-                        <div style={{ marginBottom: '2rem' }}>
-                            <div style={{
-                                display: 'inline-flex',
-                                padding: '0.75rem',
-                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                color: 'white',
-                                borderRadius: '12px',
-                                marginBottom: '1rem',
-                                boxShadow: '0 4px 6px -1px rgba(245, 158, 11, 0.4)'
-                            }}>
-                                <GraduationCap size={24} />
-                            </div>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>Grade Submission</h2>
-                            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Student: {selectedSubmission?.student_name}</p>
-                        </div>
-
-                        <form onSubmit={handleGradeSubmission}>
-                            <div style={{ marginBottom: '1.25rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Score (out of 100)</label>
-                                <input
-                                    type="number"
-                                    className="input"
-                                    required
-                                    min="0"
-                                    max="100"
-                                    value={gradeData.grade}
-                                    onChange={(e) => setGradeData({ ...gradeData, grade: e.target.value })}
-                                    placeholder="Enter points given"
-                                    style={{ width: '100%', fontSize: '1.1rem', fontWeight: 700 }}
-                                />
-                            </div>
-                            <div style={{ marginBottom: '2rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Feedback</label>
-                                <textarea
-                                    className="input"
-                                    placeholder="Provide encouraging feedback or areas for improvement..."
-                                    value={gradeData.feedback}
-                                    onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
-                                    style={{ minHeight: '120px', resize: 'vertical', width: '100%' }}
-                                />
-                            </div>
-                            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-                                <button
-                                    type="button"
-                                    className="btn"
-                                    onClick={() => setShowGradeModal(false)}
-                                    style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', justifyContent: 'center' }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    style={{ flex: 1, background: '#f59e0b', border: 'none', color: 'white', justifyContent: 'center', boxShadow: '0 4px 6px -1px rgba(245, 158, 11, 0.4)' }}
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Submitting...' : 'Submit Grade'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </DashboardLayout >
     );
 };
