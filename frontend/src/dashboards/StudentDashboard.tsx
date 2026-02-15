@@ -261,13 +261,11 @@ const StudentDashboard: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     {allLessons.map((lesson) => {
                         const lessonAssessments = assessmentsByLesson[lesson.id] || [];
-                        const isLocked = !lesson.is_taught;
 
                         return (
                             <div key={lesson.id} className="card" style={{
                                 padding: '2rem',
                                 border: '2px solid var(--border)',
-                                opacity: isLocked ? 0.7 : 1,
                                 position: 'relative'
                             }}>
                                 {/* Lesson Header */}
@@ -284,7 +282,7 @@ const StudentDashboard: React.FC = () => {
                                             }}>
                                                 LESSON {lesson.order}
                                             </span>
-                                            {isLocked && (
+                                            {!lesson.is_taught && (
                                                 <span style={{
                                                     fontSize: '0.75rem',
                                                     fontWeight: 600,
@@ -305,7 +303,7 @@ const StudentDashboard: React.FC = () => {
                                 </div>
 
                                 {/* Lesson Content */}
-                                {lesson.content && !isLocked && (
+                                {lesson.content && (
                                     <div style={{
                                         marginBottom: '2rem',
                                         padding: '1.5rem',
@@ -329,7 +327,7 @@ const StudentDashboard: React.FC = () => {
                                 )}
 
                                 {/* Lesson Resources */}
-                                {lesson.resources && lesson.resources.length > 0 && !isLocked && (
+                                {lesson.resources && lesson.resources.length > 0 && (
                                     <div style={{ marginBottom: '2rem' }}>
                                         <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <FileText size={18} className="text-primary" />
@@ -376,7 +374,7 @@ const StudentDashboard: React.FC = () => {
                                 )}
 
                                 {/* Lesson-specific Assessments */}
-                                {lessonAssessments.length > 0 && !isLocked && (
+                                {lessonAssessments.length > 0 && (
                                     <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
                                         <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <BarChart3 size={18} className="text-primary" />
@@ -431,19 +429,6 @@ const StudentDashboard: React.FC = () => {
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                )}
-
-                                {/* Locked State Message */}
-                                {isLocked && (
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: '3rem 1rem',
-                                        color: 'var(--text-muted)'
-                                    }}>
-                                        <Lock size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
-                                        <p style={{ fontSize: '1rem', fontWeight: 600 }}>This lesson hasn't been taught yet</p>
-                                        <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Content will be available once your trainer marks it as taught</p>
                                     </div>
                                 )}
                             </div>
