@@ -135,10 +135,18 @@ class LessonSerializer(serializers.ModelSerializer):
     trainer_name = serializers.ReadOnlyField(source='trainer.username')
     unit_name = serializers.ReadOnlyField(source='unit.name')
     unit_code = serializers.ReadOnlyField(source='unit.code')
+    is_completed = serializers.SerializerMethodField()
+
     class Meta:
         model = Lesson
         fields = '__all__'
         read_only_fields = ['trainer']
+
+    def get_is_completed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.student_progress.filter(student=request.user, is_completed=True).exists()
+        return False
 
 class QuestionOptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -216,6 +224,9 @@ class UnitSerializer(serializers.ModelSerializer):
     modules = ModuleSerializer(many=True, read_only=True)
     lessons = LessonSerializer(many=True, read_only=True)
     assessments = AssessmentSerializer(many=True, read_only=True)
+    
+    student_progress = serializers.SerializerMethodField()
+    lessons_completed = serializers.SerializerMethodField()
 
     is_enrolled = serializers.SerializerMethodField()
 
@@ -243,6 +254,22 @@ class UnitSerializer(serializers.ModelSerializer):
 
     def get_cats_count(self, obj):
         return obj.assessments.filter(assessment_type='CAT').count()
+
+    def get_lessons_completed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            from core.models import StudentLessonProgress
+            return StudentLessonProgress.objects.filter(
+                student=request.user, 
+                lesson__unit=obj, 
+                is_completed=True
+            ).count()
+        return 0
+
+    def get_student_progress(self, obj):
+        completed = self.get_lessons_completed(obj)
+        total = obj.total_lessons or 1
+        return round((completed / total) * 100)
 
 class StudentAnswerSerializer(serializers.ModelSerializer):
     question_text = serializers.ReadOnlyField(source='question.question_text')

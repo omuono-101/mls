@@ -256,6 +256,8 @@ class LessonViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
+        if self.action in ['complete', 'incomplete']:
+            return [permissions.IsAuthenticated()]
         # Allow HODs to approve (PATCH/PUT) but maybe not create? 
         # Actually, HODs should definitely be able to edit lessons for verification.
         return [(IsTrainer | IsHOD)()]
@@ -299,6 +301,31 @@ class LessonViewSet(viewsets.ModelViewSet):
                 pass
         
         serializer.save()
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complete(self, request, pk=None):
+        lesson = self.get_object()
+        from core.models import StudentLessonProgress
+        progress, created = StudentLessonProgress.objects.get_or_create(
+            student=request.user,
+            lesson=lesson
+        )
+        progress.is_completed = True
+        progress.save()
+        return Response({'status': 'lesson completed'})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def incomplete(self, request, pk=None):
+        lesson = self.get_object()
+        from core.models import StudentLessonProgress
+        progress, created = StudentLessonProgress.objects.get_or_create(
+            student=request.user,
+            lesson=lesson
+        )
+        progress.is_completed = False
+        progress.save()
+        return Response({'status': 'lesson marked incomplete'})
+
 
 class ResourceViewSet(viewsets.ModelViewSet):
     queryset = Resource.objects.all()

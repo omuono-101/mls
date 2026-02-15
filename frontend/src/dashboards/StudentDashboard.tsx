@@ -26,6 +26,7 @@ interface Lesson {
     module?: number;
     resources?: Resource[];
     content?: string;
+    is_completed?: boolean;
 }
 
 interface Module {
@@ -60,6 +61,7 @@ interface Unit {
     lessons: Lesson[];
     assessments: Assessment[];
     is_enrolled: boolean;
+    student_progress?: number;
 }
 
 interface Announcement {
@@ -133,6 +135,43 @@ const StudentDashboard: React.FC = () => {
             console.error('Failed to fetch dashboard data', error);
         } finally {
             setLoading(false);
+        }
+    };
+    const toggleLessonCompletion = async (lessonId: number, currentStatus: boolean, unitId: number) => {
+        try {
+            // Optimistic update
+            const updatedUnits = units.map(u => {
+                if (u.id === unitId) {
+                    const updatedLessons = u.lessons.map(l => {
+                        if (l.id === lessonId) {
+                            return { ...l, is_completed: !currentStatus };
+                        }
+                        return l;
+                    });
+
+                    // Recalculate progress for the unit
+                    const completedCount = updatedLessons.filter(l => l.is_completed).length;
+                    const newProgress = Math.round((completedCount / (u.total_lessons || 1)) * 100);
+
+                    return { ...u, lessons: updatedLessons, student_progress: newProgress };
+                }
+                return u;
+            });
+
+            setUnits(updatedUnits);
+            if (selectedUnit && selectedUnit.id === unitId) {
+                setSelectedUnit(updatedUnits.find(u => u.id === unitId) || null);
+            }
+
+            // API call
+            await api.post(`lessons/${lessonId}/${!currentStatus ? 'complete' : 'incomplete'}/`);
+
+            // Background refresh to ensure sync
+            fetchDashboardData();
+        } catch (error) {
+            console.error('Failed to toggle lesson completion', error);
+            // Revert on error (optional, but good practice)
+            fetchDashboardData();
         }
     };
 
@@ -244,7 +283,7 @@ const StudentDashboard: React.FC = () => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         {units.map((unit, idx) => {
-                            const progress = Math.round((unit.lessons_taught / (unit.total_lessons || 1)) * 100);
+                            const progress = unit.student_progress || 0;
                             return (
                                 <div key={unit.id} className="animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.9375rem', fontWeight: 700 }}>
@@ -389,8 +428,24 @@ const StudentDashboard: React.FC = () => {
                                                 <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>{lesson.title}</h2>
                                             </div>
                                             {lesson.is_taught && (
-                                                <div style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '12px' }}>
-                                                    <CheckCircle2 size={24} />
+                                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                    <button
+                                                        onClick={() => toggleLessonCompletion(lesson.id, !!lesson.is_completed, unit.id)}
+                                                        className={`btn ${lesson.is_completed ? 'btn-success' : 'btn-outline'}`}
+                                                        style={{
+                                                            padding: '0.5rem 1rem',
+                                                            borderRadius: '12px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.5rem',
+                                                            border: lesson.is_completed ? 'none' : '1px solid var(--border)',
+                                                            background: lesson.is_completed ? '#10b981' : 'transparent',
+                                                            color: lesson.is_completed ? 'white' : 'var(--text-muted)'
+                                                        }}
+                                                    >
+                                                        {lesson.is_completed ? <CheckCircle2 size={18} /> : <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: '2px solid currentColor' }} />}
+                                                        {lesson.is_completed ? 'Completed' : 'Mark Complete'}
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -574,7 +629,7 @@ const StudentDashboard: React.FC = () => {
                                         <span className="badge badge-success">Active</span>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--primary)' }}>{Math.round((u.lessons_taught / (u.total_lessons || 1)) * 100)}%</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--primary)' }}>{u.student_progress || 0}%</div>
                                         <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Completion</div>
                                     </div>
                                 </div>
@@ -853,81 +908,81 @@ const StudentDashboard: React.FC = () => {
                                                 </button>
                                             )}
                                         </td>
-                        </tr>
+                                    </tr>
                                 ))}
-                    </tbody>
-                </table>
-            </div>
+                            </tbody>
+                        </table>
+                    </div>
                 </div >
             </div >
         );
     };
 
-const renderSupport = () => (
-    <div className="animate-fade-in">
-        <div style={{ marginBottom: '3.5rem' }}>
-            <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Help & Support</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We're here to help you succeed in your studies.</p>
-        </div>
+    const renderSupport = () => (
+        <div className="animate-fade-in">
+            <div style={{ marginBottom: '3.5rem' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Help & Support</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We're here to help you succeed in your studies.</p>
+            </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
-            <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
-                <div style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
-                    <HelpCircle size={32} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
+                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                    <div style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                        <HelpCircle size={32} />
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Knowledge Base</h3>
+                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Browse our extensive library of guides, tutorials, and frequently asked questions.</p>
+                    <button className="btn btn-primary" style={{ width: '100%' }}>Explore Guides</button>
                 </div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Knowledge Base</h3>
-                <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Browse our extensive library of guides, tutorials, and frequently asked questions.</p>
-                <button className="btn btn-primary" style={{ width: '100%' }}>Explore Guides</button>
+
+                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                        <MessageSquare size={32} />
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Direct Chat</h3>
+                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Our support team is available Monday to Friday, 8am - 5pm to help with any technical issues.</p>
+                    <button className="btn btn-primary" style={{ width: '100%', background: '#10b981' }}>Start Conversing</button>
+                </div>
+
+                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
+                    <div style={{ background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                        <AlertCircle size={32} />
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Report Issue</h3>
+                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Encountered a bug or a problem with unit access? Let us know and we'll fix it quickly.</p>
+                    <button className="btn btn-primary" style={{ width: '100%', background: '#f43f5e' }}>Submit Report</button>
+                </div>
             </div>
 
-            <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
-                <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
-                    <MessageSquare size={32} />
+            <div className="card-premium glass" style={{ marginTop: '4rem', padding: '2.5rem', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.25rem' }}>Contact Administration</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>For enrollment and academic requests</p>
                 </div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Direct Chat</h3>
-                <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Our support team is available Monday to Friday, 8am - 5pm to help with any technical issues.</p>
-                <button className="btn btn-primary" style={{ width: '100%', background: '#10b981' }}>Start Conversing</button>
-            </div>
-
-            <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
-                <div style={{ background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
-                    <AlertCircle size={32} />
-                </div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Report Issue</h3>
-                <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Encountered a bug or a problem with unit access? Let us know and we'll fix it quickly.</p>
-                <button className="btn btn-primary" style={{ width: '100%', background: '#f43f5e' }}>Submit Report</button>
+                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--primary)' }}>admin@kisecollege.ac.ke</div>
             </div>
         </div>
+    );
 
-        <div className="card-premium glass" style={{ marginTop: '4rem', padding: '2.5rem', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.25rem' }}>Contact Administration</h3>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>For enrollment and academic requests</p>
-            </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--primary)' }}>admin@kisecollege.ac.ke</div>
-        </div>
-    </div>
-);
-
-return (
-    <DashboardLayout>
-        {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
-            </div>
-        ) : (
-            <div className="animate-fade-in">
-                {activeTab === 'overview' && renderOverview()}
-                {activeTab === 'courses' && renderCourses()}
-                {activeTab === 'forum' && renderForum()}
-                {activeTab === 'notifications' && renderNotifications()}
-                {activeTab === 'profile' && renderProfile()}
-                {activeTab === 'support' && renderSupport()}
-                {activeTab === 'assessments' && renderAssessments()}
-            </div>
-        )}
-    </DashboardLayout>
-);
+    return (
+        <DashboardLayout>
+            {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+                    <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
+                </div>
+            ) : (
+                <div className="animate-fade-in">
+                    {activeTab === 'overview' && renderOverview()}
+                    {activeTab === 'courses' && renderCourses()}
+                    {activeTab === 'forum' && renderForum()}
+                    {activeTab === 'notifications' && renderNotifications()}
+                    {activeTab === 'profile' && renderProfile()}
+                    {activeTab === 'support' && renderSupport()}
+                    {activeTab === 'assessments' && renderAssessments()}
+                </div>
+            )}
+        </DashboardLayout>
+    );
 };
 
 export default StudentDashboard;
