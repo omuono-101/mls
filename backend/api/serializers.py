@@ -128,6 +128,7 @@ class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = '__all__'
+        read_only_fields = ['trainer']
 
 class QuestionOptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -249,6 +250,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = '__all__'
+        read_only_fields = ['student']
     
     def get_assessment_name(self, obj):
         return f"{obj.assessment.assessment_type}: {obj.assessment.title}"
@@ -275,6 +277,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = '__all__'
+        read_only_fields = ['author']
 
 class ForumTopicSerializer(serializers.ModelSerializer):
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
@@ -284,6 +287,7 @@ class ForumTopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForumTopic
         fields = '__all__'
+        read_only_fields = ['created_by']
 
     def get_message_count(self, obj):
         return obj.messages.count()
@@ -293,6 +297,7 @@ class ForumMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForumMessage
         fields = '__all__'
+        read_only_fields = ['user']
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
