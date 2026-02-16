@@ -27,6 +27,8 @@ interface Resource {
     file: string | null;
     url: string | null;
     description: string;
+    is_approved: boolean;
+    audit_feedback: string;
 }
 
 interface Lesson {
@@ -39,6 +41,7 @@ interface Lesson {
     is_taught: boolean;
     is_approved: boolean;
     order: number;
+    audit_feedback: string;
 }
 
 interface Assessment {
@@ -48,6 +51,8 @@ interface Assessment {
     assessment_type: string;
     points: number;
     due_date: string;
+    is_approved: boolean;
+    audit_feedback: string;
 }
 
 interface Course { id: number; name: string; }
@@ -77,6 +82,7 @@ const HODDashboard: React.FC = () => {
     const [isTrainerModalOpen, setIsTrainerModalOpen] = useState(false);
     const [isUnitAssignmentModalOpen, setIsUnitAssignmentModalOpen] = useState(false);
     const [isEditUnitModalOpen, setIsEditUnitModalOpen] = useState(false);
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
     // Form States
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
@@ -88,6 +94,7 @@ const HODDashboard: React.FC = () => {
     const [groupForm, setGroupForm] = useState({ course: '', intake: '', semester: '', course_code: '' });
     const [unitForm, setUnitForm] = useState({ name: '', code: '', course_group: '', total_lessons: 10, cat_frequency: 3, cat_total_points: 30, assessment_total_points: 20 });
     const [editUnitForm, setEditUnitForm] = useState({ id: 0, name: '', code: '', course_group: '', total_lessons: 10, cat_frequency: 3, cat_total_points: 30, assessment_total_points: 20 });
+    const [feedbackForm, setFeedbackForm] = useState({ contentId: 0, contentType: 'lesson' as 'lesson' | 'resource' | 'assessment', feedback: '' });
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [courseGroups, setCourseGroups] = useState<any[]>([]);
     const [trainerId, setTrainerId] = useState('');
@@ -279,18 +286,29 @@ const HODDashboard: React.FC = () => {
     const isTrainersPage = location.pathname.includes('/hod/trainers');
     const isVerificationPage = location.pathname.includes('/hod/verifications');
 
-    const handleApproveLesson = async (lessonId: number) => {
+    const handleAuditAction = async (type: 'lesson' | 'resource' | 'assessment', id: number, approved: boolean, feedback: string = '') => {
         setLoading(true);
+        const endpoint = type === 'lesson' ? 'lessons' : type === 'resource' ? 'resources' : 'assessments';
         try {
-            await api.patch(`lessons/${lessonId}/`, { is_approved: true });
-            alert('Lesson approved successfully');
+            await api.patch(`${endpoint}/${id}/`, {
+                is_approved: approved,
+                audit_feedback: feedback
+            });
+            alert(`${type.charAt(0).toUpperCase() + type.slice(1)} ${approved ? 'approved' : 'feedback sent'} successfully`);
+            setIsFeedbackModalOpen(false);
+            setFeedbackForm({ contentId: 0, contentType: 'lesson', feedback: '' });
             fetchData();
         } catch (error) {
-            console.error('Failed to approve lesson', error);
-            alert('Failed to approve lesson');
+            console.error(`Failed to audit ${type}`, error);
+            alert(`Failed to audit ${type}`);
         } finally {
             setLoading(false);
         }
+    };
+
+    const openFeedbackModal = (type: 'lesson' | 'resource' | 'assessment', id: number) => {
+        setFeedbackForm({ contentId: id, contentType: type, feedback: '' });
+        setIsFeedbackModalOpen(true);
     };
 
     const pendingLessons = lessons.filter(l => l.is_taught && !l.is_approved);
@@ -388,7 +406,7 @@ const HODDashboard: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pendingLessons.length > 0 ? pendingLessons.map(l => (
+                                    {lessons.filter(l => l.is_taught).length > 0 ? lessons.filter(l => l.is_taught).map(l => (
                                         <tr key={l.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ fontWeight: 600 }}>{l.title}</div>
@@ -406,27 +424,43 @@ const HODDashboard: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
-                                                <span style={{ padding: '0.25rem 0.6rem', background: '#fef3c7', color: '#92400e', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>
-                                                    Taught (Unverified)
-                                                </span>
+                                                {l.is_approved ? (
+                                                    <span style={{ padding: '0.25rem 0.6rem', background: '#dcfce7', color: '#15803d', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>
+                                                        Approved
+                                                    </span>
+                                                ) : l.audit_feedback ? (
+                                                    <span style={{ padding: '0.25rem 0.6rem', background: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>
+                                                        Audit Feedback Sent
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ padding: '0.25rem 0.6rem', background: '#fef3c7', color: '#92400e', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>
+                                                        Pending Audit
+                                                    </span>
+                                                )}
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
-                                                <button
-                                                    className="btn btn-sm"
-                                                    title="Approve Lesson"
-                                                    style={{
-                                                        padding: '0.4rem',
-                                                        minWidth: 'auto',
-                                                        background: '#dcfce7',
-                                                        color: '#15803d',
-                                                        borderRadius: '8px',
-                                                        border: '1px solid #bbf7d0'
-                                                    }}
-                                                    onClick={() => handleApproveLesson(l.id)}
-                                                    disabled={loading}
-                                                >
-                                                    <CheckCircle size={18} />
-                                                </button>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    {!l.is_approved && (
+                                                        <button
+                                                            className="btn btn-sm"
+                                                            title="Approve Lesson"
+                                                            style={{ padding: '0.4rem', minWidth: 'auto', background: '#dcfce7', color: '#15803d', borderRadius: '8px', border: '1px solid #bbf7d0' }}
+                                                            onClick={() => handleAuditAction('lesson', l.id, true)}
+                                                            disabled={loading}
+                                                        >
+                                                            <CheckCircle size={18} />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        className="btn btn-sm"
+                                                        title="Provide Feedback"
+                                                        style={{ padding: '0.4rem', minWidth: 'auto', background: '#f3f4f6', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                                                        onClick={() => openFeedbackModal('lesson', l.id)}
+                                                        disabled={loading}
+                                                    >
+                                                        <Edit2 size={18} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     )) : (
@@ -472,11 +506,36 @@ const HODDashboard: React.FC = () => {
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '1rem 1.5rem' }}>
-                                                    {r.file ? (
-                                                        <a href={r.file} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: 'var(--bg-alt)', color: 'var(--text-main)' }}>View File</a>
-                                                    ) : r.url ? (
-                                                        <a href={r.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: 'var(--bg-alt)', color: 'var(--text-main)' }}>Open Link</a>
-                                                    ) : null}
+                                                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                                        {r.file ? (
+                                                            <a href={r.file} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: 'var(--bg-alt)', color: 'var(--text-main)', fontSize: '0.75rem' }}>View</a>
+                                                        ) : r.url ? (
+                                                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: 'var(--bg-alt)', color: 'var(--text-main)', fontSize: '0.75rem' }}>Link</a>
+                                                        ) : null}
+
+                                                        <div style={{ width: '1px', height: '16px', background: 'var(--border)', margin: '0 0.2rem' }} />
+
+                                                        {r.is_approved ? (
+                                                            <span style={{ color: '#15803d', fontSize: '0.75rem', fontWeight: 600 }}>Approved</span>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleAuditAction('resource', r.id, true)}
+                                                                    style={{ background: '#dcfce7', color: '#15803d', border: 'none', borderRadius: '6px', padding: '0.3rem', cursor: 'pointer' }}
+                                                                    title="Approve Resource"
+                                                                >
+                                                                    <CheckCircle size={16} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => openFeedbackModal('resource', r.id)}
+                                                                    style={{ background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '6px', padding: '0.3rem', cursor: 'pointer' }}
+                                                                    title="Request Changes"
+                                                                >
+                                                                    <Edit2 size={16} />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -516,7 +575,31 @@ const HODDashboard: React.FC = () => {
                                                 <span style={{ fontSize: '0.875rem' }}>{a.points} Pts</span>
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
-                                                <span style={{ fontSize: '0.875rem' }}>{new Date(a.due_date).toLocaleDateString()}</span>
+                                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                                    <span style={{ fontSize: '0.875rem' }}>{new Date(a.due_date).toLocaleDateString()}</span>
+                                                    <div style={{ width: '1px', height: '16px', background: 'var(--border)', margin: '0 0.2rem' }} />
+
+                                                    {a.is_approved ? (
+                                                        <span style={{ color: '#15803d', fontSize: '0.75rem', fontWeight: 600 }}>Approved</span>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleAuditAction('assessment', a.id, true)}
+                                                                style={{ background: '#dcfce7', color: '#15803d', border: 'none', borderRadius: '6px', padding: '0.3rem', cursor: 'pointer' }}
+                                                                title="Approve Assessment"
+                                                            >
+                                                                <CheckCircle size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => openFeedbackModal('assessment', a.id)}
+                                                                style={{ background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '6px', padding: '0.3rem', cursor: 'pointer' }}
+                                                                title="Request Changes"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     )) : (
@@ -1229,6 +1312,50 @@ const HODDashboard: React.FC = () => {
                     </div>
                 </div>
             )}
+            {/* Audit Feedback Modal */}
+            {isFeedbackModalOpen && (
+                <div className="modal-overlay" style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+                }}>
+                    <div className="modal-content" style={{
+                        maxWidth: '500px', width: '90%', backgroundColor: 'var(--bg-main)',
+                        padding: '2.5rem', borderRadius: '24px', border: '1px solid var(--border)'
+                    }}>
+                        <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: 700 }}>Quality Audit Feedback</h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                            Provide feedback to the trainer regarding the {feedbackForm.contentType}.
+                            This will mark the item as "Needs Revision".
+                        </p>
+
+                        <div className="form-group">
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>Audit Observations / Requirements</label>
+                            <textarea
+                                className="form-control"
+                                rows={4}
+                                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1.5px solid var(--border)', backgroundColor: 'var(--bg-alt)', resize: 'none' }}
+                                value={feedbackForm.feedback}
+                                onChange={e => setFeedbackForm({ ...feedbackForm, feedback: e.target.value })}
+                                placeholder="e.g. Please update the resource with more recent case studies..."
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                            <button className="btn" style={{ flex: 1, padding: '0.75rem' }} onClick={() => setIsFeedbackModalOpen(false)}>Cancel</button>
+                            <button
+                                className="btn btn-primary"
+                                style={{ flex: 2, padding: '0.75rem' }}
+                                disabled={loading || !feedbackForm.feedback.trim()}
+                                onClick={() => handleAuditAction(feedbackForm.contentType, feedbackForm.contentId, false, feedbackForm.feedback)}
+                            >
+                                Submit Revision Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Edit Unit Modal */}
             {isEditUnitModalOpen && (
                 <div className="modal-overlay" style={{
