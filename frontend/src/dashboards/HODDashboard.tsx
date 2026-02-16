@@ -52,7 +52,7 @@ interface Assessment {
 
 interface Course { id: number; name: string; }
 interface Intake { id: number; name: string; course: number; }
-interface Semester { id: number; start_date: string; end_date: string; }
+interface Semester { id: number; name: string; start_date: string; end_date: string; intake: number; }
 interface Trainer {
     id: number;
     username: string;
@@ -129,6 +129,10 @@ const HODDashboard: React.FC = () => {
         ? intakes.filter(i => i.course === parseInt(groupForm.course))
         : [];
 
+    const filteredSemesters = groupForm.intake
+        ? semesters.filter(s => s.intake === parseInt(groupForm.intake))
+        : [];
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -146,18 +150,28 @@ const HODDashboard: React.FC = () => {
 
                 if (groupForm.intake) {
                     const selectedIntake = intakes.find(i => i.id === parseInt(groupForm.intake));
+
+                    // If the currently selected semester doesn't belong to this intake, reset it
+                    const semester = semesters.find(s => s.id === parseInt(groupForm.semester));
+                    if (semester && selectedIntake && semester.intake !== selectedIntake.id) {
+                        setGroupForm(prev => ({ ...prev, semester: '' }));
+                    }
+
                     if (selectedIntake) {
                         const intakePart = (selectedIntake as any).group_code || '';
                         const coursePart = (course as any).code || 'GEN';
                         setGroupForm(prev => ({ ...prev, course_code: `${coursePart} ${intakePart}` }));
                     }
+                } else {
+                    // Reset semester if intake is cleared
+                    setGroupForm(prev => ({ ...prev, semester: '' }));
                 }
             }
         } else {
-            // Reset intake if course is cleared
-            setGroupForm(prev => ({ ...prev, intake: '', course_code: '' }));
+            // Reset intake and semester if course is cleared
+            setGroupForm(prev => ({ ...prev, intake: '', semester: '', course_code: '' }));
         }
-    }, [groupForm.course, groupForm.intake, courses, intakes]);
+    }, [groupForm.course, groupForm.intake, groupForm.semester, courses, intakes, semesters]);
 
 
 
@@ -869,13 +883,17 @@ const HODDashboard: React.FC = () => {
                                         padding: '0.75rem 1rem',
                                         borderRadius: '12px',
                                         border: '1.5px solid var(--border)',
-                                        backgroundColor: 'var(--bg-alt)'
+                                        backgroundColor: 'var(--bg-alt)',
+                                        transition: 'all 0.2s ease',
+                                        opacity: !groupForm.intake ? 0.5 : 1,
+                                        cursor: !groupForm.intake ? 'not-allowed' : 'pointer'
                                     }}
                                     value={groupForm.semester}
                                     onChange={e => setGroupForm({ ...groupForm, semester: e.target.value })}
+                                    disabled={!groupForm.intake}
                                 >
-                                    <option value="">Select Semester</option>
-                                    {semesters.map(s => <option key={s.id} value={s.id}>{s.start_date} to {s.end_date}</option>)}
+                                    <option value="">{groupForm.intake ? "Select Semester" : "Select Intake First"}</option>
+                                    {filteredSemesters.map(s => <option key={s.id} value={s.id}>{s.name} ({s.start_date} - {s.end_date})</option>)}
                                 </select>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
