@@ -139,6 +139,7 @@ class Lesson(models.Model):
     has_cat = models.BooleanField(default=False)
     has_assessment = models.BooleanField(default=True)
     content = models.TextField(blank=True, help_text="Rich text content for the lesson lecture notes.")
+    audit_feedback = models.TextField(blank=True)
 
     class Meta:
         ordering = ['order']
@@ -163,6 +164,8 @@ class Resource(models.Model):
     file = models.FileField(upload_to='resources/', blank=True, null=True)
     url = models.URLField(blank=True, null=True)
     description = models.TextField(blank=True) # For "read more" etc.
+    is_approved = models.BooleanField(default=False)
+    audit_feedback = models.TextField(blank=True)
 
     def __str__(self):
         return self.title
@@ -186,6 +189,8 @@ class Assessment(models.Model):
     duration_minutes = models.PositiveIntegerField(null=True, blank=True, help_text="Time limit in minutes")
     show_answers_after_submission = models.BooleanField(default=False)
     scheduled_at = models.DateTimeField(null=True, blank=True, help_text="When the assessment becomes available to students")
+    is_approved = models.BooleanField(default=False)
+    audit_feedback = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.assessment_type}: {self.title} for {self.unit.name}"
