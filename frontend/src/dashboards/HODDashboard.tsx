@@ -51,7 +51,7 @@ interface Assessment {
 }
 
 interface Course { id: number; name: string; }
-interface Intake { id: number; name: string; }
+interface Intake { id: number; name: string; course: number; }
 interface Semester { id: number; start_date: string; end_date: string; }
 interface Trainer {
     id: number;
@@ -125,7 +125,9 @@ const HODDashboard: React.FC = () => {
         }
     };
 
-    const filteredIntakes = intakes.filter(i => !groupForm.course || (i as any).course === parseInt(groupForm.course));
+    const filteredIntakes = groupForm.course
+        ? intakes.filter(i => i.course === parseInt(groupForm.course))
+        : [];
 
     useEffect(() => {
         fetchData();
@@ -138,7 +140,7 @@ const HODDashboard: React.FC = () => {
             if (course) {
                 // If the currently selected intake doesn't belong to this course, reset it
                 const intake = intakes.find(i => i.id === parseInt(groupForm.intake));
-                if (intake && (intake as any).course !== course.id) {
+                if (intake && intake.course !== course.id) {
                     setGroupForm(prev => ({ ...prev, intake: '', course_code: '' }));
                 }
 
@@ -151,8 +153,13 @@ const HODDashboard: React.FC = () => {
                     }
                 }
             }
+        } else {
+            // Reset intake if course is cleared
+            setGroupForm(prev => ({ ...prev, intake: '', course_code: '' }));
         }
     }, [groupForm.course, groupForm.intake, courses, intakes]);
+
+
 
     const handleGenerateCats = async (unitId: number) => {
         setLoading(true);
@@ -803,12 +810,15 @@ const HODDashboard: React.FC = () => {
                                         borderRadius: '12px',
                                         border: '1.5px solid var(--border)',
                                         backgroundColor: 'var(--bg-alt)',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        opacity: !groupForm.course ? 0.5 : 1,
+                                        cursor: !groupForm.course ? 'not-allowed' : 'pointer'
                                     }}
                                     value={groupForm.intake}
                                     onChange={e => setGroupForm({ ...groupForm, intake: e.target.value })}
+                                    disabled={!groupForm.course}
                                 >
-                                    <option value="">Select Intake</option>
+                                    <option value="">{groupForm.course ? "Select Intake" : "Select Course First"}</option>
                                     {filteredIntakes.map(i => <option key={i.id} value={i.id}>{i.name} ({(i as any).group_code})</option>)}
                                 </select>
                             </div>
