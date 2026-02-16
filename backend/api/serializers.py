@@ -214,6 +214,34 @@ class AssessmentSerializer(serializers.ModelSerializer):
     def get_question_count(self, obj):
         return obj.questions.count()
 
+class UnitListSerializer(serializers.ModelSerializer):
+    course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
+    trainer_name = serializers.ReadOnlyField(source='trainer.username')
+    lessons_taught = serializers.IntegerField(source='annotated_lessons_taught', read_only=True)
+    notes_count = serializers.IntegerField(source='annotated_notes_count', read_only=True)
+    cats_count = serializers.IntegerField(source='annotated_cats_count', read_only=True)
+    student_progress = serializers.SerializerMethodField()
+    lessons_completed = serializers.IntegerField(source='annotated_lessons_completed', read_only=True)
+    is_enrolled = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Unit
+        fields = [
+            'id', 'name', 'code', 'course_group', 'course_group_name', 'trainer', 'trainer_name',
+            'total_lessons', 'cat_frequency', 'cat_total_points', 'assessment_total_points',
+            'lessons_taught', 'notes_count', 'cats_count',
+            'student_progress', 'lessons_completed', 'is_enrolled'
+        ]
+
+    def get_is_enrolled(self, obj):
+        # Fallback if not annotated or use context
+        return getattr(obj, 'annotated_is_enrolled', False)
+
+    def get_student_progress(self, obj):
+        completed = getattr(obj, 'annotated_lessons_completed', 0)
+        total = obj.total_lessons or 1
+        return round((completed / total) * 100)
+
 class UnitSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
     trainer_name = serializers.ReadOnlyField(source='trainer.username')
@@ -227,7 +255,6 @@ class UnitSerializer(serializers.ModelSerializer):
     
     student_progress = serializers.SerializerMethodField()
     lessons_completed = serializers.SerializerMethodField()
-
     is_enrolled = serializers.SerializerMethodField()
 
     class Meta:
@@ -235,6 +262,10 @@ class UnitSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_is_enrolled(self, obj):
+        # Check if already annotated in queryset for performance
+        if hasattr(obj, 'annotated_is_enrolled'):
+            return obj.annotated_is_enrolled
+            
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
@@ -246,16 +277,23 @@ class UnitSerializer(serializers.ModelSerializer):
         ).exists()
 
     def get_lessons_taught(self, obj):
-        return obj.lessons.filter(is_taught=True).count()
+        return getattr(obj, 'annotated_lessons_taught', obj.lessons.filter(is_taught=True).count())
 
     def get_notes_count(self, obj):
+        if hasattr(obj, 'annotated_notes_count'):
+            return obj.annotated_notes_count
         from core.models import Resource
         return Resource.objects.filter(lesson__unit=obj).count()
 
     def get_cats_count(self, obj):
+        if hasattr(obj, 'annotated_cats_count'):
+            return obj.annotated_cats_count
         return obj.assessments.filter(assessment_type='CAT').count()
 
     def get_lessons_completed(self, obj):
+        if hasattr(obj, 'annotated_lessons_completed'):
+            return obj.annotated_lessons_completed
+            
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             from core.models import StudentLessonProgress

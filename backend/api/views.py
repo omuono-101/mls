@@ -129,7 +129,7 @@ class SemesterViewSet(viewsets.ModelViewSet):
         return [IsCourseMaster()]
 
 class CourseGroupViewSet(viewsets.ModelViewSet):
-    queryset = CourseGroup.objects.all()
+    queryset = CourseGroup.objects.all().select_related('course', 'intake', 'semester')
     serializer_class = CourseGroupSerializer
     
     def get_permissions(self):
@@ -139,15 +139,60 @@ class CourseGroupViewSet(viewsets.ModelViewSet):
 
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
-    serializer_class = UnitSerializer
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return UnitListSerializer
+        return UnitSerializer
     
     def get_queryset(self):
-        queryset = Unit.objects.all()
-        if self.request.user.role == 'Student':
-            from core.models import StudentEnrollment
-            enrollment = StudentEnrollment.objects.filter(student=self.request.user, is_active=True).first()
-            if enrollment:
-                queryset = queryset.filter(course_group=enrollment.course_group)
+        from django.db.models import Count, Q, Exists, OuterRef, Prefetch
+        from core.models import Lesson, Resource, Assessment, StudentLessonProgress, StudentEnrollment
+
+        queryset = Unit.objects.all().select_related(
+            'course_group__course', 
+            'trainer'
+        )
+
+        user = self.request.user
+        
+        # Base annotations for counts to avoid N+1 in serializers
+        queryset = queryset.annotate(
+            annotated_lessons_taught=Count('lessons', filter=Q(lessons__is_taught=True), distinct=True),
+            annotated_notes_count=Count('lessons__resources', distinct=True),
+            annotated_cats_count=Count('assessments', filter=Q(assessments__assessment_type='CAT'), distinct=True),
+        )
+
+        if user.is_authenticated:
+            # Annotated is_enrolled for performance
+            enrollment_subquery = StudentEnrollment.objects.filter(
+                student=user,
+                course_group=OuterRef('course_group'),
+                is_active=True
+            )
+            queryset = queryset.annotate(annotated_is_enrolled=Exists(enrollment_subquery))
+
+            if user.role == 'Student':
+                # Filter units by enrollment for students
+                queryset = queryset.filter(annotated_is_enrolled=True)
+                
+                # Annotated lessons_completed for students
+                queryset = queryset.annotate(
+                    annotated_lessons_completed=Count(
+                        'lessons__student_progress',
+                        filter=Q(lessons__student_progress__student=user, lessons__student_progress__is_completed=True),
+                        distinct=True
+                    )
+                )
+
+        if self.action == 'retrieve':
+            # Add prefetch for detailed view
+            queryset = queryset.prefetch_related(
+                'modules',
+                Prefetch('lessons', queryset=Lesson.objects.select_related('trainer', 'unit', 'module')),
+                Prefetch('assessments', queryset=Assessment.objects.select_related('unit'))
+            )
+            
         return queryset
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
@@ -244,13 +289,17 @@ class LessonViewSet(viewsets.ModelViewSet):
     serializer_class = LessonSerializer
     
     def get_queryset(self):
-        queryset = Lesson.objects.all()
+        queryset = Lesson.objects.all().select_related('unit', 'trainer', 'module')
         unit_id = self.request.query_params.get('unit', None)
         module_id = self.request.query_params.get('module', None)
         if unit_id is not None:
             queryset = queryset.filter(unit_id=unit_id)
         if module_id is not None:
             queryset = queryset.filter(module_id=module_id)
+        
+        if self.action == 'list':
+            queryset = queryset.prefetch_related('resources')
+            
         return queryset
     
     def get_permissions(self):
@@ -341,7 +390,7 @@ class AssessmentViewSet(viewsets.ModelViewSet):
     serializer_class = AssessmentSerializer
     
     def get_queryset(self):
-        queryset = Assessment.objects.all()
+        queryset = Assessment.objects.all().select_related('unit', 'module')
         unit_id = self.request.query_params.get('unit', None)
         module_id = self.request.query_params.get('module', None)
         if unit_id is not None:
