@@ -57,6 +57,15 @@ class Intake(models.Model):
     start_date = models.DateField(null=True)
     end_date = models.DateField(null=True)
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.start_date and self.end_date and self.start_date >= self.end_date:
+            raise ValidationError({'end_date': 'End date must be after start date.'})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} ({self.group_code})"
 
