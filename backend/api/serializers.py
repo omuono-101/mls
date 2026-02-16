@@ -221,7 +221,7 @@ class UnitListSerializer(serializers.ModelSerializer):
     notes_count = serializers.IntegerField(source='annotated_notes_count', read_only=True)
     cats_count = serializers.IntegerField(source='annotated_cats_count', read_only=True)
     student_progress = serializers.SerializerMethodField()
-    lessons_completed = serializers.IntegerField(source='annotated_lessons_completed', read_only=True)
+    lessons_completed = serializers.SerializerMethodField()
     is_enrolled = serializers.SerializerMethodField()
 
     class Meta:
@@ -238,9 +238,12 @@ class UnitListSerializer(serializers.ModelSerializer):
         return getattr(obj, 'annotated_is_enrolled', False)
 
     def get_student_progress(self, obj):
-        completed = getattr(obj, 'annotated_lessons_completed', 0)
+        completed = self.get_lessons_completed(obj)
         total = obj.total_lessons or 1
         return round((completed / total) * 100)
+
+    def get_lessons_completed(self, obj):
+        return getattr(obj, 'annotated_lessons_completed', 0)
 
 class UnitSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')

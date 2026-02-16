@@ -146,7 +146,7 @@ class UnitViewSet(viewsets.ModelViewSet):
         return UnitSerializer
     
     def get_queryset(self):
-        from django.db.models import Count, Q, Exists, OuterRef, Prefetch
+        from django.db.models import Count, Q, Exists, OuterRef, Prefetch, Value, IntegerField, BooleanField
         from core.models import Lesson, Resource, Assessment, StudentLessonProgress, StudentEnrollment
 
         queryset = Unit.objects.all().select_related(
@@ -157,10 +157,13 @@ class UnitViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         # Base annotations for counts to avoid N+1 in serializers
+        # We provide default 0/False values for attributes that might be missing for some roles
         queryset = queryset.annotate(
             annotated_lessons_taught=Count('lessons', filter=Q(lessons__is_taught=True), distinct=True),
             annotated_notes_count=Count('lessons__resources', distinct=True),
             annotated_cats_count=Count('assessments', filter=Q(assessments__assessment_type='CAT'), distinct=True),
+            annotated_lessons_completed=Value(0, output_field=IntegerField()),
+            annotated_is_enrolled=Value(False, output_field=BooleanField()),
         )
 
         if user.is_authenticated:
