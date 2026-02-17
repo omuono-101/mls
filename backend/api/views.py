@@ -203,15 +203,14 @@ class UnitViewSet(viewsets.ModelViewSet):
         )
         queryset = queryset.annotate(annotated_is_enrolled=Exists(enrollment_subquery))
 
-        # 3. Role-specific annotations
+        # 3. Role-specific logic
         if user.role == 'Student':
-            # Priority: Units in course groups the student is enrolled in
-            # Filter to only show units in their group(s) as requested
+            # Students only see units in their active course groups
             queryset = queryset.filter(
                 course_group__enrolled_students__student=user,
                 course_group__enrolled_students__is_active=True
             )
-
+            
             queryset = queryset.annotate(
                 annotated_lessons_completed=Coalesce(
                     Subquery(
@@ -229,7 +228,8 @@ class UnitViewSet(viewsets.ModelViewSet):
                 )
             )
         else:
-            # For non-students, provide a default 0 for the serializer
+            # HODs, Trainers, and Admins see more units
+            # For HODs specifically, ensure we don't accidentally filter anything
             queryset = queryset.annotate(
                 annotated_lessons_completed=Value(0, output_field=IntegerField())
             )

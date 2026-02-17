@@ -18,6 +18,7 @@ interface Unit {
     lessons_taught?: number;
     notes_count?: number;
     cats_count?: number;
+    course_group_code?: string;
 }
 
 interface Resource {
@@ -1217,8 +1218,11 @@ const HODDashboard: React.FC = () => {
                                     onChange={e => setTargetUnitId(e.target.value)}
                                 >
                                     <option value="">Select a unit...</option>
-                                    {units.filter(u => u.trainer !== selectedTrainer?.id).map(u => (
-                                        <option key={u.id} value={u.id}>{u.name} ({u.code})</option>
+                                    {units.map(u => (
+                                        <option key={u.id} value={u.id}>
+                                            {u.name} ({u.code}) - {u.course_group_code || u.course_group_name}
+                                            {u.trainer_name ? ` (Current: ${u.trainer_name})` : ' (Unassigned)'}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
