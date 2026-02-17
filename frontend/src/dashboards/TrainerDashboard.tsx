@@ -151,7 +151,7 @@ const TrainerDashboard: React.FC = () => {
         }
     };
 
-    const trainerUnits = units.filter((u: any) => u.trainer === user?.id);
+    const trainerUnits = units.filter((u: any) => u.trainer == user?.id);
 
     return (
         <DashboardLayout>

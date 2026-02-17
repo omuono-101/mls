@@ -155,38 +155,39 @@ class UnitViewSet(viewsets.ModelViewSet):
         )
 
         user = self.request.user
+        if not user or not user.is_authenticated:
+            return queryset.none()
         
-        # Base annotations for counts to avoid N+1 in serializers
-        # We provide default 0/False values for attributes that might be missing for some roles
+        # 1. Base annotations available for all roles
         queryset = queryset.annotate(
             annotated_lessons_taught=Count('lessons', filter=Q(lessons__is_taught=True), distinct=True),
             annotated_notes_count=Count('lessons__resources', distinct=True),
             annotated_cats_count=Count('assessments', filter=Q(assessments__assessment_type='CAT'), distinct=True),
-            annotated_lessons_completed=Value(0, output_field=IntegerField()),
-            annotated_is_enrolled=Value(False, output_field=BooleanField()),
         )
 
-        if user.is_authenticated:
-            # Annotated is_enrolled for performance
-            enrollment_subquery = StudentEnrollment.objects.filter(
-                student=user,
-                course_group=OuterRef('course_group'),
-                is_active=True
-            )
-            queryset = queryset.annotate(annotated_is_enrolled=Exists(enrollment_subquery))
+        # 2. Enrollment Check
+        enrollment_subquery = StudentEnrollment.objects.filter(
+            student=user,
+            course_group=OuterRef('course_group'),
+            is_active=True
+        )
+        queryset = queryset.annotate(annotated_is_enrolled=Exists(enrollment_subquery))
 
-            if user.role == 'Student':
-                # Filter units by enrollment for students
-                queryset = queryset.filter(annotated_is_enrolled=True)
-                
-                # Annotated lessons_completed for students
-                queryset = queryset.annotate(
-                    annotated_lessons_completed=Count(
-                        'lessons__student_progress',
-                        filter=Q(lessons__student_progress__student=user, lessons__student_progress__is_completed=True),
-                        distinct=True
-                    )
+        # 3. Role-specific annotations
+        if user.role == 'Student':
+            queryset = queryset.filter(annotated_is_enrolled=True)
+            queryset = queryset.annotate(
+                annotated_lessons_completed=Count(
+                    'lessons__student_progress',
+                    filter=Q(lessons__student_progress__student=user, lessons__student_progress__is_completed=True),
+                    distinct=True
                 )
+            )
+        else:
+            # For non-students, provide a default 0 for the serializer
+            queryset = queryset.annotate(
+                annotated_lessons_completed=Value(0, output_field=IntegerField())
+            )
 
         if self.action == 'retrieve':
             # Add prefetch for detailed view

@@ -217,9 +217,9 @@ class AssessmentSerializer(serializers.ModelSerializer):
 class UnitListSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
     trainer_name = serializers.ReadOnlyField(source='trainer.username')
-    lessons_taught = serializers.IntegerField(source='annotated_lessons_taught', read_only=True)
-    notes_count = serializers.IntegerField(source='annotated_notes_count', read_only=True)
-    cats_count = serializers.IntegerField(source='annotated_cats_count', read_only=True)
+    lessons_taught = serializers.SerializerMethodField()
+    notes_count = serializers.SerializerMethodField()
+    cats_count = serializers.SerializerMethodField()
     student_progress = serializers.SerializerMethodField()
     lessons_completed = serializers.SerializerMethodField()
     is_enrolled = serializers.SerializerMethodField()
@@ -234,8 +234,16 @@ class UnitListSerializer(serializers.ModelSerializer):
         ]
 
     def get_is_enrolled(self, obj):
-        # Fallback if not annotated or use context
         return getattr(obj, 'annotated_is_enrolled', False)
+
+    def get_lessons_taught(self, obj):
+        return getattr(obj, 'annotated_lessons_taught', 0)
+
+    def get_notes_count(self, obj):
+        return getattr(obj, 'annotated_notes_count', 0)
+
+    def get_cats_count(self, obj):
+        return getattr(obj, 'annotated_cats_count', 0)
 
     def get_student_progress(self, obj):
         completed = self.get_lessons_completed(obj)
@@ -342,6 +350,8 @@ class SubmissionSerializer(serializers.ModelSerializer):
         read_only_fields = ['student', 'auto_graded_score']
     
     def get_assessment_name(self, obj):
+        if not obj.assessment:
+            return "Unknown Assessment"
         return f"{obj.assessment.assessment_type}: {obj.assessment.title}"
 
 class AttendanceSerializer(serializers.ModelSerializer):
