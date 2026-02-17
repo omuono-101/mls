@@ -1,5 +1,8 @@
 from django.db import models
-from django.db.models import Sum, Q, Count, OuterRef, Exists, Value, IntegerField, Prefetch
+from django.db.models import Sum, Q, Count, OuterRef, Exists, Value, IntegerField, BooleanField, Prefetch, Subquery, IntegerField
+from django.db.models.functions import Coalesce
+from django.utils import timezone
+import datetime
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -146,9 +149,6 @@ class UnitViewSet(viewsets.ModelViewSet):
         return UnitSerializer
     
     def get_queryset(self):
-        from django.db.models import Count, Q, Exists, OuterRef, Prefetch, Value, IntegerField, BooleanField
-        from core.models import Lesson, Resource, Assessment, StudentLessonProgress, StudentEnrollment
-
         queryset = Unit.objects.all().select_related(
             'course_group__course', 
             'trainer'
@@ -158,11 +158,38 @@ class UnitViewSet(viewsets.ModelViewSet):
         if not user or not user.is_authenticated:
             return queryset.none()
         
-        # 1. Base annotations available for all roles
+        # 1. Base annotations with Subqueries for stability on Postgres
         queryset = queryset.annotate(
-            annotated_lessons_taught=Count('lessons', filter=Q(lessons__is_taught=True), distinct=True),
-            annotated_notes_count=Count('lessons__resources', distinct=True),
-            annotated_cats_count=Count('assessments', filter=Q(assessments__assessment_type='CAT'), distinct=True),
+            annotated_lessons_taught=Coalesce(
+                Subquery(
+                    Lesson.objects.filter(unit=OuterRef('pk'), is_taught=True)
+                    .values('unit')
+                    .annotate(cnt=Count('pk'))
+                    .values('cnt'),
+                    output_field=IntegerField()
+                ),
+                Value(0, output_field=IntegerField())
+            ),
+            annotated_notes_count=Coalesce(
+                Subquery(
+                    Resource.objects.filter(lesson__unit=OuterRef('pk'))
+                    .values('lesson__unit')
+                    .annotate(cnt=Count('pk'))
+                    .values('cnt'),
+                    output_field=IntegerField()
+                ),
+                Value(0, output_field=IntegerField())
+            ),
+            annotated_cats_count=Coalesce(
+                Subquery(
+                    Assessment.objects.filter(unit=OuterRef('pk'), assessment_type='CAT')
+                    .values('unit')
+                    .annotate(cnt=Count('pk'))
+                    .values('cnt'),
+                    output_field=IntegerField()
+                ),
+                Value(0, output_field=IntegerField())
+            )
         )
 
         # 2. Enrollment Check
@@ -175,13 +202,20 @@ class UnitViewSet(viewsets.ModelViewSet):
 
         # 3. Role-specific annotations
         if user.role == 'Student':
-            # Note: We removed the strict .filter(annotated_is_enrolled=True) 
-            # to allow students to see units they can enroll in.
             queryset = queryset.annotate(
-                annotated_lessons_completed=Count(
-                    'lessons__student_progress',
-                    filter=Q(lessons__student_progress__student=user, lessons__student_progress__is_completed=True),
-                    distinct=True
+                annotated_lessons_completed=Coalesce(
+                    Subquery(
+                        StudentLessonProgress.objects.filter(
+                            lesson__unit=OuterRef('pk'),
+                            student=user,
+                            is_completed=True
+                        )
+                        .values('lesson__unit')
+                        .annotate(cnt=Count('pk'))
+                        .values('cnt'),
+                        output_field=IntegerField()
+                    ),
+                    Value(0, output_field=IntegerField())
                 )
             )
         else:
@@ -190,8 +224,12 @@ class UnitViewSet(viewsets.ModelViewSet):
                 annotated_lessons_completed=Value(0, output_field=IntegerField())
             )
 
+        if self.action == 'list':
+            # Add prefetch for list to make it faster
+            queryset = queryset.prefetch_related('lessons', 'assessments')
+            
         if self.action == 'retrieve':
-            # Add prefetch for detailed view
+            # Add deep prefetch for detailed view
             queryset = queryset.prefetch_related(
                 'modules',
                 Prefetch('lessons', queryset=Lesson.objects.select_related('trainer', 'unit', 'module')),
