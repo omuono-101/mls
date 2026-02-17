@@ -131,6 +131,11 @@ const StudentDashboard: React.FC = () => {
             setUnits(unitsRes.data);
             setAnnouncements(annRes.data);
             setNotifications(notifRes.data);
+            console.log('Student Dashboard Data:', {
+                units: unitsRes.data,
+                announcements: annRes.data,
+                notifications: notifRes.data
+            });
         } catch (error) {
             console.error('Failed to fetch dashboard data', error);
         } finally {

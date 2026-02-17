@@ -84,6 +84,13 @@ const TrainerDashboard: React.FC = () => {
             setUnits(uRes.data);
             setSubmissions(sRes.data);
             setAssessments(aRes.data);
+            console.log('Trainer Dashboard Data:', {
+                lessons: lRes.data,
+                units: uRes.data,
+                submissions: sRes.data,
+                assessments: aRes.data,
+                userId: user?.id
+            });
         } catch (error) {
             console.error('Failed to fetch data', error);
         }

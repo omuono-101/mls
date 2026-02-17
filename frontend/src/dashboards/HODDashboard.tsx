@@ -127,6 +127,13 @@ const HODDashboard: React.FC = () => {
             } else {
                 console.warn('Failed to fetch trainers - HOD might lack permissions');
             }
+
+            console.log('HOD Dashboard Data:', {
+                units: uRes.status === 'fulfilled' ? uRes.value.data : 'failed',
+                lessons: lRes.status === 'fulfilled' ? lRes.value.data : 'failed',
+                trainers: tRes.status === 'fulfilled' ? tRes.value.data : 'failed',
+                courseGroups: cgRes.status === 'fulfilled' ? cgRes.value.data : 'failed'
+            });
         } catch (error) {
             console.error('Serious error in fetchData', error);
         }

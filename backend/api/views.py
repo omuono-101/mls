@@ -175,7 +175,8 @@ class UnitViewSet(viewsets.ModelViewSet):
 
         # 3. Role-specific annotations
         if user.role == 'Student':
-            queryset = queryset.filter(annotated_is_enrolled=True)
+            # Note: We removed the strict .filter(annotated_is_enrolled=True) 
+            # to allow students to see units they can enroll in.
             queryset = queryset.annotate(
                 annotated_lessons_completed=Count(
                     'lessons__student_progress',
