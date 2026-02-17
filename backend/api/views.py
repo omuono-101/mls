@@ -235,8 +235,11 @@ class UnitViewSet(viewsets.ModelViewSet):
             )
 
         if self.action == 'list':
-            # No prefetches needed for list as we use subqueries for counts
-            pass
+            # Prefetch for lessons and assessments which are now in UnitListSerializer
+            queryset = queryset.prefetch_related(
+                Prefetch('lessons', queryset=Lesson.objects.select_related('trainer', 'unit', 'module').prefetch_related('resources')),
+                Prefetch('assessments', queryset=Assessment.objects.select_related('unit'))
+            )
             
         if self.action == 'retrieve':
             # Add deep prefetch for detailed view
