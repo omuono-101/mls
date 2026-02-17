@@ -14,7 +14,7 @@ from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Le
                           ForumMessage, Notification, StudentLessonProgress)
 from .serializers import (
     UserSerializer, StudentRegistrationSerializer, SchoolSerializer, CourseSerializer, IntakeSerializer, 
-    SemesterSerializer, CourseGroupSerializer, UnitSerializer, LessonSerializer, 
+    SemesterSerializer, CourseGroupSerializer, UnitListSerializer, UnitSerializer, LessonSerializer, 
     ResourceSerializer, AssessmentSerializer, SubmissionSerializer,
     AttendanceSerializer, StudentEnrollmentSerializer, ModuleSerializer, LearningPathSerializer,
     QuestionSerializer, QuestionOptionSerializer, AnswerSerializer, StudentAnswerSerializer,
