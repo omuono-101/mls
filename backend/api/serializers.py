@@ -132,7 +132,7 @@ class ResourceSerializer(serializers.ModelSerializer):
 
 class LessonSerializer(serializers.ModelSerializer):
     resources = ResourceSerializer(many=True, read_only=True)
-    trainer_name = serializers.ReadOnlyField(source='trainer.username')
+    trainer_name = serializers.SerializerMethodField()
     unit_name = serializers.ReadOnlyField(source='unit.name')
     unit_code = serializers.ReadOnlyField(source='unit.code')
     is_completed = serializers.SerializerMethodField()
@@ -141,6 +141,9 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = '__all__'
         read_only_fields = ['trainer']
+
+    def get_trainer_name(self, obj):
+        return obj.trainer.username if obj.trainer else "Not Assigned"
 
     def get_is_completed(self, obj):
         request = self.context.get('request')
@@ -216,7 +219,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
 class UnitListSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
-    trainer_name = serializers.ReadOnlyField(source='trainer.username')
+    trainer_name = serializers.SerializerMethodField()
     lessons_taught = serializers.SerializerMethodField()
     notes_count = serializers.SerializerMethodField()
     cats_count = serializers.SerializerMethodField()
@@ -235,6 +238,9 @@ class UnitListSerializer(serializers.ModelSerializer):
 
     def get_is_enrolled(self, obj):
         return getattr(obj, 'annotated_is_enrolled', False)
+
+    def get_trainer_name(self, obj):
+        return obj.trainer.username if obj.trainer else "Not Assigned"
 
     def get_lessons_taught(self, obj):
         return getattr(obj, 'annotated_lessons_taught', 0)
@@ -255,7 +261,7 @@ class UnitListSerializer(serializers.ModelSerializer):
 
 class UnitSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
-    trainer_name = serializers.ReadOnlyField(source='trainer.username')
+    trainer_name = serializers.SerializerMethodField()
     lessons_taught = serializers.SerializerMethodField()
     total_lessons_count = serializers.ReadOnlyField(source='total_lessons')
     notes_count = serializers.SerializerMethodField()
@@ -286,6 +292,9 @@ class UnitSerializer(serializers.ModelSerializer):
             course_group=obj.course_group,
             is_active=True
         ).exists()
+
+    def get_trainer_name(self, obj):
+        return obj.trainer.username if obj.trainer else "Not Assigned"
 
     def get_lessons_taught(self, obj):
         return getattr(obj, 'annotated_lessons_taught', obj.lessons.filter(is_taught=True).count())
