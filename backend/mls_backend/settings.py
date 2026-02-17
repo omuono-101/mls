@@ -140,7 +140,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Use a less strict storage to avoid startup crashes if manifest missing
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files (uploads)
 MEDIA_URL = '/media/'
@@ -161,6 +162,19 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
+
+# Render/Heroku SSL Proxy handling
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Trusted Origins for CSRF
+CSRF_TRUSTED_ORIGINS = [
+    'https://mls-frontend.onrender.com',
+    'https://mls-backend-on2p.onrender.com',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    'https://mls-frontend.onrender.com',
+]
 
 from datetime import timedelta
 SIMPLE_JWT = {

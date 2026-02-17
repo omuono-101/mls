@@ -16,9 +16,28 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Ensure trailing slash for POST/PUT/PATCH requests (Django compatibility)
+    if (config.url && !config.url.endsWith('/') && !config.url.includes('?')) {
+      config.url += '/';
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error Response:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    return Promise.reject(error);
+  }
 );
 
 export default api;
