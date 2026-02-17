@@ -53,6 +53,7 @@ interface Unit {
     name: string;
     code: string;
     course_group_name: string;
+    course_group_code?: string;
     total_lessons: number;
     lessons_taught: number;
     notes_count: number;
@@ -61,6 +62,8 @@ interface Unit {
     lessons: Lesson[];
     assessments: Assessment[];
     is_enrolled: boolean;
+    is_current_semester?: boolean;
+    semester_number: number;
     student_progress?: number;
 }
 
@@ -615,8 +618,18 @@ const StudentDashboard: React.FC = () => {
         return (
             <div className="animate-fade-in">
                 <div style={{ marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Academic Portfolio</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Explore your registered units and master new skills.</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Academic Portfolio</h1>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Explore your registered units and master new skills.</p>
+                        </div>
+                        {units.length > 0 && units[0].course_group_code && (
+                            <div className="glass" style={{ padding: '0.75rem 1.5rem', borderRadius: '16px', border: '1px solid var(--primary-light)' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Primary Group</span>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary)' }}>{units[0].course_group_code}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2.5rem' }}>
@@ -631,7 +644,13 @@ const StudentDashboard: React.FC = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                         <span className="badge badge-primary">{u.code}</span>
-                                        <span className="badge badge-success">Active</span>
+                                        {u.is_enrolled && u.is_current_semester ? (
+                                            <span className="badge badge-success">Enrolled</span>
+                                        ) : u.is_enrolled ? (
+                                            <span className="badge badge-warning" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>Considered</span>
+                                        ) : (
+                                            <span className="badge">Available</span>
+                                        )}
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
                                         <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--primary)' }}>{u.student_progress || 0}%</div>
@@ -639,13 +658,17 @@ const StudentDashboard: React.FC = () => {
                                     </div>
                                 </div>
                                 <h4 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.75rem', lineHeight: 1.2 }}>{u.name}</h4>
-                                <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)', fontWeight: 500 }}>{u.course_group_name}</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)', fontWeight: 500 }}>{u.course_group_name}</p>
+                                    <span style={{ color: 'var(--border)' }}>•</span>
+                                    <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700 }}>{u.course_group_code}</span>
+                                </div>
                             </div>
 
                             <div className="glass" style={{ padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.02)' }}>
                                 <div style={{ display: 'flex', gap: '1.25rem' }}>
-                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <FileText size={16} className="text-primary" /> {u.notes_count}
+                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="Learning Modules">
+                                        <Layers size={16} className="text-primary" /> {u.total_lessons}
                                     </div>
                                     <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                         <BarChart3 size={16} className="text-primary" /> {u.cats_count}
@@ -653,8 +676,9 @@ const StudentDashboard: React.FC = () => {
                                 </div>
 
                                 {u.is_enrolled ? (
-                                    <button onClick={() => setSelectedUnit(u)} className="btn btn-primary" style={{ borderRadius: '14px', padding: '0.6rem 1.25rem' }}>
-                                        Launch Unit
+                                    <button onClick={() => setSelectedUnit(u)} className="btn btn-primary" style={{ borderRadius: '14px', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {u.is_current_semester ? <CheckCircle2 size={16} /> : <Clock size={16} />}
+                                        {u.is_current_semester ? 'Launch Unit' : 'Preview Unit'}
                                     </button>
                                 ) : (
                                     <button

@@ -219,6 +219,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
 class UnitListSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
+    course_group_code = serializers.ReadOnlyField(source='course_group.group_display_code')
     trainer_name = serializers.SerializerMethodField()
     lessons_taught = serializers.SerializerMethodField()
     notes_count = serializers.SerializerMethodField()
@@ -226,15 +227,29 @@ class UnitListSerializer(serializers.ModelSerializer):
     student_progress = serializers.SerializerMethodField()
     lessons_completed = serializers.SerializerMethodField()
     is_enrolled = serializers.SerializerMethodField()
+    is_current_semester = serializers.SerializerMethodField()
 
     class Meta:
         model = Unit
         fields = [
-            'id', 'name', 'code', 'course_group', 'course_group_name', 'trainer', 'trainer_name',
+            'id', 'name', 'code', 'course_group', 'course_group_name', 'course_group_code', 'trainer', 'trainer_name',
             'total_lessons', 'cat_frequency', 'cat_total_points', 'assessment_total_points',
             'lessons_taught', 'notes_count', 'cats_count',
-            'student_progress', 'lessons_completed', 'is_enrolled'
+            'student_progress', 'lessons_completed', 'is_enrolled', 'is_current_semester'
         ]
+
+    def get_is_current_semester(self, obj):
+        try:
+            group_sem_name = obj.course_group.semester.name
+            # Extract number from "Semester X"
+            import re
+            match = re.search(r'\d+', group_sem_name)
+            if match:
+                current_sem_num = int(match.group())
+                return obj.semester_number == current_sem_num
+        except:
+            pass
+        return False
 
     def get_is_enrolled(self, obj):
         return getattr(obj, 'annotated_is_enrolled', False)
@@ -261,6 +276,7 @@ class UnitListSerializer(serializers.ModelSerializer):
 
 class UnitSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
+    course_group_code = serializers.ReadOnlyField(source='course_group.group_display_code')
     trainer_name = serializers.SerializerMethodField()
     lessons_taught = serializers.SerializerMethodField()
     total_lessons_count = serializers.ReadOnlyField(source='total_lessons')
@@ -273,10 +289,23 @@ class UnitSerializer(serializers.ModelSerializer):
     student_progress = serializers.SerializerMethodField()
     lessons_completed = serializers.SerializerMethodField()
     is_enrolled = serializers.SerializerMethodField()
+    is_current_semester = serializers.SerializerMethodField()
 
     class Meta:
         model = Unit
         fields = '__all__'
+
+    def get_is_current_semester(self, obj):
+        try:
+            group_sem_name = obj.course_group.semester.name
+            import re
+            match = re.search(r'\d+', group_sem_name)
+            if match:
+                current_sem_num = int(match.group())
+                return obj.semester_number == current_sem_num
+        except:
+            pass
+        return False
 
     def get_is_enrolled(self, obj):
         # Check if already annotated in queryset for performance

@@ -202,6 +202,13 @@ class UnitViewSet(viewsets.ModelViewSet):
 
         # 3. Role-specific annotations
         if user.role == 'Student':
+            # Priority: Units in course groups the student is enrolled in
+            # Filter to only show units in their group(s) as requested
+            queryset = queryset.filter(
+                course_group__enrolled_students__student=user,
+                course_group__enrolled_students__is_active=True
+            ).distinct()
+
             queryset = queryset.annotate(
                 annotated_lessons_completed=Coalesce(
                     Subquery(
