@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, Resource, 
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
                           Question, QuestionOption, Answer, StudentAnswer, Announcement, ForumTopic, 
-                          ForumMessage, Notification)
+                          ForumMessage, Notification, StudentLessonProgress)
 from .serializers import (
     UserSerializer, StudentRegistrationSerializer, SchoolSerializer, CourseSerializer, IntakeSerializer, 
     SemesterSerializer, CourseGroupSerializer, UnitSerializer, LessonSerializer, 
@@ -225,8 +225,8 @@ class UnitViewSet(viewsets.ModelViewSet):
             )
 
         if self.action == 'list':
-            # Add prefetch for list to make it faster
-            queryset = queryset.prefetch_related('lessons', 'assessments')
+            # No prefetches needed for list as we use subqueries for counts
+            pass
             
         if self.action == 'retrieve':
             # Add deep prefetch for detailed view
