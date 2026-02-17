@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, Resource, 
@@ -240,14 +241,13 @@ class UnitListSerializer(serializers.ModelSerializer):
 
     def get_is_current_semester(self, obj):
         try:
+            if not obj.course_group or not obj.course_group.semester:
+                return False
             group_sem_name = obj.course_group.semester.name
-            # Extract number from "Semester X"
-            import re
-            match = re.search(r'\d+', group_sem_name)
+            match = re.search(r'\d+', str(group_sem_name))
             if match:
-                current_sem_num = int(match.group())
-                return obj.semester_number == current_sem_num
-        except:
+                return obj.semester_number == int(match.group())
+        except Exception:
             pass
         return False
 
@@ -297,13 +297,13 @@ class UnitSerializer(serializers.ModelSerializer):
 
     def get_is_current_semester(self, obj):
         try:
+            if not obj.course_group or not obj.course_group.semester:
+                return False
             group_sem_name = obj.course_group.semester.name
-            import re
-            match = re.search(r'\d+', group_sem_name)
+            match = re.search(r'\d+', str(group_sem_name))
             if match:
-                current_sem_num = int(match.group())
-                return obj.semester_number == current_sem_num
-        except:
+                return obj.semester_number == int(match.group())
+        except Exception:
             pass
         return False
 

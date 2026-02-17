@@ -1,5 +1,6 @@
+import re
 from django.db import models
-from django.db.models import Sum, Q, Count, OuterRef, Exists, Value, IntegerField, BooleanField, Prefetch, Subquery, IntegerField
+from django.db.models import Sum, Q, Count, OuterRef, Exists, Value, IntegerField, BooleanField, Prefetch, Subquery
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 import datetime
@@ -151,6 +152,8 @@ class UnitViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Unit.objects.all().select_related(
             'course_group__course', 
+            'course_group__intake',
+            'course_group__semester',
             'trainer'
         )
 
@@ -207,7 +210,7 @@ class UnitViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(
                 course_group__enrolled_students__student=user,
                 course_group__enrolled_students__is_active=True
-            ).distinct()
+            )
 
             queryset = queryset.annotate(
                 annotated_lessons_completed=Coalesce(
