@@ -53,7 +53,7 @@ const Sidebar: React.FC = () => {
                     { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/student?tab=overview' },
                     { icon: <BookOpen size={20} />, label: 'My Courses', path: '/student?tab=courses' },
                     { icon: <FileText size={20} />, label: 'Assessments', path: '/student?tab=assessments' },
-                    { icon: <MessageSquare size={20} />, label: 'Communication', path: '/student?tab=forum' },
+                    { icon: <MessageSquare size={20} />, label: 'Communication', path: '/student/forum' },
                     { icon: <Bell size={20} />, label: 'Notifications', path: '/student?tab=notifications' },
                     { icon: <UserIcon size={20} />, label: 'Profile', path: '/student?tab=profile' },
                     { icon: <HelpCircle size={20} />, label: 'Support', path: '/student?tab=support' },
