@@ -177,24 +177,11 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 from datetime import timedelta
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
-# Custom JWT serializer to include user info in token
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        # Add custom claims
-        token['user_id'] = user.id
-        token['role'] = user.role
-        token['username'] = user.username
-        token['email'] = user.email
-        return token
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'TOKEN_OBTAIN_SERIALIZER': 'mls_backend.settings.CustomTokenObtainPairSerializer',
+    'TOKEN_OBTAIN_SERIALIZER': 'mls_backend.custom_jwt.CustomTokenObtainPairSerializer',
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
