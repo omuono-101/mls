@@ -115,9 +115,12 @@ class LearningPathSerializer(serializers.ModelSerializer):
         read_only_fields = ['trainer']
 
 class LessonPlanActivitySerializer(serializers.ModelSerializer):
+    unit_name = serializers.ReadOnlyField(source='unit.name')
+    lesson_title = serializers.ReadOnlyField(source='lesson.title')
+    
     class Meta:
         model = LessonPlanActivity
-        fields = '__all__'
+        fields = ['id', 'lesson', 'unit', 'title', 'time', 'activity', 'content', 'resources', 'references', 'order', 'is_approved', 'created_at', 'updated_at', 'unit_name', 'lesson_title']
 
 class ResourceSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()

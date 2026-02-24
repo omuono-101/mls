@@ -196,19 +196,29 @@ class Lesson(models.Model):
         return f"Lesson {self.order}: {self.title}"
 
 class LessonPlanActivity(models.Model):
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='plan_activities')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='plan_activities', null=True, blank=True)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='lesson_plan_activities', null=True, blank=True)
+    title = models.CharField(max_length=255, blank=True, help_text="Title of the lesson plan (optional - for standalone plans)")
     time = models.CharField(max_length=50)
     activity = models.TextField()
     content = models.TextField(blank=True)
     resources = models.TextField(blank=True)
     references = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=1)
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['order']
 
     def __str__(self):
-        return f"Activity {self.order} for Lesson {self.lesson.title}"
+        if self.lesson:
+            return f"Activity {self.order} for Lesson {self.lesson.title}"
+        elif self.title:
+            return f"Lesson Plan: {self.title}"
+        else:
+            return f"Lesson Plan Activity {self.order}"
 
 class StudentLessonProgress(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='lesson_progress')
