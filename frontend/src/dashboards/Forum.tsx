@@ -5,7 +5,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
     MessageSquare, Plus, ChevronRight, Send, ArrowLeft,
-    User, Clock, BookOpen
+    Clock, BookOpen
 } from 'lucide-react';
 
 interface ForumTopic {

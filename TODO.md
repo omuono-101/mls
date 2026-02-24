@@ -1,12 +1,13 @@
-# Discussion Forums & Unit Progress Tracking - Implementation
+# Discussion Forums Implementation - COMPLETED
 
-## Backend
+## Backend ✅
 - [x] Enhance ForumTopicViewSet to filter topics by user's enrolled units
+- [x] Add message count and last activity to topic serializer
+- [x] Create ForumDetailViewSet for individual topic messages
 
-## Frontend - Discussion Forums
-- [x] Add routes for /student/forum and /student/forum/:topicId
-- [x] Update Sidebar navigation to /student/forum
-
-## Frontend - Unit Progress Tracking (New Features)
-- [x] Learning Progress in Overview - shows enrolled units with completion percentage
-- [x] Academic Portfolio Cards - show cats_count and lessons_taught for enrolled and non-enrolled units
+## Frontend ✅
+- [x] Update StudentDashboard forum tab to fetch and display forum topics from API
+- [x] Add functionality to create new discussion topics
+- [x] Add functionality to view and post messages in topics
+- [x] Add routing for individual forum threads (/student/forum/:topicId)
+- [x] Add API service methods for forum operations
