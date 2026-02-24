@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
-  Calendar, Clock, BookOpen, Users, FileText, 
+  Calendar, Clock, BookOpen, FileText, 
   Save, Send, Plus, Trash2, ArrowLeft, User, CheckCircle
 } from 'lucide-react';
 

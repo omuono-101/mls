@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import { 
@@ -39,14 +38,12 @@ interface LessonPlan {
 }
 
 const HODLessonPlanReview: React.FC = () => {
-  const navigate = useNavigate();
   const [lessons, setLessons] = useState<LessonPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [selectedLesson, setSelectedLesson] = useState<LessonPlan | null>(null);
   const [feedback, setFeedback] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   useEffect(() => {
     fetchLessonPlans();
@@ -133,7 +130,6 @@ const HODLessonPlanReview: React.FC = () => {
     return (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '2rem' }}>
         <div style={{ background: 'var(--bg-card)', borderRadius: '16px', maxWidth: '900px', width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
-          {/* Header */}
           <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{selectedLesson.title}</h2>
@@ -145,7 +141,6 @@ const HODLessonPlanReview: React.FC = () => {
           </div>
 
           <div style={{ padding: '1.5rem' }}>
-            {/* Session Info */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
               <div style={{ background: 'var(--bg-muted)', padding: '1rem', borderRadius: '8px' }}>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Week</p>
@@ -169,7 +164,6 @@ const HODLessonPlanReview: React.FC = () => {
               </div>
             </div>
 
-            {/* Topic */}
             <div style={{ marginBottom: '2rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <BookOpen size={18} /> Topic & Sub-topic
@@ -178,7 +172,6 @@ const HODLessonPlanReview: React.FC = () => {
               <p><strong>Sub-topic:</strong> {selectedLesson.subtopic || 'N/A'}</p>
             </div>
 
-            {/* Learning Outcomes */}
             <div style={{ marginBottom: '2rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>By the end of this lesson, the learner should be able to:</h3>
               <div style={{ background: 'var(--bg-muted)', padding: '1rem', borderRadius: '8px', whiteSpace: 'pre-wrap' }}>
@@ -186,7 +179,6 @@ const HODLessonPlanReview: React.FC = () => {
               </div>
             </div>
 
-            {/* Lesson Plan Activities */}
             {selectedLesson.plan_activities && selectedLesson.plan_activities.length > 0 && (
               <div style={{ marginBottom: '2rem' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Lesson Plan Activities</h3>
@@ -217,7 +209,6 @@ const HODLessonPlanReview: React.FC = () => {
               </div>
             )}
 
-            {/* Feedback Section */}
             {!selectedLesson.is_approved && (
               <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -279,7 +270,6 @@ const HODLessonPlanReview: React.FC = () => {
           <p style={{ color: 'var(--text-muted)' }}>Review and approve trainer lesson plans before they become visible to students</p>
         </div>
 
-        {/* Filter Tabs */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           {(['pending', 'approved', 'rejected', 'all'] as const).map((f) => (
             <button
@@ -308,7 +298,6 @@ const HODLessonPlanReview: React.FC = () => {
           ))}
         </div>
 
-        {/* Lesson Plans List */}
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
             <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />

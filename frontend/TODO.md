@@ -1,45 +1,64 @@
-# LMS Implementation Status
+# LMS Lesson Plan System Implementation
 
 ## ✅ Completed Features:
 
-### 1. Lesson Plan System
-- **Trainer**: Create lesson plans with date, week, unit code, session, lesson No., topic, sub-topic, learning outcomes, activities table (time, activity, content, resources)
-- **HOD**: Quality assurance view to approve/reject lesson plans with feedback
-- **Student**: View approved lessons based on approval status and scheduled time
+### 1. Trainer Dashboard - Lesson Plan Creation
+**File:** `frontend/src/components/LessonPlanForm.tsx`
 
-### 2. CAT/Assessment Scheduling System
-- **Trainer**: Set scheduled_start and scheduled_end times for assessments
-- **Auto-expiry**: Assessments automatically deactivate after scheduled_end
-- **Late submission**: Option to allow or disallow late submissions
-- **One submission per student**: Prevents multiple submissions
+Trainer can create lesson plans with the following fields:
+- **Session Information:** Date, Week, Session (Morning/Afternoon), Lesson No.
+- **Time:** Start Time, End Time (used to activate lessons to students)
+- **Unit Information:** Unit selection, Trainer name (auto-filled)
+- **Topic & Sub-topic:** Main topic and sub-topic
+- **Learning Outcomes:** "By the end of this lesson, the learner should be able to:" (auto-generated section)
+- **Lesson Plan Activities Table:** 
+  - Time
+  - Learning Activity
+  - Lesson Content
+  - Resources/Activities
+  - References
+- **Lesson Content/Notes:** Additional notes
+- **Actions:** Save as Draft or Submit for Approval
 
-### 3. Automatic Submission Handling
-- Students cannot submit after scheduled_end (when allow_late_submission=False)
-- Late submissions are marked with is_late=True
-- If submitted late without allow_late_submission, grade is auto-set to 0
-- Undone assessments (not submitted) get grade 0
+### 2. HOD Dashboard - Quality Assurance
+**File:** `frontend/src/components/HODLessonPlanReview.tsx`
 
-### 4. Student Dashboard
-- Course selection and viewing
-- Lessons, Resources, CATS, Tests, Assignments organized
-- Progress tracking based on lesson completion
-- Timeline view for lessons
+HOD can:
+- View all submitted lesson plans
+- Filter by: Pending, Approved, Rejected, All
+- View detailed lesson plan information:
+  - Session info (Week, Date, Session, Time, Trainer)
+  - Topic & Sub-topic
+  - Learning Outcomes
+  - Lesson Plan Activities table
+- Provide feedback and Approve or Reject lessons
+- Approved lessons become active in student dashboard
 
-## Backend Changes Made:
-- `backend/core/models.py`: Added scheduling fields to Assessment and Submission models
-- `backend/api/views.py`: Added expiry checks in SubmissionViewSet and AssessmentViewSet
-- `backend/api/serializers.py`: Added availability fields to AssessmentSerializer
+### 3. Student Dashboard - View Approved Lessons
+**File:** `frontend/src/dashboards/StudentDashboard.tsx`
 
-## To Apply Changes:
-Run migrations in the backend directory:
-```
-bash
-cd backend
-python manage.py makemigrations
-python manage.py migrate
-```
+Students can:
+- See only lessons that are:
+  - Approved by HOD (`is_approved: true`)
+  - Active based on time (`is_active: true` and session_start time has passed)
+- Track learning progress
+- View lesson content, resources, assessments
 
-## Frontend Components:
-- `LessonPlanForm.tsx`: Trainer lesson plan creation
-- `HODLessonPlanReview.tsx`: HOD quality assurance review
-- `StudentDashboard.tsx`: Student course content view
+### 4. Backend Implementation
+- **Models:** `Lesson` model has fields: `week`, `session_date`, `session_start`, `session_end`, `session`, `topic`, `subtopic`, `learning_outcomes`, `is_taught`, `is_approved`, `is_active`, `audit_feedback`
+- **LessonPlanActivity Model:** For storing time-based activities
+- **Serializers:** Updated with LessonPlanActivitySerializer
+- **Views:** LessonPlanActivityViewSet implemented
+- **URLs:** Route `lesson-plan-activities/` added
+
+## Workflow:
+1. Trainer creates lesson plan → submits for approval
+2. HOD reviews in Quality Assurance → Approves or Rejects with feedback
+3. Once approved AND time-based activation (session_start time), lesson appears in Student Dashboard
+4. Students can view and track progress
+
+## Routes:
+- `/trainer/lesson-plan` - Create new lesson plan
+- `/trainer/lesson-plan/:id` - Edit lesson plan
+- `/hod/lesson-plans` - HOD QA review
+- `/student` - Student dashboard with approved lessons
