@@ -29,11 +29,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const decodeToken = (token: string): User | null => {
         try {
             const decoded: any = jwtDecode(token);
+            // Standard JWT uses 'sub' for user_id, custom JWT uses 'user_id'
+            const userId = decoded.user_id || decoded.sub || -1;
             return {
-                id: decoded.user_id || decoded.sub || -1,
-                username: decoded.username || '',
+                id: typeof userId === 'string' ? parseInt(userId) : userId,
+                username: decoded.username || decoded.preferred_username || '',
                 email: decoded.email || '',
-                role: decoded.role || 'Student',
+                role: decoded.role || decoded.user_role || 'Student',
                 is_activated: true,
             };
         } catch (error) {
