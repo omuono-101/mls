@@ -23,10 +23,30 @@ interface Lesson {
     title: string;
     order: number;
     is_taught: boolean;
+    is_approved: boolean;
+    is_active: boolean;
+    week?: number | null;
+    session_date?: string | null;
+    session_start?: string | null;
+    session_end?: string | null;
+    session?: string;
+    topic?: string;
+    subtopic?: string;
+    learning_outcomes?: string;
+    plan_activities?: LessonPlanActivity[];
     module?: number;
     resources?: Resource[];
     content?: string;
     is_completed?: boolean;
+}
+
+interface LessonPlanActivity {
+    id: number;
+    time: string;
+    activity: string;
+    content: string;
+    resources: string;
+    references: string;
 }
 
 interface Module {
@@ -856,7 +876,7 @@ const StudentDashboard: React.FC = () => {
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Role</label>
-                            <span className="badge badge-primary">Student Ambassador</span>
+                            <span className="badge badge-primary">Student Ambassador()</span>
                         </div>
                     </div>
 

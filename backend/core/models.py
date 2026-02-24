@@ -140,12 +140,40 @@ class Lesson(models.Model):
     has_assessment = models.BooleanField(default=True)
     content = models.TextField(blank=True, help_text="Rich text content for the lesson lecture notes.")
     audit_feedback = models.TextField(blank=True)
+    
+    # Lesson Plan Fields
+    week = models.PositiveIntegerField(null=True, blank=True, help_text="Week number")
+    session_date = models.DateField(null=True, blank=True, help_text="Date of the lesson session")
+    session_start = models.TimeField(null=True, blank=True, help_text="Start time of the lesson")
+    session_end = models.TimeField(null=True, blank=True, help_text="End time of the lesson")
+    session = models.CharField(max_length=50, blank=True, help_text="Session name (e.g., Morning, Afternoon)")
+    topic = models.CharField(max_length=255, blank=True, help_text="Main topic of the lesson")
+    subtopic = models.CharField(max_length=255, blank=True, help_text="Sub-topic of the lesson")
+    learning_outcomes = models.TextField(blank=True, help_text="Learning outcomes - By the end of this lesson, students should be able to...")
+    is_active = models.BooleanField(default=False, help_text="Lesson is active and visible to students (after HOD approval and time reached)")
 
     class Meta:
         ordering = ['order']
 
     def __str__(self):
         return f"Lesson {self.order}: {self.title}"
+
+
+class LessonPlanActivity(models.Model):
+    """Time-based activities for lesson plan - the detailed schedule table"""
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='plan_activities')
+    time = models.CharField(max_length=50, help_text="Time slot (e.g., 9:00-9:30)")
+    activity = models.TextField(help_text="Learning activity description")
+    content = models.TextField(blank=True, help_text="Specific content covered")
+    resources = models.TextField(blank=True, help_text="Resources/activities needed")
+    references = models.TextField(blank=True, help_text="References/materials")
+    order = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Activity {self.order} for Lesson {self.lesson.title}"
 
 class StudentLessonProgress(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='lesson_progress')
@@ -188,12 +216,44 @@ class Assessment(models.Model):
     due_date = models.DateTimeField()
     duration_minutes = models.PositiveIntegerField(null=True, blank=True, help_text="Time limit in minutes")
     show_answers_after_submission = models.BooleanField(default=False)
-    scheduled_at = models.DateTimeField(null=True, blank=True, help_text="When the assessment becomes available to students")
+    
+    # Scheduling fields - for time-based availability
+    scheduled_start = models.DateTimeField(null=True, blank=True, help_text="When the assessment becomes available")
+    scheduled_end = models.DateTimeField(null=True, blank=True, help_text="When the assessment expires - submissions after get 0")
+    allow_late_submission = models.BooleanField(default=False, help_text="Allow submissions after expiry")
+    
     is_approved = models.BooleanField(default=False)
     audit_feedback = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.assessment_type}: {self.title} for {self.unit.name}"
+    
+    def is_available(self):
+        from django.utils import timezone
+        now = timezone.now()
+        if not self.scheduled_start:
+            return self.is_approved
+        return self.is_approved and now >= self.scheduled_start
+    
+    def is_expired(self):
+        from django.utils import timezone
+        now = timezone.now()
+        if not self.scheduled_end:
+            return False
+        return now > self.scheduled_end
+    
+    def can_submit(self):
+        if not self.is_approved:
+            return False
+        if not self.scheduled_start:
+            return True
+        from django.utils import timezone
+        now = timezone.now()
+        if now < self.scheduled_start:
+            return False
+        if self.scheduled_end and now > self.scheduled_end:
+            return self.allow_late_submission
+        return True
 
 class Question(models.Model):
     QUESTION_TYPES = [
@@ -265,6 +325,8 @@ class Submission(models.Model):
     feedback = models.TextField(blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     is_graded = models.BooleanField(default=False)
+    is_late = models.BooleanField(default=False, help_text="Submitted after deadline")
+    is_zero_graded = models.BooleanField(default=False, help_text="Graded zero due to late submission")
 
     def __str__(self):
         return f"Submission by {self.student.username} for {self.assessment}"
@@ -329,12 +391,24 @@ class ForumMessage(models.Model):
         return f"Message by {self.user.username} on {self.topic.title}"
 
 class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('general', 'General'),
+        ('critical', 'Critical'),
+        ('lesson', 'Lesson'),
+        ('assessment', 'Assessment'),
+        ('enrollment', 'Enrollment'),
+        ('approval', 'Approval'),
+    ]
+    
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
     title = models.CharField(max_length=255)
     message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='general')
+    is_critical = models.BooleanField(default=False)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     link = models.CharField(max_length=255, blank=True, null=True)
+    sender_role = models.CharField(max_length=20, blank=True, null=True)
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.title}"

@@ -11,14 +11,15 @@ from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, Resource, 
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
                           Question, QuestionOption, Answer, StudentAnswer, Announcement, ForumTopic, 
-                          ForumMessage, Notification, StudentLessonProgress)
+                          ForumMessage, Notification, StudentLessonProgress, LessonPlanActivity)
 from .serializers import (
     UserSerializer, StudentRegistrationSerializer, SchoolSerializer, CourseSerializer, IntakeSerializer, 
     SemesterSerializer, CourseGroupSerializer, UnitListSerializer, UnitSerializer, LessonSerializer, 
     ResourceSerializer, AssessmentSerializer, SubmissionSerializer,
     AttendanceSerializer, StudentEnrollmentSerializer, ModuleSerializer, LearningPathSerializer,
     QuestionSerializer, QuestionOptionSerializer, AnswerSerializer, StudentAnswerSerializer,
-    AnnouncementSerializer, ForumTopicSerializer, ForumMessageSerializer, NotificationSerializer
+    AnnouncementSerializer, ForumTopicSerializer, ForumMessageSerializer, NotificationSerializer,
+    LessonPlanActivitySerializer
 )
 from .permissions import IsAdmin, IsCourseMaster, IsHOD, IsTrainer, IsStudent, IsStaff
 
@@ -453,6 +454,21 @@ class AssessmentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(unit_id=unit_id)
         if module_id is not None:
             queryset = queryset.filter(module_id=module_id)
+        
+        # Students only see available (not expired) assessments
+        user = self.request.user
+        if user.is_authenticated and user.role == 'Student':
+            from django.utils import timezone
+            now = timezone.now()
+            # Show only approved assessments that haven't expired
+            queryset = queryset.filter(is_approved=True)
+            # Exclude assessments where scheduled_end has passed and no late submission allowed
+            queryset = queryset.exclude(
+                scheduled_end__isnull=False,
+                scheduled_end__lt=now,
+                allow_late_submission=False
+            )
+        
         return queryset
     
     def get_permissions(self):
@@ -475,7 +491,55 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         return Submission.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(student=self.request.user)
+        """Handle submission with automatic expiry check"""
+        assessment = serializer.validated_data.get('assessment')
+        
+        # Check if assessment is available and not expired
+        if assessment:
+            if not assessment.can_submit():
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({
+                    'detail': 'This assessment is no longer available for submission. The deadline has passed.'
+                })
+            
+            # Check if student already submitted
+            student = self.request.user
+            existing = Submission.objects.filter(
+                assessment=assessment,
+                student=student
+            ).exists()
+            
+            if existing:
+                raise ValidationError({
+                    'detail': 'You have already submitted this assessment.'
+                })
+            
+            # Check if expired and mark as late if allowed
+            from django.utils import timezone
+            now = timezone.now()
+            is_late = False
+            
+            if assessment.scheduled_end and now > assessment.scheduled_end:
+                if assessment.allow_late_submission:
+                    is_late = True
+                else:
+                    raise ValidationError({
+                        'detail': 'Submission deadline has passed. No more submissions allowed.'
+                    })
+            
+            submission = serializer.save(student=student, is_late=is_late)
+            
+            # If late and not allowed, auto-grade as zero
+            if is_late and not assessment.allow_late_submission:
+                submission.grade = 0
+                submission.is_graded = True
+                submission.is_zero_graded = True
+                submission.feedback = 'Automatic zero: Submission after deadline'
+                submission.save()
+            
+            return submission
+        
+        return serializer.save(student=self.request.user)
 
     @action(detail=False, methods=['get'])
     def by_assessment(self, request):
@@ -604,7 +668,19 @@ class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+        queryset = Notification.objects.filter(user=self.request.user).order_by('-created_at')
+        
+        # Filter by type
+        notification_type = self.request.query_params.get('type', None)
+        if notification_type:
+            queryset = queryset.filter(notification_type=notification_type)
+        
+        # Filter critical only
+        critical_only = self.request.query_params.get('critical', None)
+        if critical_only == 'true':
+            queryset = queryset.filter(is_critical=True)
+            
+        return queryset
 
     def get_permissions(self):
         return [permissions.IsAuthenticated()]
@@ -615,3 +691,108 @@ class NotificationViewSet(viewsets.ModelViewSet):
         notification.is_read = True
         notification.save()
         return Response({'status': 'notification marked as read'})
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def send_notification(self, request):
+        """
+        Send notification to users based on role
+        Request body:
+        - user_ids: list of user IDs (optional, if not provided sends to role)
+        - role: target role (Admin, HOD, Trainer, Student) - sends to all users with this role
+        - title: notification title
+        - message: notification message
+        - notification_type: general, critical, lesson, assessment, enrollment, approval
+        - is_critical: boolean
+        - link: optional link
+        """
+        user_ids = request.data.get('user_ids', [])
+        target_role = request.data.get('role')
+        title = request.data.get('title')
+        message = request.data.get('message')
+        notification_type = request.data.get('notification_type', 'general')
+        is_critical = request.data.get('is_critical', False)
+        link = request.data.get('link', '')
+        
+        sender = request.user
+        
+        if not title or not message:
+            return Response({'error': 'Title and message are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        notifications_created = 0
+        
+        # Send to specific users
+        if user_ids:
+            for user_id in user_ids:
+                try:
+                    target_user = User.objects.get(id=user_id)
+                    Notification.objects.create(
+                        user=target_user,
+                        title=title,
+                        message=message,
+                        notification_type=notification_type,
+                        is_critical=is_critical,
+                        link=link,
+                        sender_role=sender.role
+                    )
+                    notifications_created += 1
+                except User.DoesNotExist:
+                    pass
+        
+        # Send to all users of a specific role
+        elif target_role:
+            target_users = User.objects.filter(role=target_role, is_activated=True)
+            for target_user in target_users:
+                Notification.objects.create(
+                    user=target_user,
+                    title=title,
+                    message=message,
+                    notification_type=notification_type,
+                    is_critical=is_critical,
+                    link=link,
+                    sender_role=sender.role
+                )
+                notifications_created += 1
+        else:
+            return Response({'error': 'Either user_ids or role must be provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({'status': f'{notifications_created} notifications sent'})
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def critical_notifications(self, request):
+        """Get all critical notifications for the current user"""
+        notifications = Notification.objects.filter(
+            user=request.user,
+            is_critical=True,
+            is_read=False
+        ).order_by('-created_at')
+        
+        serializer = self.get_serializer(notifications, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def unread_count(self, request):
+        """Get count of unread notifications"""
+        total_count = Notification.objects.filter(user=request.user, is_read=False).count()
+        critical_count = Notification.objects.filter(user=request.user, is_critical=True, is_read=False).count()
+        return Response({
+            'total': total_count,
+            'critical': critical_count
+        })
+
+
+class LessonPlanActivityViewSet(viewsets.ModelViewSet):
+    """ViewSet for Lesson Plan Activities"""
+    queryset = LessonPlanActivity.objects.all()
+    serializer_class = LessonPlanActivitySerializer
+    
+    def get_queryset(self):
+        queryset = LessonPlanActivity.objects.all()
+        lesson_id = self.request.query_params.get('lesson', None)
+        if lesson_id is not None:
+            queryset = queryset.filter(lesson_id=lesson_id)
+        return queryset
+    
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return [IsTrainer()]

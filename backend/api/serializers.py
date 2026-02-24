@@ -1,7 +1,7 @@
 import re
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, Resource, 
+from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, LessonPlanActivity, Resource, 
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
                           Question, QuestionOption, Answer, StudentAnswer, Announcement, ForumTopic, 
                           ForumMessage, Notification)
@@ -40,7 +40,6 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         course_group = validated_data.pop('course_group', None)
         password = validated_data.pop('password')
         
-        # Create user as inactive student
         user = User.objects.create(
             role=User.STUDENT,
             is_activated=False,
@@ -49,7 +48,6 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
 
-        # Create enrollment if course group provided
         if course_group:
             StudentEnrollment.objects.create(
                 student=user,
@@ -116,6 +114,11 @@ class LearningPathSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['trainer']
 
+class LessonPlanActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonPlanActivity
+        fields = '__all__'
+
 class ResourceSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
     
@@ -133,6 +136,7 @@ class ResourceSerializer(serializers.ModelSerializer):
 
 class LessonSerializer(serializers.ModelSerializer):
     resources = ResourceSerializer(many=True, read_only=True)
+    plan_activities = LessonPlanActivitySerializer(many=True, read_only=True)
     trainer_name = serializers.SerializerMethodField()
     unit_name = serializers.ReadOnlyField(source='unit.name')
     unit_code = serializers.ReadOnlyField(source='unit.code')
@@ -190,12 +194,10 @@ class QuestionSerializer(serializers.ModelSerializer):
         options_data = validated_data.pop('options', [])
         answers_data = validated_data.pop('correct_answers', [])
         
-        # Update question fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         
-        # Simple implementation: delete and recreate options/answers
         instance.options.all().delete()
         for option in options_data:
             QuestionOption.objects.create(question=instance, **option)
@@ -210,6 +212,9 @@ class AssessmentSerializer(serializers.ModelSerializer):
     unit_name = serializers.ReadOnlyField(source='unit.name')
     questions = QuestionSerializer(many=True, read_only=True)
     question_count = serializers.SerializerMethodField()
+    is_available = serializers.SerializerMethodField()
+    is_expired = serializers.SerializerMethodField()
+    can_submit = serializers.SerializerMethodField()
     
     class Meta:
         model = Assessment
@@ -217,6 +222,15 @@ class AssessmentSerializer(serializers.ModelSerializer):
     
     def get_question_count(self, obj):
         return obj.questions.count()
+    
+    def get_is_available(self, obj):
+        return obj.is_available()
+    
+    def get_is_expired(self, obj):
+        return obj.is_expired()
+    
+    def get_can_submit(self, obj):
+        return obj.can_submit()
 
 class UnitListSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
@@ -312,7 +326,6 @@ class UnitSerializer(serializers.ModelSerializer):
         return False
 
     def get_is_enrolled(self, obj):
-        # Check if already annotated in queryset for performance
         if hasattr(obj, 'annotated_is_enrolled'):
             return obj.annotated_is_enrolled
             
@@ -444,4 +457,4 @@ class ForumMessageSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = '__all__'
+        fields = ['id', 'user', 'title', 'message', 'notification_type', 'is_critical', 'is_read', 'created_at', 'link', 'sender_role']

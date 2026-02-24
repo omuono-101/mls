@@ -19,6 +19,8 @@ import LessonEditor from './dashboards/LessonEditor';
 import AssessmentAuthoring from './dashboards/AssessmentAuthoring';
 import StudentRegistration from './dashboards/StudentRegistration';
 import SubmissionGrading from './dashboards/SubmissionGrading';
+import LessonPlanForm from './components/LessonPlanForm';
+import HODLessonPlanReview from './components/HODLessonPlanReview';
 
 const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
@@ -120,9 +122,28 @@ const App: React.FC = () => {
             </ProtectedRoute>
           } />
 
-          <Route path="/student/assessment/:assessmentId" element={
+<Route path="/student/assessment/:assessmentId" element={
             <ProtectedRoute allowedRoles={['Student']}>
               <AssessmentSubmission />
+            </ProtectedRoute>
+          } />
+
+          {/* Lesson Plan Routes */}
+          <Route path="/trainer/lesson-plan/new" element={
+            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+              <LessonPlanForm />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/trainer/lesson-plan/:lessonId/edit" element={
+            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+              <LessonPlanForm />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/hod/lesson-plans" element={
+            <ProtectedRoute allowedRoles={['HOD', 'Admin']}>
+              <HODLessonPlanReview />
             </ProtectedRoute>
           } />
 
