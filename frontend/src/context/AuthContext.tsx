@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import api from '../services/api';
 
 interface User {
     id: number;
@@ -27,28 +26,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchUserProfile = async () => {
+    const decodeToken = (token: string): User | null => {
         try {
-            const response = await api.get('users/me/'); // Note: Need to implement this endpoint in backend properly or use token data
-            // For now, let's decode from token or fetch if possible. 
-            // In Django simplejwt, 'me' isn't default, but we can decode tokens for basic info.
-            setUser(response.data);
+            const decoded: any = jwtDecode(token);
+            return {
+                id: decoded.user_id || decoded.sub || -1,
+                username: decoded.username || '',
+                email: decoded.email || '',
+                role: decoded.role || 'Student',
+                is_activated: true,
+            };
         } catch (error) {
-            console.error('Failed to fetch user profile', error);
-            logout();
-        } finally {
-            setLoading(false);
+            console.error('Failed to decode token', error);
+            return null;
         }
     };
 
     const login = (access: string, refresh: string) => {
         localStorage.setItem('access_token', access);
         localStorage.setItem('refresh_token', refresh);
-        const decoded: any = jwtDecode(access);
-        console.log('Decoded token:', decoded);
-        // Basic user info from token (we should customize simplejwt to include role/id)
-        // For now, let's assume we fetch profile after login
-        fetchUserProfile();
+        const userInfo = decodeToken(access);
+        if (userInfo) {
+            setUser(userInfo);
+            console.log('User logged in:', userInfo);
+        }
+        setLoading(false);
     };
 
     const logout = () => {
@@ -61,10 +63,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         const token = localStorage.getItem('access_token');
         if (token) {
-            fetchUserProfile();
-        } else {
-            setLoading(false);
+            const userInfo = decodeToken(token);
+            if (userInfo) {
+                setUser(userInfo);
+            } else {
+                logout();
+            }
         }
+        setLoading(false);
     }, []);
 
     return (
