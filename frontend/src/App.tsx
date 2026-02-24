@@ -123,7 +123,7 @@ const App: React.FC = () => {
             </ProtectedRoute>
           } />
 
-<Route path="/student/assessment/:assessmentId" element={
+          <Route path="/student/assessment/:assessmentId" element={
             <ProtectedRoute allowedRoles={['Student']}>
               <AssessmentSubmission />
             </ProtectedRoute>

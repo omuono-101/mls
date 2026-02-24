@@ -402,7 +402,6 @@ const StudentDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Vertical Learning Path Timeline */}
                 <div style={{ position: 'relative', paddingLeft: '2.5rem' }}>
                     <div style={{
                         position: 'absolute',
@@ -421,7 +420,6 @@ const StudentDashboard: React.FC = () => {
 
                             return (
                                 <div key={lesson.id} className="animate-fade-in" style={{ position: 'relative', animationDelay: `${idx * 0.1}s` }}>
-                                    {/* Timeline Node */}
                                     <div style={{
                                         position: 'absolute',
                                         left: '-32px',
@@ -442,7 +440,6 @@ const StudentDashboard: React.FC = () => {
                                         background: isLocked ? '#f8fafc' : 'white',
                                         borderRadius: '24px'
                                     }}>
-                                        {/* Lesson Header */}
                                         <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
@@ -478,7 +475,6 @@ const StudentDashboard: React.FC = () => {
                                             )}
                                         </div>
 
-                                        {/* Lesson Content - Premium Display */}
                                         {lesson.content && (
                                             <div style={{
                                                 marginBottom: '2.5rem',
@@ -501,9 +497,7 @@ const StudentDashboard: React.FC = () => {
                                             </div>
                                         )}
 
-                                        {/* Horizontal Layout for Resources and Assessments */}
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-                                            {/* Resources */}
                                             {lesson.resources && lesson.resources.length > 0 && (
                                                 <div>
                                                     <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -541,7 +535,6 @@ const StudentDashboard: React.FC = () => {
                                                 </div>
                                             )}
 
-                                            {/* Assessments */}
                                             {lessonAssessments.length > 0 && (
                                                 <div>
                                                     <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -593,7 +586,6 @@ const StudentDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Unit-wide Assessments Section */}
                 {assessmentsByLesson['unit'] && assessmentsByLesson['unit'].length > 0 && (
                     <div className="card-premium animate-fade-in" style={{ padding: '3rem', borderRadius: '32px', marginTop: '4rem', background: 'linear-gradient(135deg, white 0%, #fefeff 100%)' }}>
                         <h2 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -737,8 +729,8 @@ const StudentDashboard: React.FC = () => {
                     <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Discussion Forums</h1>
                     <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Connect with peers and trainers in your unit channels.</p>
                 </div>
-                <button className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Plus size={20} /> New Discussion
+                <button className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => navigate('/student/forum')}>
+                    <Plus size={20} /> View Forums
                 </button>
             </div>
 
@@ -771,7 +763,7 @@ const StudentDashboard: React.FC = () => {
                             </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div className="badgeBadge" style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--text-muted)', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700 }}>24 Active</div>
+                            <div className="badge" style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--text-muted)', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700 }}>24 Active</div>
                             <ChevronRight size={20} style={{ color: 'var(--text-muted)' }} />
                         </div>
                     </div>
@@ -912,7 +904,7 @@ const StudentDashboard: React.FC = () => {
 
                 <div className="card-premium" style={{ borderRadius: '28px', overflow: 'hidden' }}>
                     <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0' }}>
+                        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <thead>
                                 <tr style={{ background: '#f8fafc' }}>
                                     <th style={{ padding: '1.5rem 2rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assessment</th>
@@ -962,8 +954,8 @@ const StudentDashboard: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
-                </div >
-            </div >
+                </div>
+            </div>
         );
     };
 
