@@ -409,6 +409,30 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     link = models.CharField(max_length=255, blank=True, null=True)
     sender_role = models.CharField(max_length=20, blank=True, null=True)
+    
+    # Deadline and activation fields
+    active_from = models.DateTimeField(null=True, blank=True, help_text="When the notification becomes active/visible")
+    active_until = models.DateTimeField(null=True, blank=True, help_text="When the notification should be deactivated/expire")
+    is_active = models.BooleanField(default=True, help_text="Manual override to show/hide the notification")
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.title}"
+    
+    def is_available(self):
+        """Check if notification is currently active based on time and manual override"""
+        from django.utils import timezone
+        now = timezone.now()
+        
+        # Check manual override first
+        if not self.is_active:
+            return False
+        
+        # Check active_from time
+        if self.active_from and now < self.active_from:
+            return False
+        
+        # Check active_until time
+        if self.active_until and now > self.active_until:
+            return False
+        
+        return True

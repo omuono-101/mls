@@ -1,4 +1,4 @@
-import re
+d import re
 from django.db import models
 from django.db.models import Sum, Q, Count, OuterRef, Exists, Value, IntegerField, BooleanField, Prefetch, Subquery
 from django.db.models.functions import Coalesce
@@ -692,7 +692,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         notification.save()
         return Response({'status': 'notification marked as read'})
 
-    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+@action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def send_notification(self, request):
         """
         Send notification to users based on role
@@ -704,6 +704,9 @@ class NotificationViewSet(viewsets.ModelViewSet):
         - notification_type: general, critical, lesson, assessment, enrollment, approval
         - is_critical: boolean
         - link: optional link
+        - active_from: datetime when notification becomes active (optional)
+        - active_until: datetime when notification expires (optional)
+        - is_active: boolean for manual override (default true)
         """
         user_ids = request.data.get('user_ids', [])
         target_role = request.data.get('role')
@@ -713,12 +716,22 @@ class NotificationViewSet(viewsets.ModelViewSet):
         is_critical = request.data.get('is_critical', False)
         link = request.data.get('link', '')
         
+        # Deadline fields
+        active_from = request.data.get('active_from')
+        active_until = request.data.get('active_until')
+        is_active = request.data.get('is_active', True)
+        
         sender = request.user
         
         if not title or not message:
             return Response({'error': 'Title and message are required'}, status=status.HTTP_400_BAD_REQUEST)
         
         notifications_created = 0
+        
+        # Parse datetime fields
+        from django.utils.dateparse import parse_datetime
+        active_from_dt = parse_datetime(active_from) if active_from else None
+        active_until_dt = parse_datetime(active_until) if active_until else None
         
         # Send to specific users
         if user_ids:
@@ -732,7 +745,10 @@ class NotificationViewSet(viewsets.ModelViewSet):
                         notification_type=notification_type,
                         is_critical=is_critical,
                         link=link,
-                        sender_role=sender.role
+                        sender_role=sender.role,
+                        active_from=active_from_dt,
+                        active_until=active_until_dt,
+                        is_active=is_active
                     )
                     notifications_created += 1
                 except User.DoesNotExist:
@@ -749,7 +765,10 @@ class NotificationViewSet(viewsets.ModelViewSet):
                     notification_type=notification_type,
                     is_critical=is_critical,
                     link=link,
-                    sender_role=sender.role
+                    sender_role=sender.role,
+                    active_from=active_from_dt,
+                    active_until=active_until_dt,
+                    is_active=is_active
                 )
                 notifications_created += 1
         else:

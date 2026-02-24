@@ -455,6 +455,11 @@ class ForumMessageSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']
 
 class NotificationSerializer(serializers.ModelSerializer):
+    is_available = serializers.SerializerMethodField()
+    
     class Meta:
         model = Notification
-        fields = ['id', 'user', 'title', 'message', 'notification_type', 'is_critical', 'is_read', 'created_at', 'link', 'sender_role']
+        fields = ['id', 'user', 'title', 'message', 'notification_type', 'is_critical', 'is_read', 'created_at', 'link', 'sender_role', 'active_from', 'active_until', 'is_active', 'is_available']
+    
+    def get_is_available(self, obj):
+        return obj.is_available()

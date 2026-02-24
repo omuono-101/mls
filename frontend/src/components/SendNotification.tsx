@@ -3,7 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   Bell, Send, Users, UserCheck, UserPlus, BookOpen, FileText,
-  AlertTriangle, Check, X
+  AlertTriangle, Check, X, Clock
 } from 'lucide-react';
 
 interface User {
@@ -36,7 +36,11 @@ const SendNotification: React.FC<SendNotificationProps> = ({ onClose }) => {
     message: '',
     notificationType: 'general',
     isCritical: false,
-    link: ''
+    link: '',
+    // Deadline fields
+    activeFrom: '',
+    activeUntil: '',
+    isActive: true
   });
 
   // Define who can send to whom based on role
@@ -96,17 +100,32 @@ const SendNotification: React.FC<SendNotificationProps> = ({ onClose }) => {
       setSending(true);
       setError('');
 
-      const payload = {
+      // Parse dates to ISO format for backend
+      const payload: any = {
         title: formData.title,
         message: formData.message,
         notification_type: formData.isCritical ? 'critical' : formData.notificationType,
         is_critical: formData.isCritical,
+        is_active: formData.isActive,
         link: formData.link || undefined,
-        ...(formData.sendType === 'specific' 
-          ? { user_ids: formData.selectedUsers }
-          : { role: formData.targetRole }
-        )
       };
+
+      // Add active_from if provided
+      if (formData.activeFrom) {
+        payload.active_from = new Date(formData.activeFrom).toISOString();
+      }
+
+      // Add active_until if provided
+      if (formData.activeUntil) {
+        payload.active_until = new Date(formData.activeUntil).toISOString();
+      }
+
+      // Add user targeting
+      if (formData.sendType === 'specific') {
+        payload.user_ids = formData.selectedUsers;
+      } else {
+        payload.role = formData.targetRole;
+      }
 
       await api.post('notifications/send_notification/', payload);
       setSuccess('Notification sent successfully!');
@@ -120,7 +139,10 @@ const SendNotification: React.FC<SendNotificationProps> = ({ onClose }) => {
         message: '',
         notificationType: 'general',
         isCritical: false,
-        link: ''
+        link: '',
+        activeFrom: '',
+        activeUntil: '',
+        isActive: true
       });
 
       setTimeout(() => {
@@ -421,6 +443,81 @@ const SendNotification: React.FC<SendNotificationProps> = ({ onClose }) => {
             fontSize: '0.9rem'
           }}
         />
+      </div>
+
+      {/* Deadline Section */}
+      <div style={{ 
+        marginBottom: '1.5rem', 
+        padding: '1rem', 
+        borderRadius: '12px', 
+        background: 'var(--bg-alt)',
+        border: '1px solid var(--border)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <Clock size={18} />
+          <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Notification Schedule</h3>
+        </div>
+        
+        {/* Active Toggle */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={formData.isActive}
+              onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+            />
+            Notification is Active
+          </label>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', marginLeft: '1.5rem' }}>
+            Uncheck to manually hide this notification from all viewers
+          </p>
+        </div>
+
+        {/* Active From */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>
+            Active From (optional)
+          </label>
+          <input
+            type="datetime-local"
+            value={formData.activeFrom}
+            onChange={(e) => setFormData(prev => ({ ...prev, activeFrom: e.target.value }))}
+            style={{
+              width: '100%',
+              padding: '0.6rem',
+              borderRadius: '6px',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-main)',
+              fontSize: '0.85rem'
+            }}
+          />
+          <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+            Leave empty to make notification visible immediately
+          </p>
+        </div>
+
+        {/* Active Until */}
+        <div>
+          <label style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>
+            Active Until (optional)
+          </label>
+          <input
+            type="datetime-local"
+            value={formData.activeUntil}
+            onChange={(e) => setFormData(prev => ({ ...prev, activeUntil: e.target.value }))}
+            style={{
+              width: '100%',
+              padding: '0.6rem',
+              borderRadius: '6px',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-main)',
+              fontSize: '0.85rem'
+            }}
+          />
+          <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+            Leave empty for notification to remain active indefinitely. After this time, notification will automatically disappear.
+          </p>
+        </div>
       </div>
 
       {/* Send Button */}
