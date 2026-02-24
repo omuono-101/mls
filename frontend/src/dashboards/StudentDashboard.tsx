@@ -687,11 +687,11 @@ const StudentDashboard: React.FC = () => {
 
                             <div className="glass" style={{ padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.02)' }}>
                                 <div style={{ display: 'flex', gap: '1.25rem' }}>
-                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="Learning Modules">
-                                        <Layers size={16} className="text-primary" /> {u.total_lessons}
+                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="Lessons Covered">
+                                        <Layers size={16} className="text-primary" /> {u.lessons_taught || 0}/{u.total_lessons || 0}
                                     </div>
-                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <BarChart3 size={16} className="text-primary" /> {u.cats_count}
+                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="CATS Available">
+                                        <BarChart3 size={16} className="text-primary" /> {u.cats_count || 0}
                                     </div>
                                 </div>
 

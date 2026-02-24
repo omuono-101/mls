@@ -1,4 +1,4 @@
-d import re
+import re
 from django.db import models
 from django.db.models import Sum, Q, Count, OuterRef, Exists, Value, IntegerField, BooleanField, Prefetch, Subquery
 from django.db.models.functions import Coalesce
@@ -634,10 +634,26 @@ class ForumTopicViewSet(viewsets.ModelViewSet):
     serializer_class = ForumTopicSerializer
 
     def get_queryset(self):
-        queryset = ForumTopic.objects.all()
+        queryset = ForumTopic.objects.all().select_related('unit', 'created_by').prefetch_related('messages')
+        user = self.request.user
         unit_id = self.request.query_params.get('unit', None)
+        
         if unit_id:
             queryset = queryset.filter(unit_id=unit_id)
+        elif user.role == 'Student':
+            # Students only see topics from units they are enrolled in
+            from core.models import StudentEnrollment
+            enrolled_course_groups = StudentEnrollment.objects.filter(
+                student=user, 
+                is_active=True
+            ).values_list('course_group_id', flat=True)
+            queryset = queryset.filter(unit__course_group_id__in=enrolled_course_groups)
+        elif user.role == 'Trainer':
+            # Trainers see topics from units they teach
+            queryset = queryset.filter(unit__trainer=user)
+        
+        # Order by most recent
+        queryset = queryset.order_by('-created_at')
         return queryset
 
     def get_permissions(self):
@@ -692,7 +708,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         notification.save()
         return Response({'status': 'notification marked as read'})
 
-@action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def send_notification(self, request):
         """
         Send notification to users based on role

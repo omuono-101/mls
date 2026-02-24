@@ -21,6 +21,7 @@ import StudentRegistration from './dashboards/StudentRegistration';
 import SubmissionGrading from './dashboards/SubmissionGrading';
 import LessonPlanForm from './components/LessonPlanForm';
 import HODLessonPlanReview from './components/HODLessonPlanReview';
+import Forum from './dashboards/Forum';
 
 const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
@@ -125,6 +126,19 @@ const App: React.FC = () => {
 <Route path="/student/assessment/:assessmentId" element={
             <ProtectedRoute allowedRoles={['Student']}>
               <AssessmentSubmission />
+            </ProtectedRoute>
+          } />
+
+          {/* Forum Routes */}
+          <Route path="/student/forum" element={
+            <ProtectedRoute allowedRoles={['Student']}>
+              <Forum />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/student/forum/:topicId" element={
+            <ProtectedRoute allowedRoles={['Student']}>
+              <Forum />
             </ProtectedRoute>
           } />
 
