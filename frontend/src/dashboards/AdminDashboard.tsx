@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
-import { Users, UserCheck, UserX, ShieldCheck, X, Plus, Archive, ArchiveRestore, Edit2, Key } from 'lucide-react';
+import { Users, UserCheck, UserX, ShieldCheck, X, Plus, Archive, ArchiveRestore, Edit2, Key, Bell } from 'lucide-react';
+import SendNotification from '../components/SendNotification';
 
 interface User {
     id: number;
@@ -30,6 +31,7 @@ const AdminOverview: React.FC = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [resetPasswordData, setResetPasswordData] = useState({ userId: 0, username: '', newPassword: '' });
 
     const fetchUsers = async () => {
@@ -213,8 +215,6 @@ const AdminOverview: React.FC = () => {
                 </div>
             </div>
 
-
-
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -271,6 +271,14 @@ const AdminOverview: React.FC = () => {
                         >
                             <Plus size={16} />
                             Add New User
+                        </button>
+                        <button
+                            onClick={() => setIsNotificationOpen(true)}
+                            className="btn btn-sm"
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#10b981', color: 'white' }}
+                        >
+                            <Bell size={16} />
+                            Send Notification
                         </button>
                     </div>
                 </div>
@@ -397,242 +405,264 @@ const AdminOverview: React.FC = () => {
                 </div>
             </div>
 
-            {/* Delete Confirmation can be a simple window.confirm for now or a modal */}
+            {/* Add User Modal */}
+            {isAddUserOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(4px)'
+                }}>
+                    <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '500px', position: 'relative' }}>
+                        <button
+                            onClick={() => setIsAddUserOpen(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        >
+                            <X size={24} />
+                        </button>
 
-            {
-                isAddUserOpen && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        backdropFilter: 'blur(4px)'
-                    }}>
-                        <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '500px', position: 'relative' }}>
-                            <button
-                                onClick={() => setIsAddUserOpen(false)}
-                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                            >
-                                <X size={24} />
-                            </button>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Add New User</h2>
 
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Add New User</h2>
+                        <form onSubmit={handleAddUser}>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Username</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={newUser.username}
+                                    onChange={e => setNewUser({ ...newUser, username: e.target.value })}
+                                    required
+                                />
+                            </div>
 
-                            <form onSubmit={handleAddUser}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Username</label>
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        value={newUser.username}
-                                        onChange={e => setNewUser({ ...newUser, username: e.target.value })}
-                                        required
-                                    />
-                                </div>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Email</label>
+                                <input
+                                    type="email"
+                                    className="input"
+                                    value={newUser.email}
+                                    onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                    required
+                                />
+                            </div>
 
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Email</label>
-                                    <input
-                                        type="email"
-                                        className="input"
-                                        value={newUser.email}
-                                        onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                        required
-                                    />
-                                </div>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Role</label>
+                                <select
+                                    className="input"
+                                    value={newUser.role}
+                                    onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                >
+                                    <option value="Student">Student</option>
+                                    <option value="Trainer">Trainer</option>
+                                    <option value="HOD">HOD</option>
+                                    <option value="CourseMaster">Course Master</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                            </div>
 
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Role</label>
-                                    <select
-                                        className="input"
-                                        value={newUser.role}
-                                        onChange={e => setNewUser({ ...newUser, role: e.target.value })}
-                                    >
-                                        <option value="Student">Student</option>
-                                        <option value="Trainer">Trainer</option>
-                                        <option value="HOD">HOD</option>
-                                        <option value="CourseMaster">Course Master</option>
-                                        <option value="Admin">Admin</option>
-                                    </select>
-                                </div>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Password</label>
+                                <input
+                                    type="password"
+                                    className="input"
+                                    value={newUser.password}
+                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                    required
+                                />
+                            </div>
 
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Password</label>
-                                    <input
-                                        type="password"
-                                        className="input"
-                                        value={newUser.password}
-                                        onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                        required
-                                    />
-                                </div>
-
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                    <button
-                                        type="button"
-                                        className="btn"
-                                        onClick={() => setIsAddUserOpen(false)}
-                                        style={{ background: 'transparent', border: '1px solid var(--border)' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary"
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? 'Creating...' : 'Create User'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setIsAddUserOpen(false)}
+                                    style={{ background: 'transparent', border: '1px solid var(--border)' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Creating...' : 'Create User'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )}
 
-            {
-                isEditModalOpen && editingUser && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        backdropFilter: 'blur(4px)'
-                    }}>
-                        <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '500px', position: 'relative' }}>
-                            <button
-                                onClick={() => setIsEditModalOpen(false)}
-                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                            >
-                                <X size={24} />
-                            </button>
+            {/* Edit User Modal */}
+            {isEditModalOpen && editingUser && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(4px)'
+                }}>
+                    <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '500px', position: 'relative' }}>
+                        <button
+                            onClick={() => setIsEditModalOpen(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        >
+                            <X size={24} />
+                        </button>
 
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Edit User: {editingUser.username}</h2>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Edit User: {editingUser.username}</h2>
 
-                            <form onSubmit={handleUpdateUser}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Email</label>
-                                    <input
-                                        type="email"
-                                        className="input"
-                                        value={editingUser.email}
-                                        onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
-                                        required
-                                    />
-                                </div>
+                        <form onSubmit={handleUpdateUser}>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Email</label>
+                                <input
+                                    type="email"
+                                    className="input"
+                                    value={editingUser.email}
+                                    onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
+                                    required
+                                />
+                            </div>
 
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Role</label>
-                                    <select
-                                        className="input"
-                                        value={editingUser.role}
-                                        onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
-                                    >
-                                        <option value="Student">Student</option>
-                                        <option value="Trainer">Trainer</option>
-                                        <option value="HOD">HOD</option>
-                                        <option value="CourseMaster">Course Master</option>
-                                        <option value="Admin">Admin</option>
-                                    </select>
-                                </div>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Role</label>
+                                <select
+                                    className="input"
+                                    value={editingUser.role}
+                                    onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
+                                >
+                                    <option value="Student">Student</option>
+                                    <option value="Trainer">Trainer</option>
+                                    <option value="HOD">HOD</option>
+                                    <option value="CourseMaster">Course Master</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                            </div>
 
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                    <button
-                                        type="button"
-                                        className="btn"
-                                        onClick={() => setIsEditModalOpen(false)}
-                                        style={{ background: 'transparent', border: '1px solid var(--border)' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary"
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? 'Saving...' : 'Save Changes'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setIsEditModalOpen(false)}
+                                    style={{ background: 'transparent', border: '1px solid var(--border)' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )}
 
-            {
-                isResetPasswordOpen && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        backdropFilter: 'blur(4px)'
-                    }}>
-                        <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '500px', position: 'relative' }}>
-                            <button
-                                onClick={() => setIsResetPasswordOpen(false)}
-                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                            >
-                                <X size={24} />
-                            </button>
+            {/* Reset Password Modal */}
+            {isResetPasswordOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(4px)'
+                }}>
+                    <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '500px', position: 'relative' }}>
+                        <button
+                            onClick={() => setIsResetPasswordOpen(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        >
+                            <X size={24} />
+                        </button>
 
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Reset Password</h2>
-                            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Set a new password for <strong>{resetPasswordData.username}</strong></p>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Reset Password</h2>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Set a new password for <strong>{resetPasswordData.username}</strong></p>
 
-                            <form onSubmit={handleResetPassword}>
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>New Password</label>
-                                    <input
-                                        type="password"
-                                        className="input"
-                                        placeholder="Enter new password"
-                                        value={resetPasswordData.newPassword}
-                                        onChange={e => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
-                                        required
-                                    />
-                                </div>
+                        <form onSubmit={handleResetPassword}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>New Password</label>
+                                <input
+                                    type="password"
+                                    className="input"
+                                    placeholder="Enter new password"
+                                    value={resetPasswordData.newPassword}
+                                    onChange={e => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                                    required
+                                />
+                            </div>
 
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                    <button
-                                        type="button"
-                                        className="btn"
-                                        onClick={() => setIsResetPasswordOpen(false)}
-                                        style={{ background: 'transparent', border: '1px solid var(--border)' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="btn btn-warning"
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? 'Resetting...' : 'Reset Password'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setIsResetPasswordOpen(false)}
+                                    style={{ background: 'transparent', border: '1px solid var(--border)' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-warning"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Resetting...' : 'Reset Password'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
-        </DashboardLayout >
+                </div>
+            )}
+
+            {/* Send Notification Modal */}
+            {isNotificationOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(4px)'
+                }}>
+                    <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '600px', position: 'relative' }}>
+                        <button
+                            onClick={() => setIsNotificationOpen(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', zIndex: 10 }}
+                        >
+                            <X size={24} />
+                        </button>
+                        <SendNotification onClose={() => setIsNotificationOpen(false)} />
+                    </div>
+                </div>
+            )}
+        </DashboardLayout>
     );
 };
 
