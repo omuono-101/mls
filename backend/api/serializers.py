@@ -437,11 +437,12 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 class ForumTopicSerializer(serializers.ModelSerializer):
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
     unit_name = serializers.ReadOnlyField(source='unit.name')
+    unit_code = serializers.ReadOnlyField(source='unit.code')
     message_count = serializers.SerializerMethodField()
 
     class Meta:
         model = ForumTopic
-        fields = '__all__'
+        fields = ['id', 'unit', 'unit_name', 'unit_code', 'title', 'description', 'created_at', 'created_by', 'created_by_name', 'message_count']
         read_only_fields = ['created_by']
 
     def get_message_count(self, obj):

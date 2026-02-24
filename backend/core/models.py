@@ -21,6 +21,7 @@ class User(AbstractUser):
     is_activated = models.BooleanField(default=False)
     is_archived = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if self.is_superuser:
@@ -31,6 +32,45 @@ class User(AbstractUser):
         return f"{self.username} ({self.role})"
 
 
+class Badge(models.Model):
+    """Model for student achievement badges"""
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, blank=True, help_text="Icon name for display")
+    color = models.CharField(max_length=20, default='#6366f1', help_text="Hex color code")
+    points_required = models.IntegerField(default=0, help_text="Minimum points to earn this badge")
+    
+    def __str__(self):
+        return self.name
+
+class StudentBadge(models.Model):
+    """Model linking students to badges they've earned"""
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='earned_badges')
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='earners')
+    earned_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['student', 'badge']
+    
+    def __str__(self):
+        return f"{self.student.username} earned {self.badge.name}"
+
+class StudentRating(models.Model):
+    """Model for live student ratings based on performance"""
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ratings')
+    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0, help_text="Rating score (0-5)")
+    total_points = models.IntegerField(default=0, help_text="Total points earned")
+    completed_lessons = models.IntegerField(default=0)
+    completed_assessments = models.IntegerField(default=0)
+    average_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name_plural = "Student Ratings"
+    
+    def __str__(self):
+        return f"{self.student.username}: {self.rating}"
+
 class School(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -40,17 +80,17 @@ class School(models.Model):
 
 class Course(models.Model):
     name = models.CharField(max_length=255)
-    code = models.CharField(max_length=50, default='GEN') # e.g., "ICT"
+    code = models.CharField(max_length=50, default='GEN')
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='courses')
-    duration = models.CharField(max_length=100) # e.g., "3 years"
+    duration = models.CharField(max_length=100)
 
     def __str__(self):
         return f"{self.code} - {self.name}"
 
 class Intake(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='intakes', null=True)
-    name = models.CharField(max_length=100) # e.g., "Feb 2026 group"
-    group_code = models.CharField(max_length=50, blank=True) # e.g., "0226"
+    name = models.CharField(max_length=100)
+    group_code = models.CharField(max_length=50, blank=True)
     admission_numbers = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True)
     intake_type = models.CharField(max_length=50, choices=[('Full-time', 'Full-time'), ('Part-time', 'Part-time')], default='Full-time')
@@ -82,11 +122,10 @@ class CourseGroup(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     intake = models.ForeignKey(Intake, on_delete=models.CASCADE)
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
-    course_code = models.CharField(max_length=50) # Derived or specific
+    course_code = models.CharField(max_length=50)
 
     @property
     def group_display_code(self):
-        # Format: ICT 0226
         return f"{self.course.code} {self.intake.group_code}"
 
     def __str__(self):
@@ -99,7 +138,7 @@ class Unit(models.Model):
     code = models.CharField(max_length=50)
     semester_number = models.PositiveIntegerField()
     total_lessons = models.PositiveIntegerField()
-    cat_frequency = models.PositiveIntegerField(default=3) # every N lessons
+    cat_frequency = models.PositiveIntegerField(default=3)
     cat_total_points = models.PositiveIntegerField(default=30)
     assessment_total_points = models.PositiveIntegerField(default=20)
 
@@ -140,17 +179,15 @@ class Lesson(models.Model):
     has_assessment = models.BooleanField(default=True)
     content = models.TextField(blank=True, help_text="Rich text content for the lesson lecture notes.")
     audit_feedback = models.TextField(blank=True)
-    
-    # Lesson Plan Fields
-    week = models.PositiveIntegerField(null=True, blank=True, help_text="Week number")
-    session_date = models.DateField(null=True, blank=True, help_text="Date of the lesson session")
-    session_start = models.TimeField(null=True, blank=True, help_text="Start time of the lesson")
-    session_end = models.TimeField(null=True, blank=True, help_text="End time of the lesson")
-    session = models.CharField(max_length=50, blank=True, help_text="Session name (e.g., Morning, Afternoon)")
-    topic = models.CharField(max_length=255, blank=True, help_text="Main topic of the lesson")
-    subtopic = models.CharField(max_length=255, blank=True, help_text="Sub-topic of the lesson")
-    learning_outcomes = models.TextField(blank=True, help_text="Learning outcomes - By the end of this lesson, students should be able to...")
-    is_active = models.BooleanField(default=False, help_text="Lesson is active and visible to students (after HOD approval and time reached)")
+    week = models.PositiveIntegerField(null=True, blank=True)
+    session_date = models.DateField(null=True, blank=True)
+    session_start = models.TimeField(null=True, blank=True)
+    session_end = models.TimeField(null=True, blank=True)
+    session = models.CharField(max_length=50, blank=True)
+    topic = models.CharField(max_length=255, blank=True)
+    subtopic = models.CharField(max_length=255, blank=True)
+    learning_outcomes = models.TextField(blank=True)
+    is_active = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['order']
@@ -158,15 +195,13 @@ class Lesson(models.Model):
     def __str__(self):
         return f"Lesson {self.order}: {self.title}"
 
-
 class LessonPlanActivity(models.Model):
-    """Time-based activities for lesson plan - the detailed schedule table"""
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='plan_activities')
-    time = models.CharField(max_length=50, help_text="Time slot (e.g., 9:00-9:30)")
-    activity = models.TextField(help_text="Learning activity description")
-    content = models.TextField(blank=True, help_text="Specific content covered")
-    resources = models.TextField(blank=True, help_text="Resources/activities needed")
-    references = models.TextField(blank=True, help_text="References/materials")
+    time = models.CharField(max_length=50)
+    activity = models.TextField()
+    content = models.TextField(blank=True)
+    resources = models.TextField(blank=True)
+    references = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=1)
 
     class Meta:
@@ -184,14 +219,13 @@ class StudentLessonProgress(models.Model):
     class Meta:
         unique_together = ['student', 'lesson']
 
-
 class Resource(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources')
     title = models.CharField(max_length=255)
     resource_type = models.CharField(max_length=50, choices=[('PDF', 'PDF'), ('Video', 'Video'), ('PPT', 'PowerPoint'), ('Link', 'ReferenceLink')])
     file = models.FileField(upload_to='resources/', blank=True, null=True)
     url = models.URLField(blank=True, null=True)
-    description = models.TextField(blank=True) # For "read more" etc.
+    description = models.TextField(blank=True)
     is_approved = models.BooleanField(default=False)
     audit_feedback = models.TextField(blank=True)
 
@@ -214,14 +248,11 @@ class Assessment(models.Model):
     instructions = models.TextField(blank=True)
     points = models.PositiveIntegerField()
     due_date = models.DateTimeField()
-    duration_minutes = models.PositiveIntegerField(null=True, blank=True, help_text="Time limit in minutes")
+    duration_minutes = models.PositiveIntegerField(null=True, blank=True)
     show_answers_after_submission = models.BooleanField(default=False)
-    
-    # Scheduling fields - for time-based availability
-    scheduled_start = models.DateTimeField(null=True, blank=True, help_text="When the assessment becomes available")
-    scheduled_end = models.DateTimeField(null=True, blank=True, help_text="When the assessment expires - submissions after get 0")
-    allow_late_submission = models.BooleanField(default=False, help_text="Allow submissions after expiry")
-    
+    scheduled_start = models.DateTimeField(null=True, blank=True)
+    scheduled_end = models.DateTimeField(null=True, blank=True)
+    allow_late_submission = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=False)
     audit_feedback = models.TextField(blank=True)
 
@@ -278,7 +309,6 @@ class Question(models.Model):
         return f"Q{self.order}: {self.question_text[:50]}"
 
 class QuestionOption(models.Model):
-    """Options for Multiple Choice Questions"""
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
     option_text = models.TextField()
     is_correct = models.BooleanField(default=False)
@@ -291,10 +321,9 @@ class QuestionOption(models.Model):
         return f"{self.option_text[:30]} ({'Correct' if self.is_correct else 'Incorrect'})"
 
 class Answer(models.Model):
-    """Correct answers for non-MCQ questions"""
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='correct_answers')
-    answer_text = models.TextField(blank=True)  # For SHORT/ESSAY/FILL
-    is_correct_for_tf = models.BooleanField(null=True, blank=True)  # For True/False questions
+    answer_text = models.TextField(blank=True)
+    is_correct_for_tf = models.BooleanField(null=True, blank=True)
     
     def __str__(self):
         if self.is_correct_for_tf is not None:
@@ -302,31 +331,29 @@ class Answer(models.Model):
         return f"Answer: {self.answer_text[:50]}"
 
 class StudentAnswer(models.Model):
-    """Student's answers to assessment questions"""
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='student_answers')
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    selected_option = models.ForeignKey(QuestionOption, on_delete=models.SET_NULL, null=True, blank=True)  # For MCQ
-    answer_text = models.TextField(blank=True)  # For SHORT/ESSAY/FILL/TF
+    selected_option = models.ForeignKey(QuestionOption, on_delete=models.SET_NULL, null=True, blank=True)
+    answer_text = models.TextField(blank=True)
     points_earned = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    is_correct = models.BooleanField(null=True, blank=True)  # Auto-graded for MCQ/TF
-    feedback = models.TextField(blank=True)  # Trainer feedback for manual grading
+    is_correct = models.BooleanField(null=True, blank=True)
+    feedback = models.TextField(blank=True)
     
     def __str__(self):
         return f"Answer by {self.submission.student.username} for Q{self.question.order}"
 
-
 class Submission(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='submissions')
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='submissions')
-    file = models.FileField(upload_to='submissions/', blank=True, null=True)  # For file-based submissions
+    file = models.FileField(upload_to='submissions/', blank=True, null=True)
     content = models.TextField(blank=True)
     grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     auto_graded_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     feedback = models.TextField(blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     is_graded = models.BooleanField(default=False)
-    is_late = models.BooleanField(default=False, help_text="Submitted after deadline")
-    is_zero_graded = models.BooleanField(default=False, help_text="Graded zero due to late submission")
+    is_late = models.BooleanField(default=False)
+    is_zero_graded = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Submission by {self.student.username} for {self.assessment}"
@@ -364,7 +391,7 @@ class StudentEnrollment(models.Model):
 class Announcement(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
-    course_group = models.ForeignKey(CourseGroup, on_delete=models.CASCADE, related_name='announcements', null=True, blank=True, help_text="Null for global announcements")
+    course_group = models.ForeignKey(CourseGroup, on_delete=models.CASCADE, related_name='announcements', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
 
@@ -409,29 +436,23 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     link = models.CharField(max_length=255, blank=True, null=True)
     sender_role = models.CharField(max_length=20, blank=True, null=True)
-    
-    # Deadline and activation fields
-    active_from = models.DateTimeField(null=True, blank=True, help_text="When the notification becomes active/visible")
-    active_until = models.DateTimeField(null=True, blank=True, help_text="When the notification should be deactivated/expire")
-    is_active = models.BooleanField(default=True, help_text="Manual override to show/hide the notification")
+    active_from = models.DateTimeField(null=True, blank=True)
+    active_until = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.title}"
     
     def is_available(self):
-        """Check if notification is currently active based on time and manual override"""
         from django.utils import timezone
         now = timezone.now()
         
-        # Check manual override first
         if not self.is_active:
             return False
         
-        # Check active_from time
         if self.active_from and now < self.active_from:
             return False
         
-        # Check active_until time
         if self.active_until and now > self.active_until:
             return False
         

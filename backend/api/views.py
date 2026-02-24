@@ -634,11 +634,21 @@ class ForumTopicViewSet(viewsets.ModelViewSet):
     serializer_class = ForumTopicSerializer
 
     def get_queryset(self):
-        queryset = ForumTopic.objects.all().select_related('unit', 'created_by')
+        queryset = ForumTopic.objects.all().select_related('unit', 'created_by').prefetch_related('messages')
+        user = self.request.user
         unit_id = self.request.query_params.get('unit', None)
         
         if unit_id:
             queryset = queryset.filter(unit_id=unit_id)
+        elif user.is_authenticated and user.role == 'Student':
+            from core.models import StudentEnrollment
+            enrolled_course_groups = StudentEnrollment.objects.filter(
+                student=user, 
+                is_active=True
+            ).values_list('course_group_id', flat=True)
+            queryset = queryset.filter(unit__course_group_id__in=enrolled_course_groups)
+        elif user.is_authenticated and user.role == 'Trainer':
+            queryset = queryset.filter(unit__trainer=user)
         
         return queryset.order_by('-created_at')
 
@@ -798,6 +808,98 @@ class NotificationViewSet(viewsets.ModelViewSet):
         return Response({
             'total': total_count,
             'critical': critical_count
+        })
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAdmin])
+    def generate_system_notifications(self, request):
+        """
+        Generate system notifications for upcoming CATs and course deadlines
+        Request body (optional):
+        - days_before: Number of days before deadline to send notification (default: 3)
+        """
+        from django.core.management import call_command
+        from io import StringIO
+        
+        days_before = request.data.get('days_before', 3)
+        
+        # Capture command output
+        out = StringIO()
+        try:
+            call_command('generate_notifications', days_before=days_before, stdout=out)
+            output = out.getvalue()
+            return Response({
+                'status': 'success',
+                'message': output
+            })
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def upcoming_deadlines(self, request):
+        """
+        Get upcoming CATs and deadlines for the current user
+        This is used to show deadline countdowns in the dashboard
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        upcoming_days = 14  # Show deadlines for next 14 days
+        
+        # Get user's enrolled course groups
+        enrollments = StudentEnrollment.objects.filter(
+            student=request.user,
+            is_active=True
+        ).select_related('course_group')
+        
+        course_group_ids = [e.course_group_id for e in enrollments]
+        
+        # Get upcoming CATs
+        upcoming_cats = Assessment.objects.filter(
+            unit__course_group_id__in=course_group_ids,
+            assessment_type='CAT',
+            is_approved=True,
+            due_date__gte=now.date(),
+            due_date__lte=(now + timedelta(days=upcoming_days)).date()
+        ).select_related('unit', 'unit__course_group').order_by('due_date')
+        
+        # Get upcoming course end dates (intakes)
+        from core.models import Intake
+        upcoming_intakes = Intake.objects.filter(
+            end_date__gte=now.date(),
+            end_date__lte=(now + timedelta(days=upcoming_days)).date()
+        )
+        
+        cats_data = []
+        for cat in upcoming_cats:
+            days_until = (cat.due_date - now.date()).days
+            cats_data.append({
+                'id': cat.id,
+                'title': cat.title,
+                'unit_name': cat.unit.name,
+                'unit_code': cat.unit.code,
+                'due_date': cat.due_date.strftime('%Y-%m-%d'),
+                'days_remaining': days_until,
+                'type': 'CAT'
+            })
+        
+        intakes_data = []
+        for intake in upcoming_intakes:
+            days_until = (intake.end_date - now.date()).days
+            intakes_data.append({
+                'id': intake.id,
+                'name': intake.name,
+                'end_date': intake.end_date.strftime('%Y-%m-%d'),
+                'days_remaining': days_until,
+                'type': 'Enrollment'
+            })
+        
+        return Response({
+            'upcoming_cats': cats_data,
+            'upcoming_enrollments': intakes_data
         })
 
 
