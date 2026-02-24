@@ -132,7 +132,7 @@ const CountdownTimer: React.FC<{ targetDate: string }> = ({ targetDate }) => {
 const StudentDashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'overview';
 
     const [units, setUnits] = useState<Unit[]>([]);
