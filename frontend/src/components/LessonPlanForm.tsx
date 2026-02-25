@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Calendar, Clock, BookOpen, FileText, 
+import { useEffect } from 'react';
+import {
+  Calendar, Clock, BookOpen, FileText,
   Save, Send, Plus, Trash2, ArrowLeft, User, CheckCircle
 } from 'lucide-react';
 
@@ -22,14 +23,18 @@ interface LessonPlanActivity {
   references: string;
 }
 
-const LessonPlanForm: React.FC<LessonPlanFormProps> = ({ unitId, lessonId, onClose }) => {
+const LessonPlanForm: React.FC<LessonPlanFormProps> = ({ unitId: propUnitId, lessonId: propLessonId, onClose }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { lessonId: paramLessonId } = useParams<{ lessonId: string }>();
+  const lessonId = propLessonId || (paramLessonId ? parseInt(paramLessonId) : undefined);
+
   const [loading, setLoading] = useState(false);
+  const [units, setUnits] = useState<any[]>([]);
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
-    unit: unitId ? String(unitId) : '',
+    unit: propUnitId ? String(propUnitId) : '',
     title: '',
     order: '1',
     week: '',
@@ -50,6 +55,52 @@ const LessonPlanForm: React.FC<LessonPlanFormProps> = ({ unitId, lessonId, onClo
 
   const [isDraft, setIsDraft] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch units for dropdown
+        const unitsRes = await api.get('units/');
+        setUnits(unitsRes.data);
+
+        if (lessonId) {
+          const res = await api.get(`lessons/${lessonId}/`);
+          const lesson = res.data;
+
+          setFormData({
+            unit: String(lesson.unit),
+            title: lesson.title || '',
+            order: String(lesson.order),
+            week: lesson.week ? String(lesson.week) : '',
+            session_date: lesson.session_date || '',
+            session_start: lesson.session_start || '',
+            session_end: lesson.session_end || '',
+            session: lesson.session || 'Morning',
+            topic: lesson.topic || '',
+            subtopic: lesson.subtopic || '',
+            learning_outcomes: lesson.learning_outcomes || '',
+            content: lesson.content || '',
+            is_lab: lesson.is_lab || false,
+          });
+
+          if (lesson.plan_activities && lesson.plan_activities.length > 0) {
+            setActivities(lesson.plan_activities);
+          }
+
+          setIsDraft(!lesson.is_taught);
+          setSubmitted(lesson.is_taught);
+        }
+      } catch (err) {
+        console.error('Error fetching lesson plan data:', err);
+        setError('Failed to load lesson plan data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [lessonId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -155,7 +206,7 @@ const LessonPlanForm: React.FC<LessonPlanFormProps> = ({ unitId, lessonId, onClo
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
       {onClose && (
-        <button 
+        <button
           onClick={onClose}
           style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-muted)' }}
         >
@@ -284,7 +335,9 @@ const LessonPlanForm: React.FC<LessonPlanFormProps> = ({ unitId, lessonId, onClo
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-card)' }}
                 >
                   <option value="">Select Unit</option>
-                  {unitId && <option value={String(unitId)}>Selected Unit</option>}
+                  {units.map(u => (
+                    <option key={u.id} value={String(u.id)}>{u.code} - {u.name}</option>
+                  ))}
                 </select>
               </div>
               <div>

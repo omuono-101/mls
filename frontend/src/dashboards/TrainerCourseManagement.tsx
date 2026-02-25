@@ -5,7 +5,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
     BookOpen, Plus, Edit2,
-    ChevronRight, ChevronDown, FileText, Layers, X
+    ChevronRight, ChevronDown, FileText, Layers, X, ClipboardList
 } from 'lucide-react';
 
 interface Unit {
@@ -279,12 +279,24 @@ const TrainerCourseManagement: React.FC = () => {
                                                                     <button
                                                                         className="btn btn-sm"
                                                                         style={{ padding: '0.25rem' }}
+                                                                        title="Edit Lesson Content"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             navigate(`/trainer/authoring/lesson/${lesson.id}`);
                                                                         }}
                                                                     >
                                                                         <Edit2 size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        className="btn btn-sm"
+                                                                        style={{ padding: '0.25rem', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}
+                                                                        title="Lesson Plan (Pedagogical details)"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            navigate(`/trainer/lesson-plan/${lesson.id}/edit`);
+                                                                        }}
+                                                                    >
+                                                                        <ClipboardList size={14} />
                                                                     </button>
                                                                 </div>
                                                             ))

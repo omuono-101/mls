@@ -352,7 +352,7 @@ const HODDashboard: React.FC = () => {
                         <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>{units.length}</p>
                     </div>
                 </div>
-            </div>
+            
                 <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #6366f1' }}>
                     <div style={{ padding: '0.75rem', background: '#e0e7ff', color: '#4338ca', borderRadius: '12px' }}>
                         <Users size={24} />

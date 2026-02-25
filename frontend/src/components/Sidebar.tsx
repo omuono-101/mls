@@ -38,6 +38,7 @@ const Sidebar: React.FC = () => {
                     { icon: <Database size={20} />, label: 'Units', path: '/hod/units' },
                     { icon: <Users size={20} />, label: 'Trainers', path: '/hod/trainers' },
                     { icon: <CheckSquare size={20} />, label: 'Verifications', path: '/hod/verifications' },
+                    { icon: <FileText size={20} />, label: 'Lesson Plans', path: '/hod/lesson-plans' },
                 ];
             case 'Trainer':
                 return [
