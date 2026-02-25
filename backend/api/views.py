@@ -594,7 +594,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
-        if self.action == 'mark_auto':
+        if self.action in ['mark_auto', 'bulk_mark', 'bulk_auto_mark']:
             return [permissions.IsAuthenticated()]
         return [IsTrainer()]
 
@@ -644,6 +644,55 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             'marked_at': attendance.marked_at,
             'message': 'Attendance marked successfully'
         }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsTrainer])
+    def bulk_mark(self, request):
+        records = request.data.get('records', [])
+        if not records:
+            return Response({'error': 'No records provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        results = []
+        for record in records:
+            lesson_id = record.get('lesson')
+            student_id = record.get('student')
+            status_val = record.get('status', 'Present')
+            
+            attendance, created = Attendance.objects.update_or_create(
+                lesson_id=lesson_id,
+                student_id=student_id,
+                defaults={'status': status_val, 'marked_by': request.user}
+            )
+            results.append(AttendanceSerializer(attendance).data)
+            
+        return Response(results, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsTrainer])
+    def bulk_auto_mark(self, request):
+        lesson_id = request.data.get('lesson_id')
+        if not lesson_id:
+            return Response({'error': 'lesson_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+            # Find all students enrolled in the lesson's course group
+            from .models import StudentEnrollment
+            enrollments = StudentEnrollment.objects.filter(
+                course_group=lesson.unit.course_group,
+                is_active=True
+            )
+            
+            results = []
+            for enrollment in enrollments:
+                attendance, created = Attendance.objects.update_or_create(
+                    lesson=lesson,
+                    student=enrollment.student,
+                    defaults={'status': 'Present', 'marked_by': request.user}
+                )
+                results.append(AttendanceSerializer(attendance).data)
+                
+            return Response(results, status=status.HTTP_201_CREATED)
+        except Lesson.DoesNotExist:
+            return Response({'error': 'Lesson not found'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['get'], permission_classes=[IsTrainer | IsAdmin])
     def attendance_report(self, request):

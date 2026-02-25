@@ -40,6 +40,7 @@ interface Assessment {
     unit: number;
     unit_name: string;
     assessment_type: string;
+    title?: string;
     points: number;
     due_date: string;
     lesson?: number;
@@ -112,6 +113,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
     });
 
     const [attendanceRecords, setAttendanceRecords] = useState<Record<number, string>>({});
+    const [markingResults, setMarkingResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
     // Report states
@@ -222,17 +224,34 @@ const EnhancedTrainerDashboard: React.FC = () => {
                 lesson: selectedLesson.id,
                 student: parseInt(studentId),
                 status,
-                marked_by: user?.id
             }));
 
-            await Promise.all(attendanceData.map(data => api.post('attendance/', data)));
+            const response = await api.post('attendance/bulk_mark/', { records: attendanceData });
+            setMarkingResults(response.data);
             alert('Attendance marked successfully');
-            setShowAttendanceModal(false);
-            setAttendanceRecords({});
+            // Don't close immediately, show the summary table
+            // setShowAttendanceModal(false); 
+            // setAttendanceRecords({});
             fetchData();
         } catch (error) {
             console.error('Failed to mark attendance', error);
             alert('Failed to mark attendance');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBulkAutoMark = async () => {
+        if (!selectedLesson) return;
+        setLoading(true);
+        try {
+            const response = await api.post('attendance/bulk_auto_mark/', { lesson_id: selectedLesson.id });
+            setMarkingResults(response.data);
+            alert('Bulk attendance (Auto-Present) marked successfully');
+            fetchData();
+        } catch (error) {
+            console.error('Failed to auto-mark attendance', error);
+            alert('Failed to auto-mark attendance');
         } finally {
             setLoading(false);
         }
@@ -936,7 +955,55 @@ const EnhancedTrainerDashboard: React.FC = () => {
 
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Mark Attendance</h2>
 
-                        {!selectedLesson ? (
+                        {markingResults.length > 0 ? (
+                            <div>
+                                <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: '#10b981' }}>
+                                    <CheckCircle size={20} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                                    Marking Summary
+                                </h3>
+                                <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead style={{ background: 'var(--bg-main)', fontSize: '0.875rem' }}>
+                                            <tr>
+                                                <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student</th>
+                                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {markingResults.map((res, i) => (
+                                                <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+                                                    <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{res.student_name}</td>
+                                                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                                        <span style={{
+                                                            padding: '0.2rem 0.5rem',
+                                                            borderRadius: '4px',
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: 700,
+                                                            background: res.status === 'Present' ? '#dcfce7' : res.status === 'Late' ? '#fef3c7' : '#fee2e2',
+                                                            color: res.status === 'Present' ? '#15803d' : res.status === 'Late' ? '#92400e' : '#991b1b'
+                                                        }}>
+                                                            {res.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => {
+                                        setShowAttendanceModal(false);
+                                        setSelectedLesson(null);
+                                        setAttendanceRecords({});
+                                        setMarkingResults([]);
+                                    }}
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                >
+                                    Done
+                                </button>
+                            </div>
+                        ) : !selectedLesson ? (
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Select Lesson</label>
                                 <select
@@ -957,9 +1024,19 @@ const EnhancedTrainerDashboard: React.FC = () => {
                             </div>
                         ) : (
                             <div>
-                                <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
-                                    {selectedLesson.title}
-                                </h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+                                        {selectedLesson.title}
+                                    </h3>
+                                    <button
+                                        className="btn btn-sm"
+                                        style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' }}
+                                        onClick={handleBulkAutoMark}
+                                        disabled={loading}
+                                    >
+                                        Mark All Present
+                                    </button>
+                                </div>
                                 <div style={{ display: 'grid', gap: '0.75rem' }}>
                                     {studentsInTrainerCourses.map(enrollment => (
                                         <div key={enrollment.student} className="glass" style={{ padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
