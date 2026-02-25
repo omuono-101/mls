@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { LogIn, Lock, User as UserIcon } from 'lucide-react';
+import { Lock, User as UserIcon } from 'lucide-react';
 
 const Login: React.FC = () => {
     const [username, setUsername] = useState('');
@@ -61,13 +61,14 @@ const Login: React.FC = () => {
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                     <div style={{
                         display: 'inline-flex',
-                        padding: '1rem',
-                        background: 'var(--primary)',
-                        borderRadius: '50%',
-                        color: 'white',
-                        marginBottom: '1rem'
+                        padding: '0.5rem',
+                        background: 'white',
+                        borderRadius: '16px',
+                        marginBottom: '1rem',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        overflow: 'hidden'
                     }}>
-                        <LogIn size={32} />
+                        <img src="/imageicon.png" alt="MLS Logo" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
                     </div>
                     <h1 style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--text-main)' }}>MLS Login</h1>
                     <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Welcome back to the portal</p>

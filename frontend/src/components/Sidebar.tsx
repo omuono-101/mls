@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-    Users, BookOpen, Calendar, GraduationCap,
+    Users, BookOpen, Calendar,
     Settings, LogOut, LayoutDashboard, Database, CheckSquare, UserCheck,
     MessageSquare, Bell, User as UserIcon, HelpCircle, FileText
 } from 'lucide-react';
@@ -79,13 +79,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
     return (
         <aside className={`sidebar-container ${isMobileOpen ? 'mobile-open' : ''}`}>
             <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ background: 'var(--primary)', padding: '0.5rem', borderRadius: '8px', display: 'flex' }}>
-                    <GraduationCap size={24} />
+                <div style={{ background: 'white', padding: '0.25rem', borderRadius: '8px', display: 'flex', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                    <img src="/imageicon.png" alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
                 </div>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>MLS Portal</h2>
-                <div className="mobile-only" style={{ marginLeft: 'auto' }}>
-                    {/* Close indicator/button could go here if needed, but backdrop handles it */}
-                </div>
             </div>
 
             <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', overflowY: 'auto' }} className="scroll-hide">

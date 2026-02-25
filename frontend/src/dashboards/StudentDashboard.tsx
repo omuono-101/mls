@@ -5,7 +5,8 @@ import api from '../services/api';
 import {
     BookOpen, CheckCircle2, Clock, Lock, AlertCircle,
     FileText, MessageSquare, Bell, HelpCircle,
-    ChevronRight, Plus, BarChart3, Star, Layers, ScrollText
+    ChevronRight, Plus, BarChart3, Star, Layers, ScrollText,
+    Calendar, Target, Info
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -224,6 +225,72 @@ const StudentDashboard: React.FC = () => {
         setSelectedUnit(null);
     }, [activeTab]);
 
+    const getUnifiedFeed = () => {
+        const feedItems = [
+            ...announcements.map(a => ({
+                ...a,
+                type: 'announcement',
+                icon: <MessageSquare size={16} />,
+                color: 'var(--primary)',
+                bg: 'rgba(99, 102, 241, 0.1)'
+            })),
+            ...notifications.map(n => ({
+                ...n,
+                type: 'notification',
+                icon: <Bell size={16} />,
+                color: (n as any).is_critical ? '#f43f5e' : '#f59e0b',
+                bg: (n as any).is_critical ? 'rgba(244, 63, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)'
+            }))
+        ];
+        return feedItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6);
+    };
+
+    const getUpcomingEvents = () => {
+        const events: any[] = [];
+        const now = new Date();
+
+        units.forEach(unit => {
+            // Lessons (next 7 days)
+            unit.lessons?.forEach(lesson => {
+                if (lesson.session_date) {
+                    const sessionDate = new Date(lesson.session_date);
+                    if (sessionDate >= now) {
+                        events.push({
+                            id: `lesson-${lesson.id}`,
+                            title: lesson.title,
+                            type: 'Lesson',
+                            date: lesson.session_date,
+                            unitCode: unit.code,
+                            icon: <BookOpen size={16} />,
+                            color: '#10b981'
+                        });
+                    }
+                }
+            });
+
+            // Assessments
+            unit.assessments?.forEach(assessment => {
+                const dateStr = assessment.scheduled_at || assessment.due_date;
+                if (dateStr) {
+                    const date = new Date(dateStr);
+                    if (date >= now) {
+                        events.push({
+                            id: `assessment-${assessment.id}`,
+                            title: assessment.title,
+                            type: assessment.assessment_type,
+                            date: dateStr,
+                            unitCode: unit.code,
+                            icon: assessment.assessment_type === 'CAT' ? <Target size={16} /> : <FileText size={16} />,
+                            color: assessment.assessment_type === 'CAT' ? '#f43f5e' : 'var(--primary)'
+                        });
+                    }
+                }
+            });
+        });
+
+        return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 5);
+    };
+
     if (user && !user.is_activated) {
         return (
             <DashboardLayout>
@@ -297,78 +364,142 @@ const StudentDashboard: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '2.5rem' }}>
-                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-                        <div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>Learning Progress</h3>
-                            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Completion status for your enrolled units</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: '2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {/* Learning Progress */}
+                    <div className="card-premium" style={{ padding: '2rem', borderRadius: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>Learning Progress</h3>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Completion status for your enrolled units</p>
+                            </div>
+                            <div style={{ background: 'var(--bg-main)', padding: '0.6rem', borderRadius: '10px' }}>
+                                <BarChart3 size={20} className="text-primary" />
+                            </div>
                         </div>
-                        <div style={{ background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '12px' }}>
-                            <BarChart3 size={24} className="text-primary" />
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {units.map((unit, idx) => {
+                                const progress = unit.student_progress || 0;
+                                return (
+                                    <div key={unit.id} className="animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 700 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: idx % 2 === 0 ? 'var(--primary)' : '#10b981' }} />
+                                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{unit.name}</span>
+                                            </div>
+                                            <span style={{ color: idx % 2 === 0 ? 'var(--primary)' : '#10b981' }}>{progress}%</span>
+                                        </div>
+                                        <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' }}>
+                                            <div style={{
+                                                height: '100%',
+                                                width: `${progress}%`,
+                                                background: idx % 2 === 0 ? 'linear-gradient(90deg, var(--primary) 0%, #4f46e5 100%)' : 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+                                                borderRadius: '8px',
+                                                transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                            }} />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {units.length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                                    <Layers size={40} style={{ color: 'var(--text-muted)', opacity: 0.2, margin: '0 auto 1rem' }} />
+                                    <p className="text-muted" style={{ fontSize: '0.85rem' }}>No unit progress tracked yet.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        {units.map((unit, idx) => {
-                            const progress = unit.student_progress || 0;
-                            return (
-                                <div key={unit.id} className="animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.9375rem', fontWeight: 700 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
-                                            {unit.name}
-                                        </div>
-                                        <span className="text-gradient">{progress}%</span>
-                                    </div>
-                                    <div style={{ height: '12px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', padding: '2px' }}>
-                                        <div style={{
-                                            height: '100%',
-                                            width: `${progress}%`,
-                                            background: 'linear-gradient(90deg, var(--primary) 0%, #4f46e5 100%)',
-                                            borderRadius: '8px',
-                                            transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                                            boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
-                                        }} />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {units.length === 0 && (
-                            <div style={{ textAlign: 'center', padding: '3rem' }}>
-                                <Layers size={48} style={{ color: 'var(--text-muted)', opacity: 0.2, margin: '0 auto 1.5rem' }} />
-                                <p className="text-muted">No unit progress tracked yet.</p>
+                    {/* Upcoming Events */}
+                    <div className="card-premium" style={{ padding: '2rem', borderRadius: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>Upcoming Schedule</h3>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Your academic agenda for the next few days</p>
                             </div>
-                        )}
+                            <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '0.6rem', borderRadius: '10px', color: '#f59e0b' }}>
+                                <Calendar size={20} />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {getUpcomingEvents().map((event, idx) => (
+                                <div key={event.id} className="glass animate-fade-in" style={{ padding: '1rem', borderRadius: '16px', display: 'flex', gap: '1rem', alignItems: 'center', border: '1px solid rgba(0,0,0,0.03)', animationDelay: `${idx * 0.1}s` }}>
+                                    <div style={{ background: 'white', color: event.color, padding: '0.75rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', display: 'flex' }}>
+                                        {event.icon}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: event.color, textTransform: 'uppercase' }}>{event.type} • {event.unitCode}</span>
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                                {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            </span>
+                                        </div>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</h4>
+                                    </div>
+                                    <ChevronRight size={16} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+                                </div>
+                            ))}
+                            {getUpcomingEvents().length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '1.5rem', background: 'var(--bg-main)', borderRadius: '16px' }}>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No upcoming events scheduled.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'var(--primary)', opacity: 0.03, borderRadius: '0 0 0 100px' }} />
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Bell size={24} className="text-primary" /> Announcements
-                    </h3>
+                <div className="card-premium" style={{ padding: '2.5rem 2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>Activity Feed</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Announcements & Notifications</p>
+                        </div>
+                        <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '0.6rem', borderRadius: '10px', color: 'var(--primary)' }}>
+                            <Bell size={20} />
+                        </div>
+                    </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        {announcements.slice(0, 4).map((ann, idx) => (
-                            <div key={ann.id} className="glass animate-fade-in" style={{ padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.03)', animationDelay: `${idx * 0.1}s` }}>
-                                <h4 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)' }}>{ann.title}</h4>
-                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                    {ann.content}
-                                </p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>{ann.author_name}</span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(ann.created_at).toLocaleDateString()}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
+                        {getUnifiedFeed().map((item, idx) => (
+                            <div key={`${item.type}-${item.id}`} className="animate-fade-in" style={{ display: 'flex', gap: '1rem', animationDelay: `${idx * 0.1}s` }}>
+                                <div style={{ flexShrink: 0, marginTop: '0.25rem' }}>
+                                    <div style={{ background: (item as any).bg, color: (item as any).color, padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
+                                        {(item as any).icon}
+                                    </div>
+                                    {idx !== getUnifiedFeed().length - 1 && (
+                                        <div style={{ width: '2px', height: '100%', background: '#f1f5f9', margin: '0.5rem auto 0', opacity: 0.5 }} />
+                                    )}
+                                </div>
+                                <div style={{ flex: 1, paddingBottom: idx !== getUnifiedFeed().length - 1 ? '1.25rem' : '0' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: (item as any).color, textTransform: 'uppercase' }}>{item.type}</span>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(item.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.25rem' }}>{item.title}</h4>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                        {(item as any).content || (item as any).message}
+                                    </p>
                                 </div>
                             </div>
                         ))}
-                        {announcements.length === 0 && (
+                        {getUnifiedFeed().length === 0 && (
                             <div style={{ textAlign: 'center', padding: '3rem' }}>
-                                <MessageSquare size={40} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 1rem' }} />
-                                <p className="text-muted" style={{ fontSize: '0.875rem' }}>The bulletin board is empty.</p>
+                                <Info size={40} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 1rem' }} />
+                                <p className="text-muted" style={{ fontSize: '0.85rem' }}>No recent activity to show.</p>
                             </div>
                         )}
                     </div>
+
+                    <button
+                        className="btn glass"
+                        style={{ marginTop: '2rem', width: '100%', justifyContent: 'center', padding: '0.75rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 700 }}
+                        onClick={() => navigate('/student?tab=notifications')}
+                    >
+                        View All Activity
+                    </button>
                 </div>
             </div>
         </div>
@@ -868,7 +999,7 @@ const StudentDashboard: React.FC = () => {
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Role</label>
-                            <span className="badge badge-primary">Student Ambassador()</span>
+                            <span className="badge badge-primary">Student Ambassador</span>
                         </div>
                     </div>
 

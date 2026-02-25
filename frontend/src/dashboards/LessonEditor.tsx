@@ -4,7 +4,7 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
-import { Save, Upload, Trash2, FileText, ChevronLeft, X, Link as LinkIcon, FilePlus } from 'lucide-react';
+import { Save, Upload, Trash2, FileText, ChevronLeft, X, Link as LinkIcon, FilePlus, ClipboardList } from 'lucide-react';
 
 interface Lesson {
     id: number;
@@ -258,10 +258,28 @@ const LessonEditor: React.FC = () => {
                             <span style={{ fontSize: '0.875rem' }}>Order Sequence</span>
                             <span style={{ fontWeight: 600 }}>{lesson?.order}</span>
                         </div>
-                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                 Assigned to Module: {lesson?.module}
                             </p>
+                            <button
+                                className="btn btn-sm"
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(16, 185, 129, 0.1)',
+                                    color: '#10b981',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.6rem',
+                                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                                    fontWeight: 600
+                                }}
+                                onClick={() => navigate(`/trainer/lesson-plan/${lesson?.id}/edit`)}
+                            >
+                                <ClipboardList size={16} /> Manage Lesson Plan
+                            </button>
                         </div>
                     </div>
                 </div>

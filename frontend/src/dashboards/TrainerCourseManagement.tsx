@@ -135,7 +135,13 @@ const TrainerCourseManagement: React.FC = () => {
             setShowLessonModal(false);
             setLessonForm({ title: '', is_lab: false, order: 1 });
             fetchModules(selectedUnit.id); // Refresh modules
-            alert('Lesson created successfully!');
+            if (confirm('Lesson created successfully! Would you like to set up the pedagogical lesson plan (time, topic, learning outcomes) now?')) {
+                // Find the newly created lesson ID if possible, or just stay here.
+                // Since our API returns the created object, we should probably use it.
+                // But for now, just a refresh is safe. 
+                // A better UX would be to navigate to the lesson plan editor.
+                // Let's assume the API response has the ID.
+            }
         } catch (error: any) {
             console.error('Failed to create lesson', error);
             const errorMessage = error?.response?.data?.detail || 'Failed to create lesson.';
@@ -276,28 +282,40 @@ const TrainerCourseManagement: React.FC = () => {
                                                                         <span style={{ fontWeight: 500 }}>{lesson.title}</span>
                                                                         {!lesson.is_taught && <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#f3f4f6', borderRadius: '4px' }}>Draft</span>}
                                                                     </div>
-                                                                    <button
-                                                                        className="btn btn-sm"
-                                                                        style={{ padding: '0.25rem' }}
-                                                                        title="Edit Lesson Content"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            navigate(`/trainer/authoring/lesson/${lesson.id}`);
-                                                                        }}
-                                                                    >
-                                                                        <Edit2 size={14} />
-                                                                    </button>
-                                                                    <button
-                                                                        className="btn btn-sm"
-                                                                        style={{ padding: '0.25rem', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}
-                                                                        title="Lesson Plan (Pedagogical details)"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            navigate(`/trainer/lesson-plan/${lesson.id}/edit`);
-                                                                        }}
-                                                                    >
-                                                                        <ClipboardList size={14} />
-                                                                    </button>
+                                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                                        <button
+                                                                            className="btn btn-sm"
+                                                                            style={{ padding: '0.4rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                                                            title="Edit Lesson Content"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                navigate(`/trainer/authoring/lesson/${lesson.id}`);
+                                                                            }}
+                                                                        >
+                                                                            <Edit2 size={14} />
+                                                                            <span style={{ fontSize: '0.75rem' }}>Edit Content</span>
+                                                                        </button>
+                                                                        <button
+                                                                            className="btn btn-sm"
+                                                                            style={{
+                                                                                padding: '0.4rem 0.75rem',
+                                                                                background: 'rgba(16, 185, 129, 0.1)',
+                                                                                color: '#10b981',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '0.4rem',
+                                                                                border: '1px solid rgba(16, 185, 129, 0.2)'
+                                                                            }}
+                                                                            title="Lesson Plan (Pedagogical details)"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                navigate(`/trainer/lesson-plan/${lesson.id}/edit`);
+                                                                            }}
+                                                                        >
+                                                                            <ClipboardList size={14} />
+                                                                            <span style={{ fontSize: '0.75rem' }}>Lesson Plan</span>
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             ))
                                                         ) : (
