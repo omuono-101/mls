@@ -3,6 +3,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import { Database, Users, Play, Plus, Book, CheckSquare, CheckCircle, Edit2, UserPlus, FileText } from 'lucide-react';
+import {
+    useUnits,
+    useCourses,
+    useIntakes,
+    useSemesters,
+    useCourseGroups,
+    useLessons,
+    useAssessments,
+    useTrainers
+} from '../hooks/useDataHooks';
 
 interface Unit {
     id: number;
@@ -43,6 +53,7 @@ interface Lesson {
     is_approved: boolean;
     order: number;
     audit_feedback: string;
+    resources?: Resource[];
 }
 
 interface Assessment {
@@ -56,9 +67,17 @@ interface Assessment {
     audit_feedback: string;
 }
 
-interface Course { id: number; name: string; }
-interface Intake { id: number; name: string; course: number; }
+interface Course { id: number; name: string; code?: string; }
+interface Intake { id: number; name: string; course: number; group_code?: string; }
 interface Semester { id: number; name: string; start_date: string; end_date: string; intake: number; }
+interface CourseGroup {
+    id: number;
+    course: number;
+    intake: number;
+    semester: number;
+    course_code: string;
+    course_name?: string;
+}
 interface Trainer {
     id: number;
     username: string;
@@ -70,14 +89,32 @@ interface Trainer {
 const HODDashboard: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [units, setUnits] = useState<Unit[]>([]);
-    const [lessons, setLessons] = useState<Lesson[]>([]);
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [intakes, setIntakes] = useState<Intake[]>([]);
-    const [semesters, setSemesters] = useState<Semester[]>([]);
-    const [assessments, setAssessments] = useState<Assessment[]>([]);
-    const [trainers, setTrainers] = useState<Trainer[]>([]);
+
+    // Data hooks
+    const { data: units = [], refetch: refetchUnits } = useUnits();
+    const { data: courses = [] } = useCourses();
+    const { data: intakes = [] } = useIntakes();
+    const { data: semesters = [] } = useSemesters();
+    const { data: courseGroups = [] } = useCourseGroups();
+    const { data: lessons = [], refetch: refetchLessons } = useLessons();
+    const { data: assessments = [], refetch: refetchAssessments } = useAssessments();
+    const { data: trainers = [], refetch: refetchTrainers } = useTrainers();
+
     const [loading, setLoading] = useState(false);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            await Promise.all([
+                refetchUnits(),
+                refetchLessons(),
+                refetchAssessments(),
+                refetchTrainers()
+            ]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Modals
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -92,100 +129,64 @@ const HODDashboard: React.FC = () => {
     const [selectedUnitForAudit, setSelectedUnitForAudit] = useState<Unit | null>(null);
     const [isResourceAuditOpen, setIsResourceAuditOpen] = useState(false);
     const [isAssessmentAuditOpen, setIsAssessmentAuditOpen] = useState(false);
+
+    // Detail Modal States for Department Audit
+    const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+    const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
+    const [resourceFeedback, setResourceFeedback] = useState('');
+    const [assessmentFeedback, setAssessmentFeedback] = useState('');
+
     const [verificationTab, setVerificationTab] = useState<'lessons' | 'resources' | 'assessments'>('lessons');
     const [groupForm, setGroupForm] = useState({ course: '', intake: '', semester: '', course_code: '' });
     const [unitForm, setUnitForm] = useState({ name: '', code: '', course_group: '', total_lessons: 10, cat_frequency: 3, cat_total_points: 30, assessment_total_points: 20 });
     const [editUnitForm, setEditUnitForm] = useState({ id: 0, name: '', code: '', course_group: '', total_lessons: 10, cat_frequency: 3, cat_total_points: 30, assessment_total_points: 20 });
     const [feedbackForm, setFeedbackForm] = useState({ contentId: 0, contentType: 'lesson' as 'lesson' | 'resource' | 'assessment', feedback: '' });
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
-    const [courseGroups, setCourseGroups] = useState<any[]>([]);
     const [trainerId, setTrainerId] = useState('');
     const [targetUnitId, setTargetUnitId] = useState('');
 
-    const fetchData = async () => {
-        try {
-            const results = await Promise.allSettled([
-                api.get('units/'),
-                api.get('courses/'),
-                api.get('intakes/'),
-                api.get('semesters/'),
-                api.get('users/'),
-                api.get('course-groups/'),
-                api.get('lessons/'),
-                api.get('assessments/')
-            ]);
-
-            const [uRes, cRes, iRes, sRes, tRes, cgRes, lRes, aRes] = results;
-
-            if (uRes.status === 'fulfilled') setUnits(uRes.value.data);
-            if (cRes.status === 'fulfilled') setCourses(cRes.value.data);
-            if (iRes.status === 'fulfilled') setIntakes(iRes.value.data);
-            if (sRes.status === 'fulfilled') setSemesters(sRes.value.data);
-            if (cgRes.status === 'fulfilled') setCourseGroups(cgRes.value.data);
-            if (lRes.status === 'fulfilled') setLessons(lRes.value.data);
-            if (aRes.status === 'fulfilled') setAssessments(aRes.value.data);
-            if (tRes.status === 'fulfilled') {
-                setTrainers(tRes.value.data.filter((u: any) => u.role === 'Trainer'));
-            } else {
-                console.warn('Failed to fetch trainers - HOD might lack permissions');
-            }
-
-            console.log('HOD Dashboard Data:', {
-                units: uRes.status === 'fulfilled' ? uRes.value.data : 'failed',
-                lessons: lRes.status === 'fulfilled' ? lRes.value.data : 'failed',
-                trainers: tRes.status === 'fulfilled' ? tRes.value.data : 'failed',
-                courseGroups: cgRes.status === 'fulfilled' ? cgRes.value.data : 'failed'
-            });
-        } catch (error) {
-            console.error('Serious error in fetchData', error);
-        }
-    };
-
     const filteredIntakes = groupForm.course
-        ? intakes.filter(i => i.course === parseInt(groupForm.course))
+        ? intakes.filter((i: Intake) => i.course === parseInt(groupForm.course))
         : [];
 
     const filteredSemesters = groupForm.intake
-        ? semesters.filter(s => s.intake === parseInt(groupForm.intake))
+        ? semesters.filter((s: Semester) => s.intake === parseInt(groupForm.intake))
         : [];
 
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     // Selection logic for course_code auto-population and intake resetting
     useEffect(() => {
         if (groupForm.course) {
-            const course = courses.find(c => c.id === parseInt(groupForm.course));
+            const course = courses.find((c: Course) => c.id === parseInt(groupForm.course));
             if (course) {
                 // If the currently selected intake doesn't belong to this course, reset it
-                const intake = intakes.find(i => i.id === parseInt(groupForm.intake));
+                const intake = intakes.find((i: Intake) => i.id === parseInt(groupForm.intake));
                 if (intake && intake.course !== course.id) {
-                    setGroupForm(prev => ({ ...prev, intake: '', course_code: '' }));
+                    setGroupForm((prev: any) => ({ ...prev, intake: '', course_code: '' }));
                 }
 
                 if (groupForm.intake) {
-                    const selectedIntake = intakes.find(i => i.id === parseInt(groupForm.intake));
+                    const selectedIntake = intakes.find((i: Intake) => i.id === parseInt(groupForm.intake));
 
                     // If the currently selected semester doesn't belong to this intake, reset it
-                    const semester = semesters.find(s => s.id === parseInt(groupForm.semester));
+                    const semester = semesters.find((s: Semester) => s.id === parseInt(groupForm.semester));
                     if (semester && selectedIntake && semester.intake !== selectedIntake.id) {
-                        setGroupForm(prev => ({ ...prev, semester: '' }));
+                        setGroupForm((prev: any) => ({ ...prev, semester: '' }));
                     }
 
                     if (selectedIntake) {
-                        const intakePart = (selectedIntake as any).group_code || '';
-                        const coursePart = (course as any).code || 'GEN';
-                        setGroupForm(prev => ({ ...prev, course_code: `${coursePart} ${intakePart}` }));
+                        const intakePart = selectedIntake.group_code || '';
+                        const coursePart = course.code || 'GEN';
+                        setGroupForm((prev: any) => ({ ...prev, course_code: `${coursePart} ${intakePart}` }));
                     }
                 } else {
                     // Reset semester if intake is cleared
-                    setGroupForm(prev => ({ ...prev, semester: '' }));
+                    setGroupForm((prev: any) => ({ ...prev, semester: '' }));
                 }
             }
         } else {
             // Reset intake and semester if course is cleared
-            setGroupForm(prev => ({ ...prev, intake: '', semester: '', course_code: '' }));
+            setGroupForm((prev: any) => ({ ...prev, intake: '', semester: '', course_code: '' }));
         }
     }, [groupForm.course, groupForm.intake, groupForm.semester, courses, intakes, semesters]);
 
@@ -337,12 +338,7 @@ const HODDashboard: React.FC = () => {
                 </p>
             </div>
 
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '1.5rem',
-                marginBottom: '2.5rem'
-            }}>
+            <div className="grid-responsive" style={{ marginBottom: '2.5rem' }}>
                 <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #10b981' }}>
                     <div style={{ padding: '0.75rem', background: '#dcfce7', color: '#15803d', borderRadius: '12px' }}>
                         <Database size={24} />
@@ -417,7 +413,7 @@ const HODDashboard: React.FC = () => {
                     </div>
 
                     {verificationTab === 'lessons' && (
-                        <div style={{ overflowX: 'auto' }}>
+                        <div className="table-responsive">
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                 <thead style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
                                     <tr>
@@ -499,7 +495,7 @@ const HODDashboard: React.FC = () => {
                     )}
 
                     {verificationTab === 'resources' && (
-                        <div style={{ overflowX: 'auto' }}>
+                        <div className="table-responsive">
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                 <thead style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
                                     <tr>
@@ -511,8 +507,8 @@ const HODDashboard: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {lessons.flatMap(l => ((l as any).resources || []).map((r: Resource) => ({ ...r, unit_code: l.unit_code, trainer_name: l.trainer_name }))).length > 0 ? (
-                                        lessons.flatMap(l => ((l as any).resources || []).map((r: Resource) => ({ ...r, unit_code: l.unit_code, trainer_name: l.trainer_name }))).map(r => (
+                                    {lessons.flatMap((l: Lesson) => (l.resources || []).map((r: Resource) => ({ ...r, unit_code: l.unit_code, trainer_name: l.trainer_name }))).length > 0 ? (
+                                        lessons.flatMap((l: Lesson) => (l.resources || []).map((r: Resource) => ({ ...r, unit_code: l.unit_code, trainer_name: l.trainer_name }))).map((r: any) => (
                                             <tr key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                                 <td style={{ padding: '1rem 1.5rem' }}>
                                                     <div style={{ fontWeight: 600 }}>{r.title}</div>
@@ -575,7 +571,7 @@ const HODDashboard: React.FC = () => {
                     )}
 
                     {verificationTab === 'assessments' && (
-                        <div style={{ overflowX: 'auto' }}>
+                        <div className="table-responsive">
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                 <thead style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
                                     <tr>
@@ -663,7 +659,7 @@ const HODDashboard: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive">
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                             <thead style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
                                 <tr>
@@ -753,7 +749,7 @@ const HODDashboard: React.FC = () => {
                             Refresh List
                         </button>
                     </div>
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive">
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                             <thead style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
                                 <tr>
@@ -766,7 +762,7 @@ const HODDashboard: React.FC = () => {
                             <tbody>
                                 {trainers.map(t => {
                                     const trainerUnits = units.filter(u => u.trainer === t.id);
-const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
+                                    const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                     const taughtLessons = trainerLessons.filter(l => l.is_taught);
                                     const pendingLessons = taughtLessons.filter(l => !l.is_approved);
                                     const trainerAssessments = assessments.filter(a => trainerUnits.some(u => u.id === a.unit));
@@ -982,7 +978,7 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                     onChange={e => setGroupForm({ ...groupForm, course: e.target.value })}
                                 >
                                     <option value="">Select Course</option>
-                                    {courses.map(c => <option key={c.id} value={c.id}>{c.name} ({(c as any).code})</option>)}
+                                    {courses.map((c: Course) => <option key={c.id} value={c.id}>{c.name} ({c.code})</option>)}
                                 </select>
                             </div>
                             <div className="form-group">
@@ -1005,7 +1001,7 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                     disabled={!groupForm.course}
                                 >
                                     <option value="">{groupForm.course ? "Select Intake" : "Select Course First"}</option>
-                                    {filteredIntakes.map(i => <option key={i.id} value={i.id}>{i.name} ({(i as any).group_code})</option>)}
+                                    {filteredIntakes.map((i: Intake) => <option key={i.id} value={i.id}>{i.name} ({i.group_code})</option>)}
                                 </select>
                             </div>
                             <div className="form-group">
@@ -1030,7 +1026,7 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                         onChange={e => setGroupForm({ ...groupForm, course_code: e.target.value })}
                                     />
                                     <datalist id="existing-codes">
-                                        {[...new Set(courseGroups.map(cg => cg.course_code))].filter(Boolean).map(code => (
+                                        {[...new Set(courseGroups.map((cg: CourseGroup) => cg.course_code))].filter(Boolean).map(code => (
                                             <option key={code} value={code} />
                                         ))}
                                     </datalist>
@@ -1065,7 +1061,7 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                     disabled={!groupForm.intake}
                                 >
                                     <option value="">{groupForm.intake ? "Select Semester" : "Select Intake First"}</option>
-                                    {filteredSemesters.map(s => <option key={s.id} value={s.id}>{s.name} ({s.start_date} - {s.end_date})</option>)}
+                                    {filteredSemesters.map((s: Semester) => <option key={s.id} value={s.id}>{s.name} ({s.start_date} - {s.end_date})</option>)}
                                 </select>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
@@ -1171,7 +1167,7 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                     onChange={e => setUnitForm({ ...unitForm, course_group: e.target.value })}
                                 >
                                     <option value="">Select Group</option>
-                                    {courseGroups.map(cg => (
+                                    {courseGroups.map((cg: CourseGroup) => (
                                         <option key={cg.id} value={cg.id}>
                                             {cg.course_code || 'UNNAMED GROUP'} - {cg.course_name}
                                         </option>
@@ -1261,7 +1257,7 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                     onChange={e => setTrainerId(e.target.value)}
                                 >
                                     <option value="">Unassigned</option>
-                                    {trainers.map(t => <option key={t.id} value={t.id}>{t.username}</option>)}
+                                    {trainers.map((t: Trainer) => <option key={t.id} value={t.id}>{t.username}</option>)}
                                 </select>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
@@ -1299,7 +1295,7 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                     onChange={e => setTargetUnitId(e.target.value)}
                                 >
                                     <option value="">Select a unit...</option>
-                                    {units.map(u => (
+                                    {units.map((u: Unit) => (
                                         <option key={u.id} value={u.id}>
                                             {u.name} ({u.code}) - {u.course_group_code || u.course_group_name}
                                             {u.trainer_name ? ` (Current: ${u.trainer_name})` : ' (Unassigned)'}
@@ -1334,11 +1330,11 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                             <button onClick={() => setIsResourceAuditOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>×</button>
                         </div>
                         <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {lessons.filter(l => l.unit === selectedUnitForAudit.id).flatMap(l => (l as any).resources || []).length > 0 ? (
-                                lessons.filter(l => l.unit === selectedUnitForAudit.id).map(l => (
+                            {lessons.filter((l: Lesson) => l.unit === selectedUnitForAudit.id).flatMap((l: Lesson) => l.resources || []).length > 0 ? (
+                                lessons.filter((l: Lesson) => l.unit === selectedUnitForAudit.id).map((l: Lesson) => (
                                     <div key={l.id}>
                                         <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Lesson {l.order}: {l.title}</div>
-                                        {((l as any).resources || []).map((r: any) => (
+                                        {(l.resources || []).map((r: Resource) => (
                                             <div key={r.id} style={{ padding: '0.75rem', background: 'var(--bg-alt)', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                     <Book size={18} style={{ color: 'var(--primary)' }} />
@@ -1347,11 +1343,20 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Type: {r.resource_type}</div>
                                                     </div>
                                                 </div>
-                                                {r.file ? (
-                                                    <a href={r.file} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm" style={{ borderRadius: '8px', fontSize: '0.75rem' }}>Download</a>
-                                                ) : r.url ? (
-                                                    <a href={r.url} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm" style={{ borderRadius: '8px', fontSize: '0.75rem' }}>Open Link</a>
-                                                ) : null}
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button
+                                                        onClick={() => setSelectedResource(r)}
+                                                        className="btn btn-sm"
+                                                        style={{ background: '#e0e7ff', color: '#4338ca', borderRadius: '8px', fontSize: '0.75rem' }}
+                                                    >
+                                                        View Details
+                                                    </button>
+                                                    {r.file ? (
+                                                        <a href={r.file} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm" style={{ borderRadius: '8px', fontSize: '0.75rem' }}>Download</a>
+                                                    ) : r.url ? (
+                                                        <a href={r.url} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm" style={{ borderRadius: '8px', fontSize: '0.75rem' }}>Open Link</a>
+                                                    ) : null}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -1361,6 +1366,138 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                             )}
                         </div>
                         <button className="btn" style={{ width: '100%', marginTop: '1.5rem', background: 'var(--bg-alt)', borderRadius: '10px' }} onClick={() => setIsResourceAuditOpen(false)}>Close</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Resource Detail Modal */}
+            {selectedResource && (
+                <div className="modal-overlay" style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+                }}>
+                    <div className="modal-content" style={{
+                        maxWidth: '700px', width: '90%', background: 'var(--bg-main)',
+                        padding: '2.5rem', borderRadius: '24px', border: '1px solid var(--border)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{selectedResource.title}</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Resource Details & Quality Review</p>
+                            </div>
+                            <button onClick={() => setSelectedResource(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.5rem' }}>×</button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                            <div style={{ background: 'var(--bg-alt)', padding: '1.5rem', borderRadius: '12px' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Resource Information</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <div>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Type:</span>
+                                        <span style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                            {selectedResource.resource_type}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Status:</span>
+                                        {selectedResource.is_approved ? (
+                                            <span style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', background: '#dcfce7', color: '#15803d', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                Approved ✓
+                                            </span>
+                                        ) : (
+                                            <span style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', background: '#fef3c7', color: '#92400e', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                Pending Review
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ background: 'var(--bg-alt)', padding: '1.5rem', borderRadius: '12px' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Resource Preview</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {selectedResource.file ? (
+                                        <div>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>File:</span>
+                                            <a href={selectedResource.file} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem', color: 'var(--primary)', textDecoration: 'underline' }}>
+                                                Download File
+                                            </a>
+                                        </div>
+                                    ) : selectedResource.url ? (
+                                        <div>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Link:</span>
+                                            <a href={selectedResource.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem', color: 'var(--primary)', textDecoration: 'underline' }}>
+                                                Open Link
+                                            </a>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            </div>
+                        </div>
+
+                        {selectedResource.description && (
+                            <div style={{ marginBottom: '2rem' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Description</h4>
+                                <div style={{ background: 'var(--bg-alt)', padding: '1rem', borderRadius: '8px', whiteSpace: 'pre-wrap' }}>
+                                    {selectedResource.description}
+                                </div>
+                            </div>
+                        )}
+
+                        {!selectedResource.is_approved && (
+                            <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+                                <h4 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Quality Assurance Feedback</h4>
+                                <textarea
+                                    value={resourceFeedback}
+                                    onChange={(e) => setResourceFeedback(e.target.value)}
+                                    placeholder="Provide feedback for the trainer regarding this resource..."
+                                    rows={4}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-card)', resize: 'vertical', marginBottom: '1rem' }}
+                                />
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => {
+                                            handleAuditAction('resource', selectedResource.id, false, resourceFeedback);
+                                            setSelectedResource(null);
+                                            setResourceFeedback('');
+                                        }}
+                                        disabled={loading || !resourceFeedback.trim()}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                            background: '#f43f5e', color: 'white', border: 'none',
+                                            padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer',
+                                            opacity: loading ? 0.7 : 1
+                                        }}
+                                    >
+                                        Request Changes
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            handleAuditAction('resource', selectedResource.id, true, resourceFeedback || 'Approved by HOD');
+                                            setSelectedResource(null);
+                                            setResourceFeedback('');
+                                        }}
+                                        disabled={loading}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                            background: '#10b981', color: 'white', border: 'none',
+                                            padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer',
+                                            opacity: loading ? 0.7 : 1
+                                        }}
+                                    >
+                                        Approve Resource
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedResource.is_approved && (
+                            <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
+                                <p style={{ fontWeight: 600, color: '#10b981' }}>✓ This resource has been approved and is visible to students</p>
+                                {selectedResource.audit_feedback && <p style={{ marginTop: '0.5rem' }}>Feedback: {selectedResource.audit_feedback}</p>}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -1384,8 +1521,8 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                             <button onClick={() => setIsAssessmentAuditOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>×</button>
                         </div>
                         <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {assessments.filter(a => a.unit === selectedUnitForAudit.id).length > 0 ? (
-                                assessments.filter(a => a.unit === selectedUnitForAudit.id).map(a => (
+                            {assessments.filter((a: Assessment) => a.unit === selectedUnitForAudit.id).length > 0 ? (
+                                assessments.filter((a: Assessment) => a.unit === selectedUnitForAudit.id).map((a: Assessment) => (
                                     <div key={a.id} style={{ padding: '0.75rem', background: 'var(--bg-alt)', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                             <Database size={18} style={{ color: '#6366f1' }} />
@@ -1394,6 +1531,13 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Due: {new Date(a.due_date).toLocaleDateString()} | {a.points} Points</div>
                                             </div>
                                         </div>
+                                        <button
+                                            onClick={() => setSelectedAssessment(a)}
+                                            className="btn btn-sm"
+                                            style={{ background: '#e0e7ff', color: '#4338ca', borderRadius: '8px', fontSize: '0.75rem' }}
+                                        >
+                                            View Details
+                                        </button>
                                     </div>
                                 ))
                             ) : (
@@ -1401,6 +1545,106 @@ const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                             )}
                         </div>
                         <button className="btn" style={{ width: '100%', marginTop: '1.5rem', background: 'var(--bg-alt)', borderRadius: '10px' }} onClick={() => setIsAssessmentAuditOpen(false)}>Close</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Assessment Detail Modal */}
+            {selectedAssessment && (
+                <div className="modal-overlay" style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+                }}>
+                    <div className="modal-content" style={{
+                        maxWidth: '700px', width: '90%', background: 'var(--bg-main)',
+                        padding: '2.5rem', borderRadius: '24px', border: '1px solid var(--border)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{selectedAssessment.assessment_type}</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Assessment Details & Quality Review</p>
+                            </div>
+                            <button onClick={() => setSelectedAssessment(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.5rem' }}>×</button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                            <div style={{ background: 'var(--bg-alt)', padding: '1.5rem', borderRadius: '12px' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Assessment Information</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <div>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Type:</span>
+                                        <span style={{ marginLeft: '0.5rem', fontWeight: 600 }}>{selectedAssessment.assessment_type}</span>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Points:</span>
+                                        <span style={{ marginLeft: '0.5rem', fontWeight: 600 }}>{selectedAssessment.points} pts</span>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Due Date:</span>
+                                        <span style={{ marginLeft: '0.5rem', fontWeight: 600 }}>{new Date(selectedAssessment.due_date).toLocaleDateString()}</span>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Status:</span>
+                                        {selectedAssessment.is_approved ? (
+                                            <span style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', background: '#dcfce7', color: '#15803d', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>Approved ✓</span>
+                                        ) : (
+                                            <span style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', background: '#fef3c7', color: '#92400e', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>Pending Review</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ background: 'var(--bg-alt)', padding: '1.5rem', borderRadius: '12px' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Quality Checklist</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                                        <CheckCircle size={16} style={{ color: selectedAssessment.points > 0 ? '#10b981' : '#ef4444' }} />
+                                        <span style={{ color: selectedAssessment.points > 0 ? '#10b981' : '#ef4444' }}>{selectedAssessment.points > 0 ? 'Has points assigned' : 'Missing points'}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                                        <CheckCircle size={16} style={{ color: selectedAssessment.due_date ? '#10b981' : '#ef4444' }} />
+                                        <span style={{ color: selectedAssessment.due_date ? '#10b981' : '#ef4444' }}>{selectedAssessment.due_date ? 'Has due date set' : 'Missing due date'}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                                        <CheckCircle size={16} style={{ color: '#10b981' }} />
+                                        <span style={{ color: '#10b981' }}>Unit assigned</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {!selectedAssessment.is_approved && (
+                            <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+                                <h4 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Quality Assurance Feedback</h4>
+                                <textarea
+                                    value={assessmentFeedback}
+                                    onChange={(e) => setAssessmentFeedback(e.target.value)}
+                                    placeholder="Provide feedback for the trainer regarding this assessment..."
+                                    rows={4}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-card)', resize: 'vertical', marginBottom: '1rem' }}
+                                />
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => { handleAuditAction('assessment', selectedAssessment.id, false, assessmentFeedback); setSelectedAssessment(null); setAssessmentFeedback(''); }}
+                                        disabled={loading || !assessmentFeedback.trim()}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f43f5e', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
+                                    >Request Changes</button>
+                                    <button
+                                        onClick={() => { handleAuditAction('assessment', selectedAssessment.id, true, assessmentFeedback || 'Approved by HOD'); setSelectedAssessment(null); setAssessmentFeedback(''); }}
+                                        disabled={loading}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#10b981', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
+                                    >Approve Assessment</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedAssessment.is_approved && (
+                            <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
+                                <p style={{ fontWeight: 600, color: '#10b981' }}>✓ This assessment has been approved and is visible to students</p>
+                                {selectedAssessment.audit_feedback && <p style={{ marginTop: '0.5rem' }}>Feedback: {selectedAssessment.audit_feedback}</p>}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

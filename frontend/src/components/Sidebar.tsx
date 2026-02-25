@@ -7,7 +7,12 @@ import {
     MessageSquare, Bell, User as UserIcon, HelpCircle, FileText
 } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+    isMobileOpen?: boolean;
+    onMobileClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -72,34 +77,26 @@ const Sidebar: React.FC = () => {
     };
 
     return (
-        <aside style={{
-            width: 'var(--sidebar-width)',
-            height: '100vh',
-            background: 'var(--bg-sidebar)',
-            color: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '1.5rem',
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            zIndex: 100
-        }}>
+        <aside className={`sidebar-container ${isMobileOpen ? 'mobile-open' : ''}`}>
             <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ background: 'var(--primary)', padding: '0.5rem', borderRadius: '8px' }}>
+                <div style={{ background: 'var(--primary)', padding: '0.5rem', borderRadius: '8px', display: 'flex' }}>
                     <GraduationCap size={24} />
                 </div>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>MLS Portal</h2>
+                <div className="mobile-only" style={{ marginLeft: 'auto' }}>
+                    {/* Close indicator/button could go here if needed, but backdrop handles it */}
+                </div>
             </div>
 
-            <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', overflowY: 'auto' }} className="scroll-hide">
                 {getNavItems().map((item) => {
                     const active = isItemActive(item.path);
                     return (
                         <NavLink
                             key={item.path}
                             to={item.path}
-                            className="btn animate-fade-in"
+                            onClick={() => onMobileClose?.()}
+                            className="btn"
                             style={{
                                 justifyContent: 'flex-start',
                                 background: active ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
@@ -126,7 +123,8 @@ const Sidebar: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontWeight: 700
+                        fontWeight: 700,
+                        flexShrink: 0
                     }}>
                         {user?.username?.[0]?.toUpperCase()}
                     </div>

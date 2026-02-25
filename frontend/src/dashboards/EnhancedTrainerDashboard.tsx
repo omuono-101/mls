@@ -5,8 +5,10 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
     BookOpen, Users, ClipboardList, UserCheck, Plus, X,
-    Calendar, Edit2, Trash2, Eye, CheckCircle, Clock
+    Calendar, Edit2, Trash2, Eye, CheckCircle, Clock, FileText
 } from 'lucide-react';
+import LessonPlanList from '../components/LessonPlanList';
+import LessonPlanForm from '../components/LessonPlanForm';
 
 interface Unit {
     id: number;
@@ -60,8 +62,23 @@ interface Submission {
 interface Lesson {
     id: number;
     unit: number;
+    unit_name?: string;
+    unit_code?: string;
     title: string;
     order: number;
+    topic?: string;
+    subtopic?: string;
+    week?: number;
+    session_date?: string;
+    session_start?: string;
+    session_end?: string;
+    session?: string;
+    is_taught: boolean;
+    is_approved: boolean;
+    is_active: boolean;
+    audit_feedback?: string;
+    trainer_name?: string;
+    trainer?: number;
     is_lab: boolean;
 }
 
@@ -77,7 +94,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
     const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'assessments' | 'submissions' | 'attendance'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'assessments' | 'submissions' | 'attendance' | 'lesson-plans'>('overview');
 
     useEffect(() => {
         const path = location.pathname;
@@ -85,6 +102,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
         else if (path.includes('/assessments')) setActiveTab('assessments');
         else if (path.includes('/submissions')) setActiveTab('submissions');
         else if (path.includes('/attendance')) setActiveTab('attendance');
+        else if (path.includes('/lesson-plans')) setActiveTab('lesson-plans');
         else setActiveTab('overview');
     }, [location]);
 
@@ -103,6 +121,9 @@ const EnhancedTrainerDashboard: React.FC = () => {
     const [showEditAssessmentModal, setShowEditAssessmentModal] = useState(false);
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
     const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
+    const [showLessonPlanModal, setShowLessonPlanModal] = useState(false);
+    const [lessonPlanEditMode, setLessonPlanEditMode] = useState(false);
+    const [selectedLessonPlan, setSelectedLessonPlan] = useState<number | undefined>(undefined);
 
     // Form states
     const [assessmentForm, setAssessmentForm] = useState({
@@ -284,11 +305,12 @@ const EnhancedTrainerDashboard: React.FC = () => {
 
             {/* Tab Navigation */}
             <div className="card" style={{ padding: 0, marginBottom: '2rem', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }} className="scroll-x-auto">
                     {[
                         { key: 'overview', label: 'Overview', icon: <BookOpen size={18} /> },
                         { key: 'students', label: 'Students', icon: <Users size={18} /> },
                         { key: 'assessments', label: 'Assessments', icon: <ClipboardList size={18} /> },
+                        { key: 'lesson-plans', label: 'Lesson Plans', icon: <FileText size={18} /> },
                         { key: 'submissions', label: 'Submissions', icon: <Edit2 size={18} /> },
                         { key: 'attendance', label: 'Attendance', icon: <UserCheck size={18} /> }
                     ].map(tab => (
@@ -311,7 +333,9 @@ const EnhancedTrainerDashboard: React.FC = () => {
                                 gap: '0.5rem',
                                 fontWeight: 600,
                                 fontSize: '0.875rem',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap',
+                                minWidth: '120px'
                             }}
                         >
                             {tab.icon}
@@ -324,12 +348,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
                 <div>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                        gap: '1.5rem',
-                        marginBottom: '2rem'
-                    }}>
+                    <div className="grid-responsive" style={{ marginBottom: '2rem' }}>
                         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <div style={{ padding: '0.75rem', background: '#e0e7ff', color: '#4338ca', borderRadius: '12px' }}>
                                 <BookOpen size={24} />
@@ -391,6 +410,29 @@ const EnhancedTrainerDashboard: React.FC = () => {
                 </div>
             )}
 
+            {/* Lesson Plans Tab */}
+            {activeTab === 'lesson-plans' && (
+                <div className="animate-fade-in">
+                    <LessonPlanList
+                        onCreateNew={() => {
+                            setSelectedLessonPlan(undefined);
+                            setLessonPlanEditMode(false);
+                            setShowLessonPlanModal(true);
+                        }}
+                        onEdit={(lesson) => {
+                            setSelectedLessonPlan(lesson.id);
+                            setLessonPlanEditMode(true);
+                            setShowLessonPlanModal(true);
+                        }}
+                        onView={(lesson) => {
+                            setSelectedLessonPlan(lesson.id);
+                            setLessonPlanEditMode(false);
+                            setShowLessonPlanModal(true);
+                        }}
+                    />
+                </div>
+            )}
+
             {/* Students Tab */}
             {activeTab === 'students' && (
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -400,7 +442,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
                             Students enrolled in your course groups
                         </p>
                     </div>
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive">
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead style={{ background: 'var(--bg-main)', fontSize: '0.875rem', fontWeight: 600 }}>
                                 <tr>
@@ -446,7 +488,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
                         </button>
                     </div>
 
-                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div className="table-responsive">
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead style={{ background: 'var(--bg-main)', fontSize: '0.875rem', fontWeight: 600 }}>
                                 <tr>
@@ -538,7 +580,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
                     <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
                         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Student Submissions</h2>
                     </div>
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive">
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead style={{ background: 'var(--bg-main)', fontSize: '0.875rem', fontWeight: 600 }}>
                                 <tr>
@@ -585,517 +627,592 @@ const EnhancedTrainerDashboard: React.FC = () => {
             )}
 
             {/* Attendance Tab */}
-            {activeTab === 'attendance' && (
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => setShowAttendanceModal(true)}
-                        >
-                            <Plus size={20} />
-                            Mark Manual Attendance
-                        </button>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                        <div className="card">
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <BookOpen size={20} style={{ color: 'var(--primary)' }} />
-                                Lesson Attendance
-                            </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {lessons.filter(l => units.some(u => u.id === l.unit)).map(lesson => (
-                                    <div key={lesson.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <p style={{ fontWeight: 600 }}>{lesson.title}</p>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Lesson Order: {lesson.order}</p>
-                                        </div>
-                                        <button className="btn btn-sm glass" onClick={() => handleViewReport(lesson.id, undefined, `Attendance: ${lesson.title}`)}>
-                                            <Eye size={16} /> View List
-                                        </button>
-                                    </div>
-                                ))}
-                                {lessons.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No lessons available.</p>}
-                            </div>
+            {
+                activeTab === 'attendance' && (
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setShowAttendanceModal(true)}
+                            >
+                                <Plus size={20} />
+                                Mark Manual Attendance
+                            </button>
                         </div>
 
-                        <div className="card">
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <ClipboardList size={20} style={{ color: 'var(--primary)' }} />
-                                Assessment Attendance & Results
-                            </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {assessments.filter(a => units.some(u => u.id === a.unit)).map(assessment => (
-                                    <div key={assessment.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <p style={{ fontWeight: 600 }}>{assessment.title || `${assessment.assessment_type} Assessment`}</p>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{assessment.assessment_type} • Due {new Date(assessment.due_date).toLocaleDateString()}</p>
+                        <div className="grid-responsive" style={{ gap: '2rem' }}>
+                            <div className="card">
+                                <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <BookOpen size={20} style={{ color: 'var(--primary)' }} />
+                                    Lesson Attendance
+                                </h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {lessons.filter(l => units.some(u => u.id === l.unit)).map(lesson => (
+                                        <div key={lesson.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <p style={{ fontWeight: 600 }}>{lesson.title}</p>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Lesson Order: {lesson.order}</p>
+                                            </div>
+                                            <button className="btn btn-sm glass" onClick={() => handleViewReport(lesson.id, undefined, `Attendance: ${lesson.title}`)}>
+                                                <Eye size={16} /> View List
+                                            </button>
                                         </div>
-                                        <button className="btn btn-sm glass" onClick={() => handleViewReport(undefined, assessment.id, `Results: ${assessment.title || assessment.assessment_type}`)}>
-                                            <Eye size={16} /> View Results
-                                        </button>
-                                    </div>
-                                ))}
-                                {assessments.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No assessments available.</p>}
+                                    ))}
+                                    {lessons.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No lessons available.</p>}
+                                </div>
+                            </div>
+
+                            <div className="card">
+                                <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <ClipboardList size={20} style={{ color: 'var(--primary)' }} />
+                                    Assessment Attendance & Results
+                                </h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {assessments.filter(a => units.some(u => u.id === a.unit)).map(assessment => (
+                                        <div key={assessment.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <p style={{ fontWeight: 600 }}>{assessment.title || `${assessment.assessment_type} Assessment`}</p>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{assessment.assessment_type} • Due {new Date(assessment.due_date).toLocaleDateString()}</p>
+                                            </div>
+                                            <button className="btn btn-sm glass" onClick={() => handleViewReport(undefined, assessment.id, `Results: ${assessment.title || assessment.assessment_type}`)}>
+                                                <Eye size={16} /> View Results
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {assessments.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No assessments available.</p>}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Attendance Report Modal */}
-            {showReportModal && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0,0,0,0.6)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 2000,
-                    backdropFilter: 'blur(5px)'
-                }}>
-                    <div className="card animate-fade-in" style={{
-                        width: '100%',
-                        maxWidth: '800px',
-                        maxHeight: '90vh',
-                        overflow: 'hidden',
+            {
+                showReportModal && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.6)',
                         display: 'flex',
-                        flexDirection: 'column',
-                        position: 'relative'
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2000,
+                        backdropFilter: 'blur(5px)'
                     }}>
-                        <button
-                            onClick={() => setShowReportModal(false)}
-                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
-                            <X size={24} />
-                        </button>
+                        <div className="card animate-fade-in" style={{
+                            width: '100%',
+                            maxWidth: '800px',
+                            maxHeight: '90vh',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            position: 'relative'
+                        }}>
+                            <button
+                                onClick={() => setShowReportModal(false)}
+                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                <X size={24} />
+                            </button>
 
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>{reportTitle}</h2>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>{reportTitle}</h2>
 
-                        {reportLoading ? (
-                            <div style={{ padding: '4rem', textAlign: 'center' }}>Loading report...</div>
-                        ) : (
-                            <div style={{ overflowY: 'auto', flex: 1 }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead style={{ background: 'var(--bg-main)', position: 'sticky', top: 0 }}>
-                                        <tr>
-                                            <th style={{ padding: '1rem', textAlign: 'left' }}>Student</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left' }}>Email</th>
-                                            <th style={{ padding: '1rem', textAlign: 'center' }}>Status</th>
-                                            {reportData.some(r => r.grade !== undefined) && (
-                                                <>
-                                                    <th style={{ padding: '1rem', textAlign: 'center' }}>Grade</th>
-                                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Submitted At</th>
-                                                </>
-                                            )}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {reportData.map((record, idx) => (
-                                            <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                <td style={{ padding: '1rem', fontWeight: 600 }}>{record.student_name}</td>
-                                                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{record.email}</td>
-                                                <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                                    <span style={{
-                                                        padding: '0.25rem 0.75rem',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        background: record.status === 'Present' ? '#d1fae5' : '#fee2e2',
-                                                        color: record.status === 'Present' ? '#065f46' : '#991b1b'
-                                                    }}>
-                                                        {record.status}
-                                                    </span>
-                                                </td>
-                                                {record.grade !== undefined && (
+                            {reportLoading ? (
+                                <div style={{ padding: '4rem', textAlign: 'center' }}>Loading report...</div>
+                            ) : (
+                                <div className="table-responsive" style={{ flex: 1 }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead style={{ background: 'var(--bg-main)', position: 'sticky', top: 0 }}>
+                                            <tr>
+                                                <th style={{ padding: '1rem', textAlign: 'left' }}>Student</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left' }}>Email</th>
+                                                <th style={{ padding: '1rem', textAlign: 'center' }}>Status</th>
+                                                {reportData.some(r => r.grade !== undefined) && (
                                                     <>
-                                                        <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 700 }}>
-                                                            {record.grade !== null ? `${record.grade}%` : '-'}
-                                                        </td>
-                                                        <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                                            {record.submitted_at ? new Date(record.submitted_at).toLocaleString() : '-'}
-                                                        </td>
+                                                        <th style={{ padding: '1rem', textAlign: 'center' }}>Grade</th>
+                                                        <th style={{ padding: '1rem', textAlign: 'left' }}>Submitted At</th>
                                                     </>
                                                 )}
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Create Assessment Modal */}
-            {showAssessmentModal && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0,0,0,0.6)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    backdropFilter: 'blur(5px)'
-                }}>
-                    <div className="card animate-fade-in" style={{
-                        width: '100%',
-                        maxWidth: '500px',
-                        position: 'relative',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-                    }}>
-                        <button
-                            onClick={() => setShowAssessmentModal(false)}
-                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
-                            <X size={24} />
-                        </button>
-
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Create Assessment</h2>
-
-                        <form onSubmit={handleCreateAssessment}>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Unit</label>
-                                <select
-                                    className="input"
-                                    required
-                                    value={assessmentForm.unit}
-                                    onChange={e => setAssessmentForm({ ...assessmentForm, unit: e.target.value })}
-                                    style={{ width: '100%' }}
-                                >
-                                    <option value="">Select Unit</option>
-                                    {trainerUnits.map(unit => (
-                                        <option key={unit.id} value={unit.id}>{unit.code}: {unit.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Assessment Type</label>
-                                <select
-                                    className="input"
-                                    required
-                                    value={assessmentForm.assessment_type}
-                                    onChange={e => setAssessmentForm({ ...assessmentForm, assessment_type: e.target.value })}
-                                    style={{ width: '100%' }}
-                                >
-                                    <option value="CAT">CAT (Continuous Assessment Test)</option>
-                                    <option value="Test">Test</option>
-                                    <option value="Assignment">Assignment</option>
-                                    <option value="LabTask">Lab Task</option>
-                                    <option value="LessonAssessment">Lesson Assessment</option>
-                                </select>
-                            </div>
-
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Points</label>
-                                <input
-                                    type="number"
-                                    className="input"
-                                    required
-                                    value={assessmentForm.points}
-                                    onChange={e => setAssessmentForm({ ...assessmentForm, points: parseInt(e.target.value) })}
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Due Date</label>
-                                <input
-                                    type="datetime-local"
-                                    className="input"
-                                    required
-                                    value={assessmentForm.due_date}
-                                    onChange={e => setAssessmentForm({ ...assessmentForm, due_date: e.target.value })}
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <button
-                                    type="button"
-                                    className="btn"
-                                    onClick={() => setShowAssessmentModal(false)}
-                                    style={{ flex: 1, justifyContent: 'center' }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    style={{ flex: 1, justifyContent: 'center' }}
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Creating...' : 'Create Assessment'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Edit Assessment Modal */}
-            {showEditAssessmentModal && selectedAssessment && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0,0,0,0.6)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    backdropFilter: 'blur(5px)'
-                }}>
-                    <div className="card animate-fade-in" style={{
-                        width: '100%',
-                        maxWidth: '500px',
-                        position: 'relative',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-                    }}>
-                        <button
-                            onClick={() => setShowEditAssessmentModal(false)}
-                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
-                            <X size={24} />
-                        </button>
-
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Edit Assessment</h2>
-
-                        <form onSubmit={handleUpdateAssessment}>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Points</label>
-                                <input
-                                    type="number"
-                                    className="input"
-                                    required
-                                    value={assessmentForm.points}
-                                    onChange={e => setAssessmentForm({ ...assessmentForm, points: parseInt(e.target.value) })}
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Due Date</label>
-                                <input
-                                    type="datetime-local"
-                                    className="input"
-                                    required
-                                    value={assessmentForm.due_date}
-                                    onChange={e => setAssessmentForm({ ...assessmentForm, due_date: e.target.value })}
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <button
-                                    type="button"
-                                    className="btn"
-                                    onClick={() => setShowEditAssessmentModal(false)}
-                                    style={{ flex: 1, justifyContent: 'center' }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    style={{ flex: 1, justifyContent: 'center' }}
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Updating...' : 'Update Assessment'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Mark Attendance Modal */}
-            {showAttendanceModal && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0,0,0,0.6)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    backdropFilter: 'blur(5px)'
-                }}>
-                    <div className="card animate-fade-in" style={{
-                        width: '100%',
-                        maxWidth: '600px',
-                        maxHeight: '80vh',
-                        overflow: 'auto',
-                        position: 'relative',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-                    }}>
-                        <button
-                            onClick={() => {
-                                setShowAttendanceModal(false);
-                                setSelectedLesson(null);
-                                setAttendanceRecords({});
-                            }}
-                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
-                            <X size={24} />
-                        </button>
-
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Mark Attendance</h2>
-
-                        {markingResults.length > 0 ? (
-                            <div>
-                                <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: '#10b981' }}>
-                                    <CheckCircle size={20} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
-                                    Marking Summary
-                                </h3>
-                                <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <thead style={{ background: 'var(--bg-main)', fontSize: '0.875rem' }}>
-                                            <tr>
-                                                <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student</th>
-                                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Status</th>
-                                            </tr>
                                         </thead>
                                         <tbody>
-                                            {markingResults.map((res, i) => (
-                                                <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
-                                                    <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{res.student_name}</td>
-                                                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                            {reportData.map((record, idx) => (
+                                                <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                    <td style={{ padding: '1rem', fontWeight: 600 }}>{record.student_name}</td>
+                                                    <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{record.email}</td>
+                                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                         <span style={{
-                                                            padding: '0.2rem 0.5rem',
-                                                            borderRadius: '4px',
-                                                            fontSize: '0.7rem',
-                                                            fontWeight: 700,
-                                                            background: res.status === 'Present' ? '#dcfce7' : res.status === 'Late' ? '#fef3c7' : '#fee2e2',
-                                                            color: res.status === 'Present' ? '#15803d' : res.status === 'Late' ? '#92400e' : '#991b1b'
+                                                            padding: '0.25rem 0.75rem',
+                                                            borderRadius: '6px',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600,
+                                                            background: record.status === 'Present' ? '#d1fae5' : '#fee2e2',
+                                                            color: record.status === 'Present' ? '#065f46' : '#991b1b'
                                                         }}>
-                                                            {res.status}
+                                                            {record.status}
                                                         </span>
                                                     </td>
+                                                    {record.grade !== undefined && (
+                                                        <>
+                                                            <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 700 }}>
+                                                                {record.grade !== null ? `${record.grade}%` : '-'}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                                                {record.submitted_at ? new Date(record.submitted_at).toLocaleString() : '-'}
+                                                            </td>
+                                                        </>
+                                                    )}
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={() => {
-                                        setShowAttendanceModal(false);
-                                        setSelectedLesson(null);
-                                        setAttendanceRecords({});
-                                        setMarkingResults([]);
-                                    }}
-                                    style={{ width: '100%', justifyContent: 'center' }}
-                                >
-                                    Done
-                                </button>
-                            </div>
-                        ) : !selectedLesson ? (
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Select Lesson</label>
-                                <select
-                                    className="input"
-                                    onChange={e => {
-                                        const lesson = lessons.find(l => l.id === parseInt(e.target.value));
-                                        setSelectedLesson(lesson || null);
-                                    }}
-                                    style={{ width: '100%' }}
-                                >
-                                    <option value="">Choose a lesson...</option>
-                                    {lessons.filter(l => trainerUnits.some(u => u.id === l.unit)).map(lesson => (
-                                        <option key={lesson.id} value={lesson.id}>
-                                            Lesson {lesson.order}: {lesson.title}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        ) : (
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-                                        {selectedLesson.title}
-                                    </h3>
+                            )}
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Create Assessment Modal */}
+            {
+                showAssessmentModal && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(5px)'
+                    }}>
+                        <div className="card animate-fade-in" style={{
+                            width: '100%',
+                            maxWidth: '500px',
+                            position: 'relative',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}>
+                            <button
+                                onClick={() => setShowAssessmentModal(false)}
+                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Create Assessment</h2>
+
+                            <form onSubmit={handleCreateAssessment}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Unit</label>
+                                    <select
+                                        className="input"
+                                        required
+                                        value={assessmentForm.unit}
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, unit: e.target.value })}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <option value="">Select Unit</option>
+                                        {trainerUnits.map(unit => (
+                                            <option key={unit.id} value={unit.id}>{unit.code}: {unit.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Assessment Type</label>
+                                    <select
+                                        className="input"
+                                        required
+                                        value={assessmentForm.assessment_type}
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, assessment_type: e.target.value })}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <option value="CAT">CAT (Continuous Assessment Test)</option>
+                                        <option value="Test">Test</option>
+                                        <option value="Assignment">Assignment</option>
+                                        <option value="LabTask">Lab Task</option>
+                                        <option value="LessonAssessment">Lesson Assessment</option>
+                                    </select>
+                                </div>
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Points</label>
+                                    <input
+                                        type="number"
+                                        className="input"
+                                        required
+                                        value={assessmentForm.points}
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, points: parseInt(e.target.value) })}
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Due Date</label>
+                                    <input
+                                        type="datetime-local"
+                                        className="input"
+                                        required
+                                        value={assessmentForm.due_date}
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, due_date: e.target.value })}
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem' }}>
                                     <button
-                                        className="btn btn-sm"
-                                        style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' }}
-                                        onClick={handleBulkAutoMark}
+                                        type="button"
+                                        className="btn"
+                                        onClick={() => setShowAssessmentModal(false)}
+                                        style={{ flex: 1, justifyContent: 'center' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        style={{ flex: 1, justifyContent: 'center' }}
                                         disabled={loading}
                                     >
-                                        Mark All Present
+                                        {loading ? 'Creating...' : 'Create Assessment'}
                                     </button>
                                 </div>
-                                <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                    {studentsInTrainerCourses.map(enrollment => (
-                                        <div key={enrollment.student} className="glass" style={{ padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontWeight: 600 }}>{enrollment.student_name}</span>
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                {['Present', 'Late', 'Absent'].map(status => (
-                                                    <button
-                                                        key={status}
-                                                        onClick={() => setAttendanceRecords({
-                                                            ...attendanceRecords,
-                                                            [enrollment.student]: status
-                                                        })}
-                                                        style={{
-                                                            padding: '0.5rem 1rem',
-                                                            borderRadius: '6px',
-                                                            border: 'none',
-                                                            cursor: 'pointer',
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: 600,
-                                                            background: attendanceRecords[enrollment.student] === status
-                                                                ? status === 'Present' ? '#10b981' : status === 'Late' ? '#f59e0b' : '#ef4444'
-                                                                : 'var(--bg-main)',
-                                                            color: attendanceRecords[enrollment.student] === status ? 'white' : 'var(--text-main)'
-                                                        }}
-                                                    >
-                                                        {status}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
+                            </form>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Edit Assessment Modal */}
+            {
+                showEditAssessmentModal && selectedAssessment && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(5px)'
+                    }}>
+                        <div className="card animate-fade-in" style={{
+                            width: '100%',
+                            maxWidth: '500px',
+                            position: 'relative',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}>
+                            <button
+                                onClick={() => setShowEditAssessmentModal(false)}
+                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Edit Assessment</h2>
+
+                            <form onSubmit={handleUpdateAssessment}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Points</label>
+                                    <input
+                                        type="number"
+                                        className="input"
+                                        required
+                                        value={assessmentForm.points}
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, points: parseInt(e.target.value) })}
+                                        style={{ width: '100%' }}
+                                    />
                                 </div>
-                                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Due Date</label>
+                                    <input
+                                        type="datetime-local"
+                                        className="input"
+                                        required
+                                        value={assessmentForm.due_date}
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, due_date: e.target.value })}
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem' }}>
                                     <button
+                                        type="button"
                                         className="btn"
-                                        onClick={() => {
-                                            setSelectedLesson(null);
-                                            setAttendanceRecords({});
-                                        }}
+                                        onClick={() => setShowEditAssessmentModal(false)}
                                         style={{ flex: 1, justifyContent: 'center' }}
                                     >
-                                        Back
+                                        Cancel
                                     </button>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        style={{ flex: 1, justifyContent: 'center' }}
+                                        disabled={loading}
+                                    >
+                                        {loading ? 'Updating...' : 'Update Assessment'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Mark Attendance Modal */}
+            {
+                showAttendanceModal && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(5px)'
+                    }}>
+                        <div className="card animate-fade-in" style={{
+                            width: '100%',
+                            maxWidth: '600px',
+                            maxHeight: '80vh',
+                            overflow: 'auto',
+                            position: 'relative',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}>
+                            <button
+                                onClick={() => {
+                                    setShowAttendanceModal(false);
+                                    setSelectedLesson(null);
+                                    setAttendanceRecords({});
+                                }}
+                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Mark Attendance</h2>
+
+                            {markingResults.length > 0 ? (
+                                <div>
+                                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: '#10b981' }}>
+                                        <CheckCircle size={20} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                                        Marking Summary
+                                    </h3>
+                                    <div className="table-responsive" style={{ marginBottom: '1.5rem' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                            <thead style={{ background: 'var(--bg-main)', fontSize: '0.875rem' }}>
+                                                <tr>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student</th>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {markingResults.map((res, i) => (
+                                                    <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+                                                        <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{res.student_name}</td>
+                                                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                                            <span style={{
+                                                                padding: '0.2rem 0.5rem',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.7rem',
+                                                                fontWeight: 700,
+                                                                background: res.status === 'Present' ? '#dcfce7' : res.status === 'Late' ? '#fef3c7' : '#fee2e2',
+                                                                color: res.status === 'Present' ? '#15803d' : res.status === 'Late' ? '#92400e' : '#991b1b'
+                                                            }}>
+                                                                {res.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                     <button
                                         className="btn btn-primary"
-                                        onClick={handleMarkAttendance}
-                                        style={{ flex: 1, justifyContent: 'center' }}
-                                        disabled={Object.keys(attendanceRecords).length === 0 || loading}
+                                        onClick={() => {
+                                            setShowAttendanceModal(false);
+                                            setSelectedLesson(null);
+                                            setAttendanceRecords({});
+                                            setMarkingResults([]);
+                                        }}
+                                        style={{ width: '100%', justifyContent: 'center' }}
                                     >
-                                        {loading ? 'Saving...' : 'Save Attendance'}
+                                        Done
                                     </button>
                                 </div>
-                            </div>
-                        )}
+                            ) : !selectedLesson ? (
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Select Lesson</label>
+                                    <select
+                                        className="input"
+                                        onChange={e => {
+                                            const lesson = lessons.find(l => l.id === parseInt(e.target.value));
+                                            setSelectedLesson(lesson || null);
+                                        }}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <option value="">Choose a lesson...</option>
+                                        {lessons.filter(l => trainerUnits.some(u => u.id === l.unit)).map(lesson => (
+                                            <option key={lesson.id} value={lesson.id}>
+                                                Lesson {lesson.order}: {lesson.title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : (
+                                <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                        <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+                                            {selectedLesson.title}
+                                        </h3>
+                                        <button
+                                            className="btn btn-sm"
+                                            style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' }}
+                                            onClick={handleBulkAutoMark}
+                                            disabled={loading}
+                                        >
+                                            Mark All Present
+                                        </button>
+                                    </div>
+                                    <div style={{ display: 'grid', gap: '0.75rem' }}>
+                                        {studentsInTrainerCourses.map(enrollment => (
+                                            <div key={enrollment.student} className="glass" style={{ padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontWeight: 600 }}>{enrollment.student_name}</span>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    {['Present', 'Late', 'Absent'].map(status => (
+                                                        <button
+                                                            key={status}
+                                                            onClick={() => setAttendanceRecords({
+                                                                ...attendanceRecords,
+                                                                [enrollment.student]: status
+                                                            })}
+                                                            style={{
+                                                                padding: '0.5rem 1rem',
+                                                                borderRadius: '6px',
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: 600,
+                                                                background: attendanceRecords[enrollment.student] === status
+                                                                    ? status === 'Present' ? '#10b981' : status === 'Late' ? '#f59e0b' : '#ef4444'
+                                                                    : 'var(--bg-main)',
+                                                                color: attendanceRecords[enrollment.student] === status ? 'white' : 'var(--text-main)'
+                                                            }}
+                                                        >
+                                                            {status}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+                                        <button
+                                            className="btn"
+                                            onClick={() => {
+                                                setSelectedLesson(null);
+                                                setAttendanceRecords({});
+                                            }}
+                                            style={{ flex: 1, justifyContent: 'center' }}
+                                        >
+                                            Back
+                                        </button>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={handleMarkAttendance}
+                                            style={{ flex: 1, justifyContent: 'center' }}
+                                            disabled={Object.keys(attendanceRecords).length === 0 || loading}
+                                        >
+                                            {loading ? 'Saving...' : 'Save Attendance'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </DashboardLayout>
+                )
+            }
+            {/* Lesson Plan Modal */}
+            {
+                showLessonPlanModal && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 1000,
+                        padding: '2rem',
+                        backdropFilter: 'blur(4px)'
+                    }}>
+                        <div style={{
+                            background: 'var(--bg-main)',
+                            borderRadius: '20px',
+                            width: '100%',
+                            maxWidth: '1000px',
+                            maxHeight: '90vh',
+                            overflow: 'auto',
+                            position: 'relative',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}>
+                            <button
+                                onClick={() => {
+                                    setShowLessonPlanModal(false);
+                                    setSelectedLessonPlan(undefined);
+                                    setLessonPlanEditMode(false);
+                                }}
+                                style={{
+                                    position: 'absolute',
+                                    top: '1.5rem',
+                                    right: '1.5rem',
+                                    background: 'var(--bg-muted)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '40px',
+                                    height: '40px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    zIndex: 10,
+                                    color: 'var(--text-main)'
+                                }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <div style={{ padding: '1rem' }}>
+                                <LessonPlanForm
+                                    lessonId={selectedLessonPlan}
+                                    onClose={() => {
+                                        setShowLessonPlanModal(false);
+                                        setSelectedLessonPlan(undefined);
+                                        setLessonPlanEditMode(false);
+                                        fetchData(); // Refresh overview data if needed
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </DashboardLayout >
     );
 };
 

@@ -22,6 +22,8 @@ import SubmissionGrading from './dashboards/SubmissionGrading';
 import LessonPlanForm from './components/LessonPlanForm';
 import HODLessonPlanReview from './components/HODLessonPlanReview';
 import Forum from './dashboards/Forum';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { queryClient, persister } from './services/queryClient';
 
 const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
@@ -37,136 +39,142 @@ const HomeRedirect: React.FC = () => {
   }
 };
 
+
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register/student" element={<StudentRegistration />} />
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister }}
+    >
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register/student" element={<StudentRegistration />} />
 
-          <Route path="/admin/*" element={
-            <ProtectedRoute allowedRoles={['Admin']}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
+            <Route path="/admin/*" element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/admin/settings" element={
-            <ProtectedRoute allowedRoles={['Admin']}>
-              <AdminSettings />
-            </ProtectedRoute>
-          } />
+            <Route path="/admin/settings" element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <AdminSettings />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/course-master/*" element={
-            <ProtectedRoute allowedRoles={['CourseMaster', 'Admin']}>
-              <CourseMasterDashboard />
-            </ProtectedRoute>
-          } />
+            <Route path="/course-master/*" element={
+              <ProtectedRoute allowedRoles={['CourseMaster', 'Admin']}>
+                <CourseMasterDashboard />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/course-master/intakes" element={
-            <ProtectedRoute allowedRoles={['CourseMaster', 'Admin']}>
-              <CourseStructure />
-            </ProtectedRoute>
-          } />
+            <Route path="/course-master/intakes" element={
+              <ProtectedRoute allowedRoles={['CourseMaster', 'Admin']}>
+                <CourseStructure />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/course-master/course-management" element={
-            <ProtectedRoute allowedRoles={['CourseMaster', 'Admin']}>
-              <CourseManagement />
-            </ProtectedRoute>
-          } />
+            <Route path="/course-master/course-management" element={
+              <ProtectedRoute allowedRoles={['CourseMaster', 'Admin']}>
+                <CourseManagement />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/hod/*" element={
-            <ProtectedRoute allowedRoles={['HOD', 'Admin']}>
-              <HODDashboard />
-            </ProtectedRoute>
-          } />
+            <Route path="/hod/*" element={
+              <ProtectedRoute allowedRoles={['HOD', 'Admin']}>
+                <HODDashboard />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trainer/authoring" element={
-            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
-              <TrainerCourseManagement />
-            </ProtectedRoute>
-          } />
+            <Route path="/trainer/authoring" element={
+              <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+                <TrainerCourseManagement />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trainer/authoring/lesson/:lessonId" element={
-            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
-              <LessonEditor />
-            </ProtectedRoute>
-          } />
+            <Route path="/trainer/authoring/lesson/:lessonId" element={
+              <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+                <LessonEditor />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trainer/assessment/:assessmentId/author" element={
-            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
-              <AssessmentAuthoring />
-            </ProtectedRoute>
-          } />
+            <Route path="/trainer/assessment/:assessmentId/author" element={
+              <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+                <AssessmentAuthoring />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trainer/grade/:assessmentId" element={
-            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
-              <SubmissionGrading />
-            </ProtectedRoute>
-          } />
+            <Route path="/trainer/grade/:assessmentId" element={
+              <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+                <SubmissionGrading />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trainer/*" element={
-            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
-              <EnhancedTrainerDashboard />
-            </ProtectedRoute>
-          } />
+            <Route path="/trainer/*" element={
+              <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+                <EnhancedTrainerDashboard />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/student" element={
-            <ProtectedRoute allowedRoles={['Student']}>
-              <StudentDashboard />
-            </ProtectedRoute>
-          } />
+            <Route path="/student" element={
+              <ProtectedRoute allowedRoles={['Student']}>
+                <StudentDashboard />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/student/unit/:unitId/lesson/:lessonOrder" element={
-            <ProtectedRoute allowedRoles={['Student']}>
-              <LessonViewer />
-            </ProtectedRoute>
-          } />
+            <Route path="/student/unit/:unitId/lesson/:lessonOrder" element={
+              <ProtectedRoute allowedRoles={['Student']}>
+                <LessonViewer />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/student/assessment/:assessmentId" element={
-            <ProtectedRoute allowedRoles={['Student']}>
-              <AssessmentSubmission />
-            </ProtectedRoute>
-          } />
+            <Route path="/student/assessment/:assessmentId" element={
+              <ProtectedRoute allowedRoles={['Student']}>
+                <AssessmentSubmission />
+              </ProtectedRoute>
+            } />
 
-          {/* Forum Routes */}
-          <Route path="/student/forum" element={
-            <ProtectedRoute allowedRoles={['Student']}>
-              <Forum />
-            </ProtectedRoute>
-          } />
+            {/* Forum Routes */}
+            <Route path="/student/forum" element={
+              <ProtectedRoute allowedRoles={['Student']}>
+                <Forum />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/student/forum/:topicId" element={
-            <ProtectedRoute allowedRoles={['Student']}>
-              <Forum />
-            </ProtectedRoute>
-          } />
+            <Route path="/student/forum/:topicId" element={
+              <ProtectedRoute allowedRoles={['Student']}>
+                <Forum />
+              </ProtectedRoute>
+            } />
 
-          {/* Lesson Plan Routes */}
-          <Route path="/trainer/lesson-plan/new" element={
-            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
-              <LessonPlanForm />
-            </ProtectedRoute>
-          } />
+            {/* Lesson Plan Routes */}
+            <Route path="/trainer/lesson-plan/new" element={
+              <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+                <LessonPlanForm />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trainer/lesson-plan/:lessonId/edit" element={
-            <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
-              <LessonPlanForm />
-            </ProtectedRoute>
-          } />
+            <Route path="/trainer/lesson-plan/:lessonId/edit" element={
+              <ProtectedRoute allowedRoles={['Trainer', 'Admin']}>
+                <LessonPlanForm />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/hod/lesson-plans" element={
-            <ProtectedRoute allowedRoles={['HOD', 'Admin']}>
-              <HODLessonPlanReview />
-            </ProtectedRoute>
-          } />
+            <Route path="/hod/lesson-plans" element={
+              <ProtectedRoute allowedRoles={['HOD', 'Admin']}>
+                <HODLessonPlanReview />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/unauthorized" element={<Unauthorized />} />
-          <Route path="/" element={<HomeRedirect />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/" element={<HomeRedirect />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </PersistQueryClientProvider>
   );
 };
 
