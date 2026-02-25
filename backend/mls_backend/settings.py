@@ -187,7 +187,6 @@ from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'TOKEN_OBTAIN_SERIALIZER': 'mls_backend.custom_jwt.CustomTokenObtainPairSerializer',
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
