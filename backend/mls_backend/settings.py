@@ -93,14 +93,12 @@ DATABASES = {
 database_url = os.environ.get('DATABASE_URL')
 if database_url:
     try:
-        # dj_database_url.parse returns a dict. We must ensure it has a 'NAME'.
         parsed_db = dj_database_url.parse(database_url, conn_max_age=600)
-        if parsed_db and parsed_db.get('NAME'):
+        if parsed_db:
             DATABASES['default'] = parsed_db
         else:
-            print("Warning: DATABASE_URL provided but missing 'NAME'. Falling back to sqlite.")
+            print("Warning: DATABASE_URL provided but parsing returned None. Falling back to sqlite.")
     except Exception as e:
-        # Fallback to sqlite if DATABASE_URL is malformed during build
         print(f"Warning: DATABASE_URL parsing failed: {e}. Falling back to sqlite.")
 
 
@@ -178,9 +176,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://mls-backend-on2p.onrender.com',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    'https://mls-frontend.onrender.com',
-]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 from datetime import timedelta
 
@@ -190,4 +187,4 @@ SIMPLE_JWT = {
     'TOKEN_OBTAIN_SERIALIZER': 'mls_backend.custom_jwt.CustomTokenObtainPairSerializer',
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS settings are handled above

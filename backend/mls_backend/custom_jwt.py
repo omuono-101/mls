@@ -11,19 +11,25 @@ User = get_user_model()
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
-        token = super().get_token(user)
+        try:
+            token = super().get_token(user)
 
-        # Add custom claims so the frontend can route to the correct dashboard
-        token['role'] = user.role
-        token['username'] = user.username
-        token['email'] = user.email or ''
-        token['first_name'] = user.first_name or ''
-        token['last_name'] = user.last_name or ''
-        token['phone_number'] = getattr(user, 'phone_number', '') or ''
-        token['is_activated'] = user.is_activated
-        token['admission_no'] = getattr(user, 'admission_no', '') or ''
+            # Add custom claims so the frontend can route to the correct dashboard
+            # Use getattr with defaults to prevent crashes if fields are missing
+            token['role'] = getattr(user, 'role', 'Student')
+            token['username'] = getattr(user, 'username', '')
+            token['email'] = getattr(user, 'email', '') or ''
+            token['first_name'] = getattr(user, 'first_name', '') or ''
+            token['last_name'] = getattr(user, 'last_name', '') or ''
+            token['phone_number'] = getattr(user, 'phone_number', '') or ''
+            token['is_activated'] = getattr(user, 'is_activated', True)
+            token['admission_no'] = getattr(user, 'admission_no', '') or ''
 
-        return token
+            return token
+        except Exception as e:
+            logger.error(f"Error generating token for user {user.username}: {str(e)}")
+            # Even if custom claims fail, try to return a basic token to avoid 500
+            return super().get_token(user)
 
     def validate(self, attrs):
         logger.info(f"Token validation attrs: {attrs}")
