@@ -766,6 +766,16 @@ const HODDashboard: React.FC = () => {
                             <tbody>
                                 {trainers.map(t => {
                                     const trainerUnits = units.filter(u => u.trainer === t.id);
+                                    const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
+                                    const taughtLessons = trainerLessons.filter(l => l.is_taught);
+                                    const approvedLessons = taughtLessons.filter(l => l.is_approved);
+                                    const pendingLessons = taughtLessons.filter(l => !l.is_approved);
+                                    const trainerAssessments = assessments.filter(a => trainerUnits.some(u => u.id === a.unit));
+                                    const totalLessons = trainerUnits.reduce((sum, u) => sum + u.total_lessons, 0);
+                                    const totalTaughtLessons = trainerUnits.reduce((sum, u) => sum + (u.lessons_taught || 0), 0);
+                                    const totalResources = trainerUnits.reduce((sum, u) => sum + (u.notes_count || 0), 0);
+                                    const totalAssessments = trainerAssessments.length;
+
                                     return (
                                         <tr key={t.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                             <td style={{ padding: '1rem 1.5rem', verticalAlign: 'top' }}>
@@ -777,9 +787,9 @@ const HODDashboard: React.FC = () => {
                                                         <div style={{ fontWeight: 600 }}>{t.username}</div>
                                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                             Staff ID: #{t.id}
-                                                            {lessons.filter(l => l.trainer_name === t.username && l.is_taught && !l.is_approved).length > 0 && (
+                                                            {pendingLessons.length > 0 && (
                                                                 <span style={{ padding: '0.1rem 0.4rem', background: '#fef3c7', color: '#92400e', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 700 }}>
-                                                                    {lessons.filter(l => l.trainer_name === t.username && l.is_taught && !l.is_approved).length} Pending
+                                                                    {pendingLessons.length} Pending Approval
                                                                 </span>
                                                             )}
                                                         </div>
@@ -788,69 +798,126 @@ const HODDashboard: React.FC = () => {
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                                    {trainerUnits.length > 0 ? trainerUnits.map(u => (
-                                                        <div key={u.id} style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4338ca' }}>{u.code}</span>
-                                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{u.name}</span>
-                                                            </div>
-                                                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.25rem' }}>
-                                                                        <span>Lessons</span>
-                                                                        <span>{u.lessons_taught}/{u.total_lessons}</span>
+                                                    {trainerUnits.length > 0 ? trainerUnits.map(u => {
+                                                        const unitLessons = trainerLessons.filter(l => l.unit === u.id);
+                                                        const unitTaught = unitLessons.filter(l => l.is_taught);
+                                                        const unitApproved = unitTaught.filter(l => l.is_approved);
+                                                        const progressPercent = u.total_lessons > 0 ? ((u.lessons_taught || 0) / u.total_lessons) * 100 : 0;
+
+                                                        return (
+                                                            <div key={u.id} style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4338ca' }}>{u.code}</span>
+                                                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{u.name}</span>
+                                                                </div>
+                                                                <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+                                                                    <div style={{ flex: 1 }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.25rem' }}>
+                                                                            <span>Lessons Progress</span>
+                                                                            <span>{u.lessons_taught || 0}/{u.total_lessons}</span>
+                                                                        </div>
+                                                                        <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+                                                                            <div style={{
+                                                                                height: '100%',
+                                                                                background: progressPercent >= 100 ? '#10b981' : progressPercent >= 75 ? '#3b82f6' : progressPercent >= 50 ? '#f59e0b' : '#ef4444',
+                                                                                width: `${progressPercent}%`,
+                                                                                transition: 'width 0.3s ease'
+                                                                            }}></div>
+                                                                        </div>
                                                                     </div>
-                                                                    <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
-                                                                        <div style={{ height: '100%', background: '#10b981', width: `${((u.lessons_taught || 0) / (u.total_lessons || 1)) * 100}%` }}></div>
+                                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                                        <div
+                                                                            title="View Notes/Resources"
+                                                                            style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.7rem', color: u.notes_count ? '#10b981' : '#ef4444', cursor: 'pointer' }}
+                                                                            onClick={() => {
+                                                                                setSelectedUnitForAudit(u);
+                                                                                setIsResourceAuditOpen(true);
+                                                                            }}
+                                                                        >
+                                                                            <Book size={10} /> {u.notes_count || 0}
+                                                                        </div>
+                                                                        <div
+                                                                            title="View CATs Uploaded"
+                                                                            style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.7rem', color: u.cats_count ? '#6366f1' : '#ef4444', cursor: 'pointer' }}
+                                                                            onClick={() => {
+                                                                                setSelectedUnitForAudit(u);
+                                                                                setIsAssessmentAuditOpen(true);
+                                                                            }}
+                                                                        >
+                                                                            <Database size={10} /> {u.cats_count || 0}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                                    <div
-                                                                        title="View Notes/Resources"
-                                                                        style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.7rem', color: u.notes_count ? '#10b981' : '#ef4444', cursor: 'pointer' }}
-                                                                        onClick={() => {
-                                                                            setSelectedUnitForAudit(u);
-                                                                            setIsResourceAuditOpen(true);
-                                                                        }}
-                                                                    >
-                                                                        <Book size={10} /> {u.notes_count || 0}
-                                                                    </div>
-                                                                    <div
-                                                                        title="View CATs Uploaded"
-                                                                        style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.7rem', color: u.cats_count ? '#6366f1' : '#ef4444', cursor: 'pointer' }}
-                                                                        onClick={() => {
-                                                                            setSelectedUnitForAudit(u);
-                                                                            setIsAssessmentAuditOpen(true);
-                                                                        }}
-                                                                    >
-                                                                        <Database size={10} /> {u.cats_count || 0}
-                                                                    </div>
+                                                                <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                                                    <span>Created: {unitLessons.length}</span>
+                                                                    <span>•</span>
+                                                                    <span>Taught: {unitTaught.length}</span>
+                                                                    <span>•</span>
+                                                                    <span>Approved: {unitApproved.length}</span>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    )) : (
+                                                        );
+                                                    }) : (
                                                         <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontStyle: 'italic' }}>No units assigned</span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem', verticalAlign: 'top' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Workload</div>
-                                                    <div style={{ fontWeight: 700, fontSize: '1.25rem' }}>{trainerUnits.length} Units</div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                                        <div style={{ textAlign: 'center', padding: '0.5rem', background: '#f0f9ff', borderRadius: '8px' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Lessons</div>
+                                                            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0369a1' }}>{totalLessons}</div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', padding: '0.5rem', background: '#dcfce7', borderRadius: '8px' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Completed</div>
+                                                            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#15803d' }}>{totalTaughtLessons}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                                        <div style={{ textAlign: 'center', padding: '0.5rem', background: '#fef3c7', borderRadius: '8px' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Assessments</div>
+                                                            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#92400e' }}>{totalAssessments}</div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', padding: '0.5rem', background: '#e0e7ff', borderRadius: '8px' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Resources</div>
+                                                            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#4338ca' }}>{totalResources}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Overall Progress</div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.25rem' }}>
+                                                            <span>Lessons</span>
+                                                            <span>{totalTaughtLessons}/{totalLessons}</span>
+                                                        </div>
+                                                        <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                                                            <div style={{
+                                                                height: '100%',
+                                                                background: totalLessons > 0 && totalTaughtLessons === totalLessons ? '#10b981' : '#3b82f6',
+                                                                width: totalLessons > 0 ? `${(totalTaughtLessons / totalLessons) * 100}%` : '0%',
+                                                                transition: 'width 0.3s ease'
+                                                            }}></div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem', verticalAlign: 'top' }}>
-                                                <button
-                                                    className="btn btn-sm"
-                                                    style={{ background: 'var(--primary)', color: 'white', borderRadius: '8px', width: '100%' }}
-                                                    onClick={() => {
-                                                        setSelectedTrainer(t);
-                                                        setIsUnitAssignmentModalOpen(true);
-                                                    }}
-                                                >
-                                                    <Plus size={14} />
-                                                    Assign Unit
-                                                </button>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                    <button
+                                                        className="btn btn-sm"
+                                                        style={{ background: 'var(--primary)', color: 'white', borderRadius: '8px', width: '100%' }}
+                                                        onClick={() => {
+                                                            setSelectedTrainer(t);
+                                                            setIsUnitAssignmentModalOpen(true);
+                                                        }}
+                                                    >
+                                                        <Plus size={14} />
+                                                        Assign Unit
+                                                    </button>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                                                        {trainerUnits.length} unit{trainerUnits.length !== 1 ? 's' : ''} assigned
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
