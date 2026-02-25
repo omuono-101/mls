@@ -154,8 +154,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'core.User'
 
-# Use default Django authentication backend
+# Use custom authentication backend that allows is_activated users to login
 AUTHENTICATION_BACKENDS = [
+    'core.auth_backends.CustomAuthBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
