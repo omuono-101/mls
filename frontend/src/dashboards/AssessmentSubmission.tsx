@@ -48,6 +48,10 @@ const AssessmentSubmission: React.FC = () => {
                 if (response.data.questions && response.data.questions.length > 0) {
                     setMode('interactive');
                 }
+                // Auto-mark attendance
+                api.post('attendance/mark_auto/', { assessment_id: response.data.id }).catch(err => {
+                    console.error('Failed to auto-mark attendance for assessment:', err);
+                });
             } catch (error) {
                 console.error('Failed to fetch assessment', error);
             }

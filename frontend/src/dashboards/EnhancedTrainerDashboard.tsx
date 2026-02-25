@@ -114,6 +114,12 @@ const EnhancedTrainerDashboard: React.FC = () => {
     const [attendanceRecords, setAttendanceRecords] = useState<Record<number, string>>({});
     const [loading, setLoading] = useState(false);
 
+    // Report states
+    const [reportData, setReportData] = useState<any[]>([]);
+    const [reportLoading, setReportLoading] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportTitle, setReportTitle] = useState('');
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -137,6 +143,22 @@ const EnhancedTrainerDashboard: React.FC = () => {
             setAttendances(attendanceRes.data);
         } catch (error) {
             console.error('Failed to fetch data', error);
+        }
+    };
+
+    const handleViewReport = async (lessonId?: number, assessmentId?: number, title?: string) => {
+        setReportLoading(true);
+        setReportTitle(title || 'Attendance Report');
+        setShowReportModal(true);
+        try {
+            const params = lessonId ? `lesson_id=${lessonId}` : `assessment_id=${assessmentId}`;
+            const response = await api.get(`attendance/attendance_report/?${params}`);
+            setReportData(response.data);
+        } catch (error) {
+            console.error('Failed to fetch report', error);
+            alert('Failed to fetch report');
+        } finally {
+            setReportLoading(false);
         }
     };
 
@@ -551,15 +573,140 @@ const EnhancedTrainerDashboard: React.FC = () => {
                             onClick={() => setShowAttendanceModal(true)}
                         >
                             <Plus size={20} />
-                            Mark Attendance
+                            Mark Manual Attendance
                         </button>
                     </div>
 
-                    <div className="card">
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1rem' }}>Attendance Records</h3>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                            Total records: {attendances.length}
-                        </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                        <div className="card">
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <BookOpen size={20} style={{ color: 'var(--primary)' }} />
+                                Lesson Attendance
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {lessons.filter(l => units.some(u => u.id === l.unit)).map(lesson => (
+                                    <div key={lesson.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <p style={{ fontWeight: 600 }}>{lesson.title}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Lesson Order: {lesson.order}</p>
+                                        </div>
+                                        <button className="btn btn-sm glass" onClick={() => handleViewReport(lesson.id, undefined, `Attendance: ${lesson.title}`)}>
+                                            <Eye size={16} /> View List
+                                        </button>
+                                    </div>
+                                ))}
+                                {lessons.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No lessons available.</p>}
+                            </div>
+                        </div>
+
+                        <div className="card">
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <ClipboardList size={20} style={{ color: 'var(--primary)' }} />
+                                Assessment Attendance & Results
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {assessments.filter(a => units.some(u => u.id === a.unit)).map(assessment => (
+                                    <div key={assessment.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <p style={{ fontWeight: 600 }}>{assessment.title || `${assessment.assessment_type} Assessment`}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{assessment.assessment_type} • Due {new Date(assessment.due_date).toLocaleDateString()}</p>
+                                        </div>
+                                        <button className="btn btn-sm glass" onClick={() => handleViewReport(undefined, assessment.id, `Results: ${assessment.title || assessment.assessment_type}`)}>
+                                            <Eye size={16} /> View Results
+                                        </button>
+                                    </div>
+                                ))}
+                                {assessments.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No assessments available.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Attendance Report Modal */}
+            {showReportModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000,
+                    backdropFilter: 'blur(5px)'
+                }}>
+                    <div className="card animate-fade-in" style={{
+                        width: '100%',
+                        maxWidth: '800px',
+                        maxHeight: '90vh',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        position: 'relative'
+                    }}>
+                        <button
+                            onClick={() => setShowReportModal(false)}
+                            style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>{reportTitle}</h2>
+
+                        {reportLoading ? (
+                            <div style={{ padding: '4rem', textAlign: 'center' }}>Loading report...</div>
+                        ) : (
+                            <div style={{ overflowY: 'auto', flex: 1 }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead style={{ background: 'var(--bg-main)', position: 'sticky', top: 0 }}>
+                                        <tr>
+                                            <th style={{ padding: '1rem', textAlign: 'left' }}>Student</th>
+                                            <th style={{ padding: '1rem', textAlign: 'left' }}>Email</th>
+                                            <th style={{ padding: '1rem', textAlign: 'center' }}>Status</th>
+                                            {reportData.some(r => r.grade !== undefined) && (
+                                                <>
+                                                    <th style={{ padding: '1rem', textAlign: 'center' }}>Grade</th>
+                                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Submitted At</th>
+                                                </>
+                                            )}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {reportData.map((record, idx) => (
+                                            <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                <td style={{ padding: '1rem', fontWeight: 600 }}>{record.student_name}</td>
+                                                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{record.email}</td>
+                                                <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                    <span style={{
+                                                        padding: '0.25rem 0.75rem',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        background: record.status === 'Present' ? '#d1fae5' : '#fee2e2',
+                                                        color: record.status === 'Present' ? '#065f46' : '#991b1b'
+                                                    }}>
+                                                        {record.status}
+                                                    </span>
+                                                </td>
+                                                {record.grade !== undefined && (
+                                                    <>
+                                                        <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 700 }}>
+                                                            {record.grade !== null ? `${record.grade}%` : '-'}
+                                                        </td>
+                                                        <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                                            {record.submitted_at ? new Date(record.submitted_at).toLocaleString() : '-'}
+                                                        </td>
+                                                    </>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

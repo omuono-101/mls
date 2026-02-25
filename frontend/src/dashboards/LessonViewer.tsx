@@ -39,6 +39,13 @@ const LessonViewer: React.FC = () => {
                 // For now, let's assume we get the lesson directly or find it.
                 const found = response.data.find((l: any) => l.order === parseInt(lessonOrder || '1'));
                 setLesson(found);
+
+                // Auto-mark attendance
+                if (found) {
+                    api.post('attendance/mark_auto/', { lesson_id: found.id }).catch(err => {
+                        console.error('Failed to auto-mark attendance:', err);
+                    });
+                }
             } catch (error) {
                 console.error('Failed to fetch lesson', error);
             } finally {

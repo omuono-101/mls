@@ -594,7 +594,131 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
+        if self.action == 'mark_auto':
+            return [permissions.IsAuthenticated()]
         return [IsTrainer()]
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def mark_auto(self, request):
+        lesson_id = request.data.get('lesson_id')
+        assessment_id = request.data.get('assessment_id')
+        
+        if not lesson_id and not assessment_id:
+            return Response({'error': 'lesson_id or assessment_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        target_lesson_id = lesson_id
+        
+        # If assessment_id is provided, try to find the linked lesson
+        if not target_lesson_id and assessment_id:
+            try:
+                assessment = Assessment.objects.get(id=assessment_id)
+                if assessment.lesson:
+                    target_lesson_id = assessment.lesson.id
+                else:
+                    # If assessment has no lesson, we can't mark standard attendance
+                    # But we can still return success as the task suggests "automated marking"
+                    # Alternatively, we could create a virtual lesson? 
+                    # For now, let's just return success if it's an approved assessment
+                    if assessment.is_approved:
+                        return Response({'status': 'assessment view acknowledged (no linked lesson)'}, status=status.HTTP_200_OK)
+                    return Response({'error': 'assessment not approved'}, status=status.HTTP_400_BAD_REQUEST)
+            except Assessment.DoesNotExist:
+                return Response({'error': 'assessment not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not target_lesson_id:
+            return Response({'error': 'target lesson could not be determined'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mark attendance
+        attendance, created = Attendance.objects.get_or_create(
+            lesson_id=target_lesson_id,
+            student=request.user,
+            defaults={'status': 'Present', 'marked_by': None} # Null marked_by means system-auto
+        )
+        
+        if not created and attendance.status == 'Absent':
+            attendance.status = 'Present'
+            attendance.save()
+            
+        return Response({
+            'status': 'Present',
+            'marked_at': attendance.marked_at,
+            'message': 'Attendance marked successfully'
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsTrainer | IsAdmin])
+    def attendance_report(self, request):
+        lesson_id = request.query_params.get('lesson_id')
+        assessment_id = request.query_params.get('assessment_id')
+        
+        if not lesson_id and not assessment_id:
+            return Response({'error': 'lesson_id or assessment_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if lesson_id:
+            try:
+                lesson = Lesson.objects.get(id=lesson_id)
+                # Get all students enrolled in the course group
+                enrollments = StudentEnrollment.objects.filter(
+                    course_group=lesson.unit.course_group,
+                    is_active=True
+                ).select_related('student')
+                
+                # Get attendance records for this lesson
+                attendances = {a.student_id: a for a in Attendance.objects.filter(lesson=lesson)}
+                
+                report = []
+                for enc in enrollments:
+                    att = attendances.get(enc.student_id)
+                    report.append({
+                        'student_id': enc.student.id,
+                        'student_name': f"{enc.student.first_name} {enc.student.last_name}" if enc.student.first_name else enc.student.username,
+                        'email': enc.student.email,
+                        'status': att.status if att else 'Absent',
+                        'marked_at': att.marked_at if att else None
+                    })
+                return Response(report)
+            except Lesson.DoesNotExist:
+                return Response({'error': 'lesson not found'}, status=status.HTTP_404_NOT_FOUND)
+                
+        if assessment_id:
+            try:
+                assessment = Assessment.objects.select_related('lesson', 'unit').get(id=assessment_id)
+                lesson = assessment.lesson
+                
+                # Get all students enrolled
+                enrollments = StudentEnrollment.objects.filter(
+                    course_group=assessment.unit.course_group,
+                    is_active=True
+                ).select_related('student')
+                
+                # Get attendance for the lesson (if any)
+                attendances = {}
+                if lesson:
+                    attendances = {a.student_id: a for a in Attendance.objects.filter(lesson=lesson)}
+                
+                # Get submissions for this assessment
+                submissions = {s.student_id: s for s in Submission.objects.filter(assessment=assessment)}
+                
+                report = []
+                for enc in enrollments:
+                    att = attendances.get(enc.student_id)
+                    sub = submissions.get(enc.student_id)
+                    
+                    # For assessments, if they submitted, they "attended"
+                    status = 'Present' if sub else (att.status if att else 'Absent')
+                    
+                    report.append({
+                        'student_id': enc.student.id,
+                        'student_name': f"{enc.student.first_name} {enc.student.last_name}" if enc.student.first_name else enc.student.username,
+                        'email': enc.student.email,
+                        'status': status,
+                        'grade': sub.grade if sub else None,
+                        'submitted_at': sub.submitted_at if sub else None,
+                        'is_graded': sub.is_graded if sub else False
+                    })
+                return Response(report)
+            except Assessment.DoesNotExist:
+                return Response({'error': 'assessment not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class StudentEnrollmentViewSet(viewsets.ModelViewSet):
     queryset = StudentEnrollment.objects.all()
