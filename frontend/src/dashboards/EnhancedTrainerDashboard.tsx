@@ -122,7 +122,6 @@ const EnhancedTrainerDashboard: React.FC = () => {
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
     const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
     const [showLessonPlanModal, setShowLessonPlanModal] = useState(false);
-    const [lessonPlanEditMode, setLessonPlanEditMode] = useState(false);
     const [selectedLessonPlan, setSelectedLessonPlan] = useState<number | undefined>(undefined);
 
     // Form states
@@ -416,17 +415,14 @@ const EnhancedTrainerDashboard: React.FC = () => {
                     <LessonPlanList
                         onCreateNew={() => {
                             setSelectedLessonPlan(undefined);
-                            setLessonPlanEditMode(false);
                             setShowLessonPlanModal(true);
                         }}
                         onEdit={(lesson) => {
                             setSelectedLessonPlan(lesson.id);
-                            setLessonPlanEditMode(true);
                             setShowLessonPlanModal(true);
                         }}
                         onView={(lesson) => {
                             setSelectedLessonPlan(lesson.id);
-                            setLessonPlanEditMode(false);
                             setShowLessonPlanModal(true);
                         }}
                     />
@@ -1175,7 +1171,6 @@ const EnhancedTrainerDashboard: React.FC = () => {
                                 onClick={() => {
                                     setShowLessonPlanModal(false);
                                     setSelectedLessonPlan(undefined);
-                                    setLessonPlanEditMode(false);
                                 }}
                                 style={{
                                     position: 'absolute',
@@ -1203,7 +1198,6 @@ const EnhancedTrainerDashboard: React.FC = () => {
                                     onClose={() => {
                                         setShowLessonPlanModal(false);
                                         setSelectedLessonPlan(undefined);
-                                        setLessonPlanEditMode(false);
                                         fetchData(); // Refresh overview data if needed
                                     }}
                                 />

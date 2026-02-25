@@ -321,7 +321,7 @@ const HODDashboard: React.FC = () => {
         setIsFeedbackModalOpen(true);
     };
 
-    const pendingLessons = lessons.filter(l => l.is_taught && !l.is_approved);
+    const pendingLessons = lessons.filter((l: Lesson) => l.is_taught && !l.is_approved);
 
     return (
         <DashboardLayout>
@@ -425,7 +425,7 @@ const HODDashboard: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {lessons.filter(l => l.is_taught).length > 0 ? lessons.filter(l => l.is_taught).map(l => (
+                                    {lessons.filter((l: Lesson) => l.is_taught).length > 0 ? lessons.filter((l: Lesson) => l.is_taught).map((l: Lesson) => (
                                         <tr key={l.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ fontWeight: 600 }}>{l.title}</div>
@@ -582,7 +582,7 @@ const HODDashboard: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {assessments.length > 0 ? assessments.map(a => (
+                                    {assessments.length > 0 ? assessments.map((a: Assessment) => (
                                         <tr key={a.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ fontWeight: 600 }}>{a.assessment_type}</div>
@@ -671,7 +671,7 @@ const HODDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {units.map(u => (
+                                {units.map((u: Unit) => (
                                     <tr key={u.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} className="table-row-hover">
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{u.name}</div>
@@ -760,15 +760,15 @@ const HODDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {trainers.map(t => {
-                                    const trainerUnits = units.filter(u => u.trainer === t.id);
-                                    const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
-                                    const taughtLessons = trainerLessons.filter(l => l.is_taught);
-                                    const pendingLessons = taughtLessons.filter(l => !l.is_approved);
-                                    const trainerAssessments = assessments.filter(a => trainerUnits.some(u => u.id === a.unit));
-                                    const totalLessons = trainerUnits.reduce((sum, u) => sum + u.total_lessons, 0);
-                                    const totalTaughtLessons = trainerUnits.reduce((sum, u) => sum + (u.lessons_taught || 0), 0);
-                                    const totalResources = trainerUnits.reduce((sum, u) => sum + (u.notes_count || 0), 0);
+                                {trainers.map((t: Trainer) => {
+                                    const trainerUnits = units.filter((u: Unit) => u.trainer === t.id);
+                                    const trainerLessons = lessons.filter((l: Lesson) => l.trainer_name === t.username);
+                                    const taughtLessons = trainerLessons.filter((l: Lesson) => l.is_taught);
+                                    const pendingLessons = taughtLessons.filter((l: Lesson) => !l.is_approved);
+                                    const trainerAssessments = assessments.filter((a: Assessment) => trainerUnits.some((u: Unit) => u.id === a.unit));
+                                    const totalLessons = trainerUnits.reduce((sum: number, u: Unit) => sum + u.total_lessons, 0);
+                                    const totalTaughtLessons = trainerUnits.reduce((sum: number, u: Unit) => sum + (u.lessons_taught || 0), 0);
+                                    const totalResources = trainerUnits.reduce((sum: number, u: Unit) => sum + (u.notes_count || 0), 0);
                                     const totalAssessments = trainerAssessments.length;
 
                                     return (
@@ -793,10 +793,10 @@ const HODDashboard: React.FC = () => {
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                                    {trainerUnits.length > 0 ? trainerUnits.map(u => {
-                                                        const unitLessons = trainerLessons.filter(l => l.unit === u.id);
-                                                        const unitTaught = unitLessons.filter(l => l.is_taught);
-                                                        const unitApproved = unitTaught.filter(l => l.is_approved);
+                                                    {trainerUnits.length > 0 ? trainerUnits.map((u: Unit) => {
+                                                        const unitLessons = trainerLessons.filter((l: Lesson) => l.unit === u.id);
+                                                        const unitTaught = unitLessons.filter((l: Lesson) => l.is_taught);
+                                                        const unitApproved = unitTaught.filter((l: Lesson) => l.is_approved);
                                                         const progressPercent = u.total_lessons > 0 ? ((u.lessons_taught || 0) / u.total_lessons) * 100 : 0;
 
                                                         return (
@@ -1026,7 +1026,7 @@ const HODDashboard: React.FC = () => {
                                         onChange={e => setGroupForm({ ...groupForm, course_code: e.target.value })}
                                     />
                                     <datalist id="existing-codes">
-                                        {[...new Set(courseGroups.map((cg: CourseGroup) => cg.course_code))].filter(Boolean).map(code => (
+                                        {([...new Set(courseGroups.map((cg: CourseGroup) => cg.course_code))].filter(Boolean) as string[]).map((code: string) => (
                                             <option key={code} value={code} />
                                         ))}
                                     </datalist>

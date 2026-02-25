@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    FileText, Clock, CheckCircle, XCircle, Edit, Eye, Plus, Calendar, User
+    FileText, Clock, CheckCircle, XCircle, Edit, Eye, Plus, Calendar
 } from 'lucide-react';
 import { useLessons } from '../hooks/useDataHooks';
 import { useAuth } from '../context/AuthContext';
@@ -35,7 +35,7 @@ interface LessonPlanListProps {
 
 const LessonPlanList: React.FC<LessonPlanListProps> = ({ onCreateNew, onEdit, onView }) => {
     const { user } = useAuth();
-    const { data: lessons = [], isLoading, refetch } = useLessons();
+    const { data: lessons = [], isLoading } = useLessons();
 
     // Filter lessons to show only those belonging to the current trainer
     const trainerLessons = lessons.filter((l: Lesson) => l.trainer === user?.id);
