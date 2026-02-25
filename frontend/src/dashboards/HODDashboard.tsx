@@ -766,9 +766,8 @@ const HODDashboard: React.FC = () => {
                             <tbody>
                                 {trainers.map(t => {
                                     const trainerUnits = units.filter(u => u.trainer === t.id);
-                                    const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
+const trainerLessons = lessons.filter(l => l.trainer_name === t.username);
                                     const taughtLessons = trainerLessons.filter(l => l.is_taught);
-                                    const approvedLessons = taughtLessons.filter(l => l.is_approved);
                                     const pendingLessons = taughtLessons.filter(l => !l.is_approved);
                                     const trainerAssessments = assessments.filter(a => trainerUnits.some(u => u.id === a.unit));
                                     const totalLessons = trainerUnits.reduce((sum, u) => sum + u.total_lessons, 0);
