@@ -94,7 +94,8 @@ const EnhancedTrainerDashboard: React.FC = () => {
     const [assessments, setAssessments] = useState<Assessment[]>([]);
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
-    const [attendances, setAttendances] = useState<Attendance[]>([]);
+    // Note: attendance data is fetched but currently unused in this view
+    const [, setAttendances] = useState<Attendance[]>([]);
 
     // Modal states
     const [showAssessmentModal, setShowAssessmentModal] = useState(false);
