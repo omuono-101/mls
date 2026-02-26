@@ -6,7 +6,7 @@ import {
     BookOpen, CheckCircle2, Clock, Lock, AlertCircle,
     FileText, MessageSquare, Bell, HelpCircle,
     ChevronRight, Plus, BarChart3, Star, Layers, ScrollText,
-    Calendar, Target, Info, Send, User, Mail, X, Check
+    Calendar, Target, Info, Send, User, Mail, X, Check, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 

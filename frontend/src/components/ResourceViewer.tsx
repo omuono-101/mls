@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
     X, Download, ExternalLink, FileText, 
-    Video, Link as LinkIcon, ChevronLeft, 
-    ChevronRight, Maximize2, ZoomIn, ZoomOut,
+    Video, Link as LinkIcon, 
+    Maximize2, ZoomIn, ZoomOut,
     File, Presentation, Eye
 } from 'lucide-react';
 
@@ -55,14 +55,6 @@ const ResourceViewer: React.FC<ResourceViewerProps> = ({ resource, onClose }) =>
             default:
                 return 'var(--text-muted)';
         }
-    };
-
-    const isEmbeddable = (type: string) => {
-        return ['PDF', 'Video'].includes(type);
-    };
-
-    const isViewable = (type: string) => {
-        return ['PDF', 'Video', 'PPT'].includes(type);
     };
 
     const handleDownload = () => {

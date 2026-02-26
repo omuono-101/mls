@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import ResourceViewer from '../components/ResourceViewer';
 import api from '../services/api';
 import {
     FileText, Video, Link as LinkIcon, Search, 
-    Filter, Download, Eye, ChevronRight, BookOpen,
+    Download, Eye,
     Layers, Grid, List, FolderOpen
 } from 'lucide-react';
 
@@ -38,7 +37,6 @@ interface Unit {
 }
 
 const MyResources: React.FC = () => {
-    const navigate = useNavigate();
     const [units, setUnits] = useState<Unit[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');

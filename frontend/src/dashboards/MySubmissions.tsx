@@ -5,7 +5,7 @@ import api from '../services/api';
 import {
     FileText, Clock, CheckCircle, AlertCircle, 
     ChevronRight, Download, Eye, Star, Calendar,
-    Send, XCircle, BookOpen
+    XCircle, BookOpen
 } from 'lucide-react';
 
 interface Submission {
