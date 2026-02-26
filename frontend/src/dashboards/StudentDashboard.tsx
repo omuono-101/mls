@@ -251,7 +251,7 @@ const StudentDashboard: React.FC = () => {
 
         units.forEach(unit => {
             // Lessons (next 7 days)
-            unit.lessons?.forEach(lesson => {
+            unit.lessons?.filter(l => l.is_approved).forEach(lesson => {
                 if (lesson.session_date) {
                     const sessionDate = new Date(lesson.session_date);
                     if (sessionDate >= now) {
@@ -506,7 +506,7 @@ const StudentDashboard: React.FC = () => {
     );
 
     const renderUnitContent = (unit: Unit) => {
-        const allLessons = [...unit.lessons].sort((a, b) => a.order - b.order);
+        const allLessons = [...unit.lessons].filter(l => l.is_approved).sort((a, b) => a.order - b.order);
         const assessmentsByLesson = unit.assessments?.reduce((acc, assessment) => {
             const lessonId = assessment.lesson || 'unit';
             if (!acc[lessonId]) acc[lessonId] = [];
@@ -629,13 +629,13 @@ const StudentDashboard: React.FC = () => {
                                         )}
 
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-                                            {lesson.resources && lesson.resources.length > 0 && (
+                                            {lesson.resources && lesson.resources.filter(r => r.is_approved).length > 0 && (
                                                 <div>
                                                     <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                                         <FileText size={18} className="text-primary" /> Learning Assets
                                                     </h3>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                                        {lesson.resources.map(resource => (
+                                                        {lesson.resources.filter(r => r.is_approved).map(resource => (
                                                             <div
                                                                 key={resource.id}
                                                                 className="glass hover-scale"

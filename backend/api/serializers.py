@@ -247,9 +247,6 @@ class UnitListSerializer(serializers.ModelSerializer):
     is_enrolled = serializers.SerializerMethodField()
     is_current_semester = serializers.SerializerMethodField()
 
-    lessons = LessonSerializer(many=True, read_only=True)
-    assessments = AssessmentSerializer(many=True, read_only=True)
-
     class Meta:
         model = Unit
         fields = [
@@ -257,7 +254,6 @@ class UnitListSerializer(serializers.ModelSerializer):
             'total_lessons', 'cat_frequency', 'cat_total_points', 'assessment_total_points',
             'lessons_taught', 'notes_count', 'cats_count',
             'student_progress', 'lessons_completed', 'is_enrolled', 'is_current_semester',
-            'lessons', 'assessments'
         ]
 
     def get_is_current_semester(self, obj):

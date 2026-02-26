@@ -163,10 +163,17 @@ class UnitViewSet(viewsets.ModelViewSet):
             return queryset.none()
         
         # 1. Base annotations with Subqueries for stability on Postgres
+        # For students, we ONLY count approved items
+        is_student = user.role == 'Student'
+        
         queryset = queryset.annotate(
             annotated_lessons_taught=Coalesce(
                 Subquery(
-                    Lesson.objects.filter(unit=OuterRef('pk'), is_taught=True)
+                    Lesson.objects.filter(
+                        unit=OuterRef('pk'), 
+                        is_taught=True,
+                        **( {'is_approved': True} if is_student else {} )
+                    )
                     .values('unit')
                     .annotate(cnt=Count('pk'))
                     .values('cnt'),
@@ -176,7 +183,10 @@ class UnitViewSet(viewsets.ModelViewSet):
             ),
             annotated_notes_count=Coalesce(
                 Subquery(
-                    Resource.objects.filter(lesson__unit=OuterRef('pk'))
+                    Resource.objects.filter(
+                        lesson__unit=OuterRef('pk'),
+                        **( {'is_approved': True} if is_student else {} )
+                    )
                     .values('lesson__unit')
                     .annotate(cnt=Count('pk'))
                     .values('cnt'),
@@ -186,7 +196,11 @@ class UnitViewSet(viewsets.ModelViewSet):
             ),
             annotated_cats_count=Coalesce(
                 Subquery(
-                    Assessment.objects.filter(unit=OuterRef('pk'), assessment_type='CAT')
+                    Assessment.objects.filter(
+                        unit=OuterRef('pk'), 
+                        assessment_type='CAT',
+                        **( {'is_approved': True} if is_student else {} )
+                    )
                     .values('unit')
                     .annotate(cnt=Count('pk'))
                     .values('cnt'),
@@ -236,18 +250,23 @@ class UnitViewSet(viewsets.ModelViewSet):
             )
 
         if self.action == 'list':
-            # Prefetch for lessons and assessments which are now in UnitListSerializer
-            queryset = queryset.prefetch_related(
-                Prefetch('lessons', queryset=Lesson.objects.select_related('trainer', 'unit', 'module').prefetch_related('resources')),
-                Prefetch('assessments', queryset=Assessment.objects.select_related('unit'))
-            )
+            # Reduced prefetches for list view to improve performance
+            pass
             
         if self.action == 'retrieve':
             # Add deep prefetch for detailed view
+            # For students, we ONLY prefetch approved lessons and assessments
+            lesson_qs = Lesson.objects.select_related('trainer', 'unit', 'module')
+            assessment_qs = Assessment.objects.select_related('unit')
+            
+            if user.role == 'Student':
+                lesson_qs = lesson_qs.filter(is_approved=True)
+                assessment_qs = assessment_qs.filter(is_approved=True)
+            
             queryset = queryset.prefetch_related(
                 'modules',
-                Prefetch('lessons', queryset=Lesson.objects.select_related('trainer', 'unit', 'module')),
-                Prefetch('assessments', queryset=Assessment.objects.select_related('unit'))
+                Prefetch('lessons', queryset=lesson_qs),
+                Prefetch('assessments', queryset=assessment_qs)
             )
             
         return queryset
@@ -347,6 +366,8 @@ class LessonViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         queryset = Lesson.objects.all().select_related('unit', 'trainer', 'module')
+        
+        # Filtering
         unit_id = self.request.query_params.get('unit', None)
         module_id = self.request.query_params.get('module', None)
         if unit_id is not None:
@@ -354,8 +375,17 @@ class LessonViewSet(viewsets.ModelViewSet):
         if module_id is not None:
             queryset = queryset.filter(module_id=module_id)
         
+        # Security: Students only see approved lessons
+        user = self.request.user
+        if user.is_authenticated and user.role == 'Student':
+            queryset = queryset.filter(is_approved=True)
+            
         if self.action == 'list':
-            queryset = queryset.prefetch_related('resources')
+            # Resources prefetch also needs to be filtered for students
+            resource_qs = Resource.objects.all()
+            if user.is_authenticated and user.role == 'Student':
+                resource_qs = resource_qs.filter(is_approved=True)
+            queryset = queryset.prefetch_related(Prefetch('resources', queryset=resource_qs))
             
         return queryset
     
@@ -436,6 +466,14 @@ class LessonViewSet(viewsets.ModelViewSet):
 class ResourceViewSet(viewsets.ModelViewSet):
     queryset = Resource.objects.all()
     serializer_class = ResourceSerializer
+    
+    def get_queryset(self):
+        queryset = Resource.objects.all()
+        # Security: Students only see approved resources
+        user = self.request.user
+        if user.is_authenticated and user.role == 'Student':
+            queryset = queryset.filter(is_approved=True)
+        return queryset
     
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:

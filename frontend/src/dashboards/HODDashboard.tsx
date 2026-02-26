@@ -60,6 +60,7 @@ interface Assessment {
     id: number;
     unit: number;
     unit_name?: string;
+    title: string;
     assessment_type: string;
     points: number;
     due_date: string;
@@ -71,6 +72,8 @@ interface Course { id: number; name: string; code?: string; }
 interface Intake { id: number; name: string; course: number; group_code?: string; }
 interface Semester { id: number; name: string; start_date: string; end_date: string; intake: number; }
 interface CourseGroup {
+    semester_name: string;
+    intake_name: string;
     id: number;
     course: number;
     intake: number;
@@ -92,10 +95,10 @@ const HODDashboard: React.FC = () => {
 
     // Data hooks
     const { data: units = [], refetch: refetchUnits } = useUnits();
-    const { data: courses = [] } = useCourses();
-    const { data: intakes = [] } = useIntakes();
-    const { data: semesters = [] } = useSemesters();
-    const { data: courseGroups = [] } = useCourseGroups();
+    const { data: courses = [], refetch: refetchCourses } = useCourses();
+    const { data: intakes = [], refetch: refetchIntakes } = useIntakes();
+    const { data: semesters = [], refetch: refetchSemesters } = useSemesters();
+    const { data: courseGroups = [], refetch: refetchCourseGroups } = useCourseGroups();
     const { data: lessons = [], refetch: refetchLessons } = useLessons();
     const { data: assessments = [], refetch: refetchAssessments } = useAssessments();
     const { data: trainers = [], refetch: refetchTrainers } = useTrainers();
@@ -107,6 +110,10 @@ const HODDashboard: React.FC = () => {
         try {
             await Promise.all([
                 refetchUnits(),
+                refetchCourses(),
+                refetchIntakes(),
+                refetchSemesters(),
+                refetchCourseGroups(),
                 refetchLessons(),
                 refetchAssessments(),
                 refetchTrainers()
@@ -142,6 +149,7 @@ const HODDashboard: React.FC = () => {
     const [editUnitForm, setEditUnitForm] = useState({ id: 0, name: '', code: '', course_group: '', total_lessons: 10, cat_frequency: 3, cat_total_points: 30, assessment_total_points: 20 });
     const [feedbackForm, setFeedbackForm] = useState({ contentId: 0, contentType: 'lesson' as 'lesson' | 'resource' | 'assessment', feedback: '' });
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
+    const [managementTab, setManagementTab] = useState<'units' | 'groups'>('units');
     const [trainerId, setTrainerId] = useState('');
     const [targetUnitId, setTargetUnitId] = useState('');
 
@@ -503,6 +511,7 @@ const HODDashboard: React.FC = () => {
                                         <th style={{ padding: '1rem 1.5rem' }}>Unit</th>
                                         <th style={{ padding: '1rem 1.5rem' }}>Trainer</th>
                                         <th style={{ padding: '1rem 1.5rem' }}>Type</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Status</th>
                                         <th style={{ padding: '1rem 1.5rem' }}>Actions</th>
                                     </tr>
                                 </thead>
@@ -525,18 +534,23 @@ const HODDashboard: React.FC = () => {
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '1rem 1.5rem' }}>
+                                                    {r.is_approved ? (
+                                                        <span style={{ padding: '0.25rem 0.6rem', background: '#dcfce7', color: '#15803d', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>Approved</span>
+                                                    ) : r.audit_feedback ? (
+                                                        <span style={{ padding: '0.25rem 0.6rem', background: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>Feedback Sent</span>
+                                                    ) : (
+                                                        <span style={{ padding: '0.25rem 0.6rem', background: '#fef3c7', color: '#92400e', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>Pending</span>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '1rem 1.5rem' }}>
                                                     <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                                                         {r.file ? (
-                                                            <a href={r.file} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: 'var(--bg-alt)', color: 'var(--text-main)', fontSize: '0.75rem' }}>View</a>
+                                                            <a href={r.file} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: 'var(--bg-alt)', color: 'var(--text-main)', fontSize: '0.75rem', minWidth: 'auto' }}>View</a>
                                                         ) : r.url ? (
-                                                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: 'var(--bg-alt)', color: 'var(--text-main)', fontSize: '0.75rem' }}>Link</a>
+                                                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: 'var(--bg-alt)', color: 'var(--text-main)', fontSize: '0.75rem', minWidth: 'auto' }}>Link</a>
                                                         ) : null}
 
-                                                        <div style={{ width: '1px', height: '16px', background: 'var(--border)', margin: '0 0.2rem' }} />
-
-                                                        {r.is_approved ? (
-                                                            <span style={{ color: '#15803d', fontSize: '0.75rem', fontWeight: 600 }}>Approved</span>
-                                                        ) : (
+                                                        {!r.is_approved && (
                                                             <>
                                                                 <button
                                                                     onClick={() => handleAuditAction('resource', r.id, true)}
@@ -579,6 +593,8 @@ const HODDashboard: React.FC = () => {
                                         <th style={{ padding: '1rem 1.5rem' }}>Unit</th>
                                         <th style={{ padding: '1rem 1.5rem' }}>Points</th>
                                         <th style={{ padding: '1rem 1.5rem' }}>Due Date</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Status</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -586,6 +602,7 @@ const HODDashboard: React.FC = () => {
                                         <tr key={a.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ fontWeight: 600 }}>{a.assessment_type}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{a.title}</div>
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{a.unit_name}</span>
@@ -594,13 +611,20 @@ const HODDashboard: React.FC = () => {
                                                 <span style={{ fontSize: '0.875rem' }}>{a.points} Pts</span>
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
+                                                <span style={{ fontSize: '0.875rem' }}>{new Date(a.due_date).toLocaleDateString()}</span>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                {a.is_approved ? (
+                                                    <span style={{ padding: '0.25rem 0.6rem', background: '#dcfce7', color: '#15803d', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>Approved</span>
+                                                ) : a.audit_feedback ? (
+                                                    <span style={{ padding: '0.25rem 0.6rem', background: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>Feedback Sent</span>
+                                                ) : (
+                                                    <span style={{ padding: '0.25rem 0.6rem', background: '#fef3c7', color: '#92400e', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>Pending</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                                                    <span style={{ fontSize: '0.875rem' }}>{new Date(a.due_date).toLocaleDateString()}</span>
-                                                    <div style={{ width: '1px', height: '16px', background: 'var(--border)', margin: '0 0.2rem' }} />
-
-                                                    {a.is_approved ? (
-                                                        <span style={{ color: '#15803d', fontSize: '0.75rem', fontWeight: 600 }}>Approved</span>
-                                                    ) : (
+                                                    {!a.is_approved && (
                                                         <>
                                                             <button
                                                                 onClick={() => handleAuditAction('assessment', a.id, true)}
@@ -637,8 +661,28 @@ const HODDashboard: React.FC = () => {
                 <div className="card" style={{ padding: 0 }}>
                     <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                         <div>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Unit Management & Automation</h2>
-                            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Schedule CATs and manage classroom readiness.</p>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Department Management</h2>
+                            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Configure Units and Course Groups.</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-alt)', padding: '0.3rem', borderRadius: '10px' }}>
+                            <button
+                                onClick={() => setManagementTab('units')}
+                                style={{
+                                    padding: '0.4rem 0.8rem', borderRadius: '8px', border: 'none', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                                    background: managementTab === 'units' ? 'var(--bg-main)' : 'transparent',
+                                    color: managementTab === 'units' ? 'var(--primary)' : 'var(--text-muted)',
+                                    boxShadow: managementTab === 'units' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+                                }}
+                            >Units</button>
+                            <button
+                                onClick={() => setManagementTab('groups')}
+                                style={{
+                                    padding: '0.4rem 0.8rem', borderRadius: '8px', border: 'none', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                                    background: managementTab === 'groups' ? 'var(--bg-main)' : 'transparent',
+                                    color: managementTab === 'groups' ? 'var(--primary)' : 'var(--text-muted)',
+                                    boxShadow: managementTab === 'groups' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+                                }}
+                            >Course Groups</button>
                         </div>
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
                             <button
@@ -659,83 +703,128 @@ const HODDashboard: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                    <div className="table-responsive">
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                            <thead style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
-                                <tr>
-                                    <th style={{ padding: '1rem 1.5rem' }}>Unit Details</th>
-                                    <th style={{ padding: '1rem 1.5rem' }}>Course Group</th>
-                                    <th style={{ padding: '1rem 1.5rem' }}>Workload</th>
-                                    <th style={{ padding: '1rem 1.5rem' }}>Trainer</th>
-                                    <th style={{ padding: '1rem 1.5rem' }}>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {units.map((u: Unit) => (
-                                    <tr key={u.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} className="table-row-hover">
-                                        <td style={{ padding: '1rem 1.5rem' }}>
-                                            <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{u.name}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                <Database size={12} /> {u.code}
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '1rem 1.5rem' }}>
-                                            <span style={{ padding: '0.25rem 0.75rem', background: '#f1f5f9', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 500 }}>
-                                                {u.course_group_name}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '1rem 1.5rem' }}>
-                                            <div style={{ fontSize: '0.875rem' }}>{u.total_lessons} Lessons</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>CAT every {u.cat_frequency} lessons</div>
-                                        </td>
-                                        <td style={{ padding: '1rem 1.5rem' }}>
-                                            {u.trainer_name ? (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700 }}>
-                                                        {u.trainer_name[0]}
-                                                    </div>
-                                                    <span style={{ fontSize: '0.875rem' }}>{u.trainer_name}</span>
-                                                </div>
-                                            ) : (
-                                                <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 500 }}>Unassigned</span>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: '1rem 1.5rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                            <button
-                                                onClick={() => handleGenerateCats(u.id)}
-                                                className="btn btn-sm"
-                                                title="Generate CATs"
-                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#f5f3ff', color: '#6d28d9', borderRadius: '8px', border: '1px solid #ddd6fe' }}
-                                                disabled={loading}
-                                            >
-                                                <Play size={16} />
-                                            </button>
-                                            <button
-                                                className="btn btn-sm"
-                                                title="Assign Trainer"
-                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#f0f9ff', color: '#0369a1', borderRadius: '8px', border: '1px solid #bae6fd' }}
-                                                onClick={() => {
-                                                    setSelectedUnit(u);
-                                                    setTrainerId(u.trainer?.toString() || '');
-                                                    setIsTrainerModalOpen(true);
-                                                }}
-                                            >
-                                                <UserPlus size={16} />
-                                            </button>
-                                            <button
-                                                className="btn btn-sm"
-                                                title="Edit Unit"
-                                                style={{ padding: '0.4rem', minWidth: 'auto', background: '#f3f4f6', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                                                onClick={() => openEditUnitModal(u)}
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                        </td>
+                    {managementTab === 'units' ? (
+                        <div className="table-responsive">
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                <thead style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
+                                    <tr>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Unit Details</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Course Group</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Workload</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Trainer</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {units.map((u: Unit) => (
+                                        <tr key={u.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} className="table-row-hover">
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{u.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <Database size={12} /> {u.code}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <span style={{ padding: '0.25rem 0.75rem', background: '#f1f5f9', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 500 }}>
+                                                    {u.course_group_name}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <div style={{ fontSize: '0.875rem' }}>{u.total_lessons} Lessons</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>CAT every {u.cat_frequency} lessons</div>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                {u.trainer_name ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700 }}>
+                                                            {u.trainer_name[0]}
+                                                        </div>
+                                                        <span style={{ fontSize: '0.875rem' }}>{u.trainer_name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 500 }}>Unassigned</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                <button
+                                                    onClick={() => handleGenerateCats(u.id)}
+                                                    className="btn btn-sm"
+                                                    title="Generate CATs"
+                                                    style={{ padding: '0.4rem', minWidth: 'auto', background: '#f5f3ff', color: '#6d28d9', borderRadius: '8px', border: '1px solid #ddd6fe' }}
+                                                    disabled={loading}
+                                                >
+                                                    <Play size={16} />
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm"
+                                                    title="Assign Trainer"
+                                                    style={{ padding: '0.4rem', minWidth: 'auto', background: '#f0f9ff', color: '#0369a1', borderRadius: '8px', border: '1px solid #bae6fd' }}
+                                                    onClick={() => {
+                                                        setSelectedUnit(u);
+                                                        setTrainerId(u.trainer?.toString() || '');
+                                                        setIsTrainerModalOpen(true);
+                                                    }}
+                                                >
+                                                    <UserPlus size={16} />
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm"
+                                                    title="Edit Unit"
+                                                    style={{ padding: '0.4rem', minWidth: 'auto', background: '#f3f4f6', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                                                    onClick={() => openEditUnitModal(u)}
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="table-responsive">
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                <thead style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
+                                    <tr>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Course Name</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Group Code</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Intake</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Semester</th>
+                                        <th style={{ padding: '1rem 1.5rem' }}>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {courseGroups.length > 0 ? courseGroups.map((cg: CourseGroup) => (
+                                        <tr key={cg.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <div style={{ fontWeight: 600 }}>{cg.course_name || 'N/A'}</div>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <span style={{ padding: '0.2rem 0.5rem', background: 'var(--bg-alt)', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                    {cg.course_code}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <div style={{ fontSize: '0.875rem' }}>{cg.intake_name || 'N/A'}</div>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <div style={{ fontSize: '0.875rem' }}>{cg.semester_name || 'N/A'}</div>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <button className="btn btn-sm" style={{ background: 'var(--bg-alt)', borderRadius: '8px' }}>Edit</button>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                                No course groups found.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             ) : (
                 /* Trainers View */
