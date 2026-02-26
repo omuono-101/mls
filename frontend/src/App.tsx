@@ -22,6 +22,8 @@ import SubmissionGrading from './dashboards/SubmissionGrading';
 import LessonPlanForm from './components/LessonPlanForm';
 import HODLessonPlanReview from './components/HODLessonPlanReview';
 import Forum from './dashboards/Forum';
+import MySubmissions from './dashboards/MySubmissions';
+import MyResources from './dashboards/MyResources';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { queryClient, persister } from './services/queryClient';
 
@@ -146,6 +148,20 @@ const App: React.FC = () => {
             <Route path="/student/forum/:topicId" element={
               <ProtectedRoute allowedRoles={['Student']}>
                 <Forum />
+              </ProtectedRoute>
+            } />
+
+            {/* My Submissions Route */}
+            <Route path="/student/submissions" element={
+              <ProtectedRoute allowedRoles={['Student']}>
+                <MySubmissions />
+              </ProtectedRoute>
+            } />
+
+            {/* My Resources Route */}
+            <Route path="/student/resources" element={
+              <ProtectedRoute allowedRoles={['Student']}>
+                <MyResources />
               </ProtectedRoute>
             } />
 

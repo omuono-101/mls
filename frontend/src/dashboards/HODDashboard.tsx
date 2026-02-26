@@ -39,6 +39,7 @@ interface Resource {
     url: string | null;
     description: string;
     is_approved: boolean;
+    is_active: boolean;
     audit_feedback: string;
 }
 
@@ -65,6 +66,7 @@ interface Assessment {
     points: number;
     due_date: string;
     is_approved: boolean;
+    is_active: boolean;
     audit_feedback: string;
 }
 
@@ -331,6 +333,23 @@ const HODDashboard: React.FC = () => {
 
     const pendingLessons = lessons.filter((l: Lesson) => l.is_taught && !l.is_approved);
 
+    const handleActivateDeactivate = async (type: 'resource' | 'assessment', id: number, isActive: boolean) => {
+        setLoading(true);
+        const endpoint = type === 'resource' ? 'resources' : 'assessments';
+        try {
+            await api.patch(`${endpoint}/${id}/`, {
+                is_active: isActive
+            });
+            alert(`${type.charAt(0).toUpperCase() + type.slice(1)} ${isActive ? 'activated' : 'deactivated'} successfully`);
+            fetchData();
+        } catch (error) {
+            console.error(`Failed to ${isActive ? 'activate' : 'deactivate'} ${type}`, error);
+            alert(`Failed to ${isActive ? 'activate' : 'deactivate'} ${type}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <DashboardLayout>
             <div style={{ marginBottom: '2rem' }}>
@@ -568,6 +587,27 @@ const HODDashboard: React.FC = () => {
                                                                 </button>
                                                             </>
                                                         )}
+
+                                                        {r.is_approved && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleActivateDeactivate('resource', r.id, !r.is_active)}
+                                                                    style={{
+                                                                        background: r.is_active ? '#fef3c7' : '#dcfce7',
+                                                                        color: r.is_active ? '#92400e' : '#15803d',
+                                                                        border: 'none',
+                                                                        borderRadius: '6px',
+                                                                        padding: '0.3rem',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: 600
+                                                                    }}
+                                                                    title={r.is_active ? 'Deactivate Resource' : 'Activate Resource'}
+                                                                >
+                                                                    {r.is_active ? 'Deactivate' : 'Activate'}
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -641,6 +681,24 @@ const HODDashboard: React.FC = () => {
                                                                 <Edit2 size={16} />
                                                             </button>
                                                         </>
+                                                    )}
+                                                    {a.is_approved && (
+                                                        <button
+                                                            onClick={() => handleActivateDeactivate('assessment', a.id, !a.is_active)}
+                                                            style={{
+                                                                background: a.is_active ? '#fef3c7' : '#dcfce7',
+                                                                color: a.is_active ? '#92400e' : '#15803d',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                padding: '0.3rem',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.7rem',
+                                                                fontWeight: 600
+                                                            }}
+                                                            title={a.is_active ? 'Deactivate Assessment' : 'Activate Assessment'}
+                                                        >
+                                                            {a.is_active ? 'Deactivate' : 'Activate'}
+                                                        </button>
                                                     )}
                                                 </div>
                                             </td>

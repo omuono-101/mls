@@ -480,6 +480,21 @@ class ResourceViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         return [IsTrainer()]
 
+    @action(detail=True, methods=['post'], permission_classes=[IsHOD])
+    def activate(self, request, pk=None):
+        resource = self.get_object()
+        resource.is_active = True
+        resource.save()
+        return Response({'status': 'resource activated'})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsHOD])
+    def deactivate(self, request, pk=None):
+        resource = self.get_object()
+        resource.is_active = False
+        resource.save()
+        return Response({'status': 'resource deactivated'})
+
+
 class AssessmentViewSet(viewsets.ModelViewSet):
     queryset = Assessment.objects.all()
     serializer_class = AssessmentSerializer
@@ -513,6 +528,21 @@ class AssessmentViewSet(viewsets.ModelViewSet):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
         return [IsTrainer()]
+
+    @action(detail=True, methods=['post'], permission_classes=[IsHOD])
+    def activate(self, request, pk=None):
+        assessment = self.get_object()
+        assessment.is_active = True
+        assessment.save()
+        return Response({'status': 'assessment activated'})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsHOD])
+    def deactivate(self, request, pk=None):
+        assessment = self.get_object()
+        assessment.is_active = False
+        assessment.save()
+        return Response({'status': 'assessment deactivated'})
+
 
 class SubmissionViewSet(viewsets.ModelViewSet):
     queryset = Submission.objects.all()

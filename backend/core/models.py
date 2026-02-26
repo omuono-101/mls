@@ -237,6 +237,7 @@ class Resource(models.Model):
     url = models.URLField(blank=True, null=True)
     description = models.TextField(blank=True)
     is_approved = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     audit_feedback = models.TextField(blank=True)
 
     def __str__(self):
@@ -264,6 +265,7 @@ class Assessment(models.Model):
     scheduled_end = models.DateTimeField(null=True, blank=True)
     allow_late_submission = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     audit_feedback = models.TextField(blank=True)
 
     def __str__(self):

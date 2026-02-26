@@ -1,21 +1,31 @@
-# HOD Department Audit Enhancement TODO
+# Student Dashboard Enhancement Tasks
 
-## Phase 1: Resources Tab Enhancement
-- [ ] Add selected resource state
-- [ ] Add Resource Detail Modal with:
-  - [ ] Resource preview (PDF, Video, Link)
-  - [ ] Metadata display (type, description, upload date)
-  - [ ] Trainer comment/feedback section
-  - [ ] Approve/Reject buttons with feedback
+## Completed
+- [x] Analyzed current codebase structure
 
-## Phase 2: Assessments Tab Enhancement
-- [ ] Add selected assessment state  
-- [ ] Add Assessment Detail Modal with:
-  - [ ] Assessment details (type, points, duration, due date)
-  - [ ] Quality checklist (has instructions, has points, proper duration)
-  - [ ] Trainer comment/feedback section
-  - [ ] Approve/Reject buttons with feedback
+## In Progress
+- [ ] Fix StudentDashboard Layout - Ensure lesson content, resources, and assessments display in separate, non-overlapping containers
+- [ ] Add "Contact Trainer" tab in StudentDashboard for student-to-trainer messaging
+- [ ] Enhance notification system to allow students to send messages to trainers
 
-## Phase 3: Backend Student Visibility
-- [ ] Filter resources by is_approved for students
-- [ ] Use is_available() for assessments in student view
+## Task Details
+
+### 1. Layout Fix (StudentDashboard.tsx)
+- Ensure lesson content (notes) doesn't overlap with resources or assessment cards
+- Use proper grid/flex layout with clear separation between content sections
+
+### 2. Contact Trainer Feature (StudentDashboard.tsx)
+- Add new tab for student-to-trainer communication
+- Show list of trainers for student's enrolled units
+- Allow sending messages/notifications to trainers
+- Show message history
+
+### 3. Notification System Enhancement (SendNotification.tsx / Backend)
+- Update role permissions to allow students to send to trainers
+- Add "Trainer" to the available roles for student users
+- Ensure notifications are properly routed to trainers
+
+## Files to Modify
+1. frontend/src/dashboards/StudentDashboard.tsx
+2. frontend/src/components/SendNotification.tsx  
+3. backend/api/views.py (if needed for permission changes)

@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import {
     Users, BookOpen, Calendar,
     Settings, LogOut, LayoutDashboard, Database, CheckSquare, UserCheck,
-    MessageSquare, Bell, User as UserIcon, HelpCircle, FileText
+    MessageSquare, Bell, User as UserIcon, HelpCircle, FileText, Mail,
+    Download, FolderOpen
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -59,6 +60,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
                     { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/student?tab=overview' },
                     { icon: <BookOpen size={20} />, label: 'My Courses', path: '/student?tab=courses' },
                     { icon: <FileText size={20} />, label: 'Assessments', path: '/student?tab=assessments' },
+                    { icon: <Download size={20} />, label: 'My Submissions', path: '/student/submissions' },
+                    { icon: <FolderOpen size={20} />, label: 'My Resources', path: '/student/resources' },
+                    { icon: <Mail size={20} />, label: 'Contact Trainer', path: '/student?tab=contact' },
                     { icon: <MessageSquare size={20} />, label: 'Communication', path: '/student/forum' },
                     { icon: <Bell size={20} />, label: 'Notifications', path: '/student?tab=notifications' },
                     { icon: <UserIcon size={20} />, label: 'Profile', path: '/student?tab=profile' },

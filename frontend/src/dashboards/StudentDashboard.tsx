@@ -6,7 +6,7 @@ import {
     BookOpen, CheckCircle2, Clock, Lock, AlertCircle,
     FileText, MessageSquare, Bell, HelpCircle,
     ChevronRight, Plus, BarChart3, Star, Layers, ScrollText,
-    Calendar, Target, Info
+    Calendar, Target, Info, Send, User, Mail, X, Check
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -17,6 +17,7 @@ interface Resource {
     lesson: number;
     file?: string;
     url?: string;
+    is_approved?: boolean;
 }
 
 interface Lesson {
@@ -86,6 +87,18 @@ interface Unit {
     is_current_semester?: boolean;
     semester_number: number;
     student_progress?: number;
+    trainer?: number;
+    trainer_name?: string;
+}
+
+interface Trainer {
+    id: number;
+    username: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    units?: number[];
 }
 
 interface Announcement {
@@ -102,6 +115,9 @@ interface Notification {
     message: string;
     is_read: boolean;
     created_at: string;
+    notification_type?: string;
+    is_critical?: boolean;
+    sender_role?: string;
 }
 
 const CountdownTimer: React.FC<{ targetDate: string }> = ({ targetDate }) => {
@@ -139,9 +155,22 @@ const StudentDashboard: React.FC = () => {
     const [units, setUnits] = useState<Unit[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [trainers, setTrainers] = useState<Trainer[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
     const [enrolling, setEnrolling] = useState<number | null>(null);
+    
+    // Contact Trainer state
+    const [showContactModal, setShowContactModal] = useState(false);
+    const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
+    const [messageForm, setMessageForm] = useState({
+        title: '',
+        message: '',
+        isCritical: false
+    });
+    const [sendingMessage, setSendingMessage] = useState(false);
+    const [messageSuccess, setMessageSuccess] = useState('');
+    const [messageError, setMessageError] = useState('');
 
     const fetchDashboardData = async () => {
         if (!user || !user.is_activated) return;
@@ -155,20 +184,70 @@ const StudentDashboard: React.FC = () => {
             setUnits(unitsRes.data);
             setAnnouncements(annRes.data);
             setNotifications(notifRes.data);
-            console.log('Student Dashboard Data:', {
-                units: unitsRes.data,
-                announcements: annRes.data,
-                notifications: notifRes.data
+            
+            // Fetch trainers for enrolled units
+            const trainerIds = new Set<number>();
+            unitsRes.data.forEach((u: Unit) => {
+                if (u.trainer) trainerIds.add(u.trainer);
             });
+            if (trainerIds.size > 0) {
+                fetchTrainers([...trainerIds]);
+            }
         } catch (error) {
             console.error('Failed to fetch dashboard data', error);
         } finally {
             setLoading(false);
         }
     };
+    
+    const fetchTrainers = async (trainerIds: number[]) => {
+        try {
+            const response = await api.get('users/');
+            const allUsers = response.data.results || response.data;
+            const filteredTrainers = allUsers.filter(
+                (u: any) => u.role === 'Trainer' && trainerIds.includes(u.id)
+            );
+            setTrainers(filteredTrainers);
+        } catch (error) {
+            console.error('Failed to fetch trainers', error);
+        }
+    };
+
+    const sendMessageToTrainer = async () => {
+        if (!selectedTrainer || !messageForm.title || !messageForm.message) {
+            setMessageError('Please fill in all required fields');
+            return;
+        }
+        
+        setSendingMessage(true);
+        setMessageError('');
+        
+        try {
+            await api.post('notifications/send_notification/', {
+                user_ids: [selectedTrainer.id],
+                title: messageForm.title,
+                message: messageForm.message,
+                notification_type: messageForm.isCritical ? 'critical' : 'general',
+                is_critical: messageForm.isCritical,
+                is_active: true
+            });
+            
+            setMessageSuccess('Message sent successfully!');
+            setMessageForm({ title: '', message: '', isCritical: false });
+            setTimeout(() => {
+                setShowContactModal(false);
+                setSelectedTrainer(null);
+                setMessageSuccess('');
+            }, 2000);
+        } catch (error: any) {
+            setMessageError(error.response?.data?.error || 'Failed to send message');
+        } finally {
+            setSendingMessage(false);
+        }
+    };
+
     const toggleLessonCompletion = async (lessonId: number, currentStatus: boolean, unitId: number) => {
         try {
-            // Optimistic update
             const updatedUnits = units.map(u => {
                 if (u.id === unitId) {
                     const updatedLessons = u.lessons.map(l => {
@@ -177,11 +256,8 @@ const StudentDashboard: React.FC = () => {
                         }
                         return l;
                     });
-
-                    // Recalculate progress for the unit
                     const completedCount = updatedLessons.filter(l => l.is_completed).length;
                     const newProgress = Math.round((completedCount / (u.total_lessons || 1)) * 100);
-
                     return { ...u, lessons: updatedLessons, student_progress: newProgress };
                 }
                 return u;
@@ -192,14 +268,10 @@ const StudentDashboard: React.FC = () => {
                 setSelectedUnit(updatedUnits.find(u => u.id === unitId) || null);
             }
 
-            // API call
             await api.post(`lessons/${lessonId}/${!currentStatus ? 'complete' : 'incomplete'}/`);
-
-            // Background refresh to ensure sync
             fetchDashboardData();
         } catch (error) {
             console.error('Failed to toggle lesson completion', error);
-            // Revert on error (optional, but good practice)
             fetchDashboardData();
         }
     };
@@ -221,9 +293,21 @@ const StudentDashboard: React.FC = () => {
     }, [user?.is_activated]);
 
     useEffect(() => {
-        // Clear selected unit when tab changes
         setSelectedUnit(null);
     }, [activeTab]);
+
+    const getEnrolledTrainers = () => {
+        const trainerMap = new Map<number, Trainer>();
+        units.filter(u => u.is_enrolled && u.trainer).forEach(unit => {
+            if (unit.trainer && !trainerMap.has(unit.trainer)) {
+                const trainer = trainers.find(t => t.id === unit.trainer);
+                if (trainer) {
+                    trainerMap.set(unit.trainer, { ...trainer, units: [unit.id] });
+                }
+            }
+        });
+        return Array.from(trainerMap.values());
+    };
 
     const getUnifiedFeed = () => {
         const feedItems = [
@@ -250,7 +334,6 @@ const StudentDashboard: React.FC = () => {
         const now = new Date();
 
         units.forEach(unit => {
-            // Lessons (next 7 days)
             unit.lessons?.filter(l => l.is_approved).forEach(lesson => {
                 if (lesson.session_date) {
                     const sessionDate = new Date(lesson.session_date);
@@ -268,7 +351,6 @@ const StudentDashboard: React.FC = () => {
                 }
             });
 
-            // Assessments
             unit.assessments?.forEach(assessment => {
                 const dateStr = assessment.scheduled_at || assessment.due_date;
                 if (dateStr) {
@@ -297,22 +379,18 @@ const StudentDashboard: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', textAlign: 'center', padding: '2rem' }}>
                     <div className="card-premium animate-fade-in" style={{ padding: '3rem', borderRadius: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '550px', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '150px', height: '150px', background: 'var(--primary)', opacity: '0.05', borderRadius: '50%' }} />
-
                         <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '1.5rem', borderRadius: '24px', marginBottom: '1.5rem' }}>
                             <Lock size={48} className="animate-pulse" />
                         </div>
-
                         <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>Account Dormant</h2>
                         <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: 'var(--text-muted)', marginBottom: '2rem' }}>
                             Welcome to the portal! Your registration is complete, but your account is currently
                             <span style={{ color: 'var(--primary)', fontWeight: 700 }}> pending activation</span> by the administration.
                         </p>
-
                         <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px', width: '100%', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(0,0,0,0.05)' }}>
                             <AlertCircle size={24} style={{ color: 'var(--primary)' }} />
                             <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-main)' }}>Please contact your HOD or Admin for activation.</span>
                         </div>
-
                         <button onClick={logout} className="btn" style={{ marginTop: '2.5rem', background: '#f1f5f9', color: '#475569', width: '100%' }}>
                             Secure Logout
                         </button>
@@ -328,7 +406,7 @@ const StudentDashboard: React.FC = () => {
                 <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
                     Welcome back, <span className="text-gradient">{user?.first_name || user?.username}!</span> 👋
                 </h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Here's what's happening in your learning journey.</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Here is what is happening in your learning journey.</p>
                 <div style={{ position: 'absolute', bottom: '-15px', left: 0, width: '60px', height: '4px', background: 'var(--primary)', borderRadius: '2px' }} />
             </div>
 
@@ -366,7 +444,6 @@ const StudentDashboard: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: '2rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    {/* Learning Progress */}
                     <div className="card-premium" style={{ padding: '2rem', borderRadius: '24px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                             <div>
@@ -412,7 +489,6 @@ const StudentDashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Upcoming Events */}
                     <div className="card-premium" style={{ padding: '2rem', borderRadius: '24px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                             <div>
@@ -455,7 +531,7 @@ const StudentDashboard: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                         <div>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>Activity Feed</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Announcements & Notifications</p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Announcements and Notifications</p>
                         </div>
                         <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '0.6rem', borderRadius: '10px', color: 'var(--primary)' }}>
                             <Bell size={20} />
@@ -628,9 +704,18 @@ const StudentDashboard: React.FC = () => {
                                             </div>
                                         )}
 
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+                                        <div style={{ 
+                                            display: 'grid', 
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+                                            gap: '2rem'
+                                        }}>
                                             {lesson.resources && lesson.resources.filter(r => r.is_approved).length > 0 && (
-                                                <div>
+                                                <div style={{
+                                                    padding: '1.5rem',
+                                                    background: 'var(--bg-alt)',
+                                                    borderRadius: '16px',
+                                                    border: '1px solid var(--border)'
+                                                }}>
                                                     <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                                         <FileText size={18} className="text-primary" /> Learning Assets
                                                     </h3>
@@ -641,22 +726,23 @@ const StudentDashboard: React.FC = () => {
                                                                 className="glass hover-scale"
                                                                 style={{
                                                                     padding: '1rem',
-                                                                    borderRadius: '16px',
+                                                                    borderRadius: '12px',
                                                                     cursor: 'pointer',
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     gap: '1rem',
-                                                                    border: '1px solid rgba(0,0,0,0.05)'
+                                                                    border: '1px solid rgba(0,0,0,0.05)',
+                                                                    background: 'white'
                                                                 }}
                                                                 onClick={() => {
                                                                     if (resource.file) window.open(resource.file, '_blank');
                                                                     else if (resource.url) window.open(resource.url, '_blank');
                                                                 }}
                                                             >
-                                                                <div style={{ background: 'white', padding: '0.6rem', borderRadius: '10px', color: 'var(--primary)', boxShadow: 'var(--shadow-sm)' }}>
+                                                                <div style={{ background: 'var(--primary-light)', padding: '0.6rem', borderRadius: '10px', color: 'var(--primary)' }}>
                                                                     <FileText size={18} />
                                                                 </div>
-                                                                <div style={{ overflow: 'hidden' }}>
+                                                                <div style={{ overflow: 'hidden', flex: 1 }}>
                                                                     <div style={{ fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{resource.title}</div>
                                                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{resource.resource_type}</div>
                                                                 </div>
@@ -667,7 +753,12 @@ const StudentDashboard: React.FC = () => {
                                             )}
 
                                             {lessonAssessments.length > 0 && (
-                                                <div>
+                                                <div style={{
+                                                    padding: '1.5rem',
+                                                    background: 'var(--bg-alt)',
+                                                    borderRadius: '16px',
+                                                    border: '1px solid var(--border)'
+                                                }}>
                                                     <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                                         <BarChart3 size={18} className="text-primary" /> Evaluation Tasks
                                                     </h3>
@@ -679,7 +770,7 @@ const StudentDashboard: React.FC = () => {
                                                                 style={{
                                                                     padding: '1.25rem',
                                                                     borderRadius: '16px',
-                                                                    background: 'var(--bg-main)',
+                                                                    background: 'white',
                                                                     border: '1px solid rgba(99, 102, 241, 0.1)',
                                                                     opacity: (assessment.scheduled_at && new Date(assessment.scheduled_at) > new Date()) ? 0.7 : 1
                                                                 }}
@@ -910,6 +1001,201 @@ const StudentDashboard: React.FC = () => {
         </div>
     );
 
+    const renderContactTrainer = () => {
+        const enrolledTrainers = getEnrolledTrainers();
+        
+        return (
+            <div className="animate-fade-in">
+                <div style={{ marginBottom: '3.5rem' }}>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Contact Trainer</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Send messages to your unit trainers for academic support.</p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+                    {enrolledTrainers.map((trainer) => (
+                        <div key={trainer.id} className="card-premium" style={{ padding: '2rem', borderRadius: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                <div style={{ 
+                                    width: '60px', 
+                                    height: '60px', 
+                                    borderRadius: '50%', 
+                                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '1.5rem',
+                                    fontWeight: 900,
+                                    color: 'white'
+                                }}>
+                                    {trainer.first_name?.[0] || trainer.username?.[0]}
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{trainer.first_name} {trainer.last_name}</h3>
+                                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>{trainer.email}</p>
+                                </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                <span className="badge badge-primary">Trainer</span>
+                            </div>
+
+                            <button 
+                                className="btn btn-primary"
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                onClick={() => {
+                                    setSelectedTrainer(trainer);
+                                    setShowContactModal(true);
+                                }}
+                            >
+                                <Mail size={18} />
+                                Send Message
+                            </button>
+                        </div>
+                    ))}
+                    
+                    {enrolledTrainers.length === 0 && (
+                        <div style={{ gridColumn: '1 / -1', padding: '5rem 2rem', textAlign: 'center' }}>
+                            <User size={64} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 2rem' }} />
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>No Trainers Assigned</h3>
+                            <p className="text-muted" style={{ maxWidth: '400px', margin: '1rem auto' }}>You need to be enrolled in units with assigned trainers to contact them.</p>
+                        </div>
+                    )}
+                </div>
+
+                {showContactModal && selectedTrainer && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(5px)'
+                    }}>
+                        <div className="card animate-fade-in" style={{
+                            width: '100%',
+                            maxWidth: '500px',
+                            position: 'relative',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}>
+                            <button
+                                onClick={() => {
+                                    setShowContactModal(false);
+                                    setSelectedTrainer(null);
+                                    setMessageForm({ title: '', message: '', isCritical: false });
+                                    setMessageError('');
+                                }}
+                                style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <div style={{ padding: '2rem' }}>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Send Message</h2>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                                    To: {selectedTrainer.first_name} {selectedTrainer.last_name}
+                                </p>
+
+                                {messageSuccess && (
+                                    <div style={{
+                                        padding: '1rem',
+                                        borderRadius: '8px',
+                                        background: 'rgba(16, 185, 129, 0.1)',
+                                        color: '#10b981',
+                                        marginBottom: '1rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}>
+                                        <Check size={18} />
+                                        {messageSuccess}
+                                    </div>
+                                )}
+
+                                {messageError && (
+                                    <div style={{
+                                        padding: '1rem',
+                                        borderRadius: '8px',
+                                        background: 'rgba(244, 63, 94, 0.1)',
+                                        color: '#f43f5e',
+                                        marginBottom: '1rem'
+                                    }}>
+                                        {messageError}
+                                    </div>
+                                )}
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Subject *</label>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        value={messageForm.title}
+                                        onChange={(e) => setMessageForm({ ...messageForm, title: e.target.value })}
+                                        placeholder="Enter message subject"
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Message *</label>
+                                    <textarea
+                                        className="input"
+                                        value={messageForm.message}
+                                        onChange={(e) => setMessageForm({ ...messageForm, message: e.target.value })}
+                                        placeholder="Type your message here..."
+                                        rows={5}
+                                        style={{ width: '100%', resize: 'vertical' }}
+                                    />
+                                </div>
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={messageForm.isCritical}
+                                            onChange={(e) => setMessageForm({ ...messageForm, isCritical: e.target.checked })}
+                                        />
+                                        <AlertTriangle size={16} style={{ color: messageForm.isCritical ? '#f43f5e' : 'inherit' }} />
+                                        Mark as urgent/critical
+                                    </label>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        className="btn"
+                                        onClick={() => {
+                                            setShowContactModal(false);
+                                            setSelectedTrainer(null);
+                                            setMessageForm({ title: '', message: '', isCritical: false });
+                                            setMessageError('');
+                                        }}
+                                        style={{ flex: 1, justifyContent: 'center' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={sendMessageToTrainer}
+                                        disabled={sendingMessage}
+                                        style={{ flex: 1, justifyContent: 'center' }}
+                                    >
+                                        {sendingMessage ? 'Sending...' : (
+                                            <>
+                                                <Send size={18} />
+                                                Send Message
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const renderNotifications = () => (
         <div className="animate-fade-in">
             <div style={{ marginBottom: '3.5rem' }}>
@@ -1093,8 +1379,8 @@ const StudentDashboard: React.FC = () => {
     const renderSupport = () => (
         <div className="animate-fade-in">
             <div style={{ marginBottom: '3.5rem' }}>
-                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Help & Support</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We're here to help you succeed in your studies.</p>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Help and Support</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We are here to help you succeed in your studies.</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
@@ -1121,7 +1407,7 @@ const StudentDashboard: React.FC = () => {
                         <AlertCircle size={32} />
                     </div>
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Report Issue</h3>
-                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Encountered a bug or a problem with unit access? Let us know and we'll fix it quickly.</p>
+                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Encountered a bug or a problem with unit access? Let us know and we will fix it quickly.</p>
                     <button className="btn btn-primary" style={{ width: '100%', background: '#f43f5e' }}>Submit Report</button>
                 </div>
             </div>
@@ -1147,6 +1433,7 @@ const StudentDashboard: React.FC = () => {
                     {activeTab === 'overview' && renderOverview()}
                     {activeTab === 'courses' && renderCourses()}
                     {activeTab === 'forum' && renderForum()}
+                    {activeTab === 'contact' && renderContactTrainer()}
                     {activeTab === 'notifications' && renderNotifications()}
                     {activeTab === 'profile' && renderProfile()}
                     {activeTab === 'support' && renderSupport()}
