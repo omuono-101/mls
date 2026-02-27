@@ -4,21 +4,32 @@ import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 import {
     FileText, PlayCircle, Link as LinkIcon,
-    ArrowLeft, ArrowRight, ChevronLeft, X, ExternalLink
+    ArrowLeft, ArrowRight, ChevronLeft, X, ExternalLink,
+    Presentation, BookOpen, Clock, Star
 } from 'lucide-react';
 
 interface Resource {
     id: number;
     title: string;
-    resource_type: 'PDF' | 'Video' | 'PPT' | 'Link';
-    file: string;
-    url: string;
+    resource_type: string;
+    file?: string;
+    url?: string;
+}
+
+interface Assessment {
+    id: number;
+    title: string;
+    assessment_type: string;
+    points: number;
+    due_date: string;
+    duration_minutes: number;
 }
 
 interface Lesson {
     id: number;
     title: string;
     order: number;
+    content: string;
     resources: Resource[];
 }
 
@@ -26,6 +37,8 @@ const LessonViewer: React.FC = () => {
     const { unitId, lessonOrder } = useParams();
     const navigate = useNavigate();
     const [lesson, setLesson] = useState<Lesson | null>(null);
+    const [allLessons, setAllLessons] = useState<Lesson[]>([]);
+    const [assessments, setAssessments] = useState<Assessment[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
     const [showViewer, setShowViewer] = useState(false);
@@ -34,10 +47,16 @@ const LessonViewer: React.FC = () => {
         const fetchLesson = async () => {
             setLoading(true);
             try {
-                const response = await api.get(`lessons/?unit=${unitId}&order=${lessonOrder}`);
-                // Assuming the backend returns a list or we filter it.
-                // For now, let's assume we get the lesson directly or find it.
-                const found = response.data.find((l: any) => l.order === parseInt(lessonOrder || '1'));
+                const [lessonsRes, assessmentsRes] = await Promise.all([
+                    api.get(`lessons/?unit=${unitId}`),
+                    api.get(`assessments/?unit=${unitId}`)
+                ]);
+
+                const lessons = lessonsRes.data.sort((a: any, b: any) => a.order - b.order);
+                setAllLessons(lessons);
+                setAssessments(assessmentsRes.data);
+
+                const found = lessons.find((l: any) => l.order === parseInt(lessonOrder || '1'));
                 setLesson(found);
 
                 // Auto-mark attendance
@@ -87,11 +106,19 @@ const LessonViewer: React.FC = () => {
                         <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.25rem' }}>{lesson.title}</h1>
                     </div>
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <button className="btn glass" disabled={lesson.order === 1}>
+                        <button
+                            className="btn glass"
+                            disabled={parseInt(lessonOrder || '1') <= 1}
+                            onClick={() => navigate(`/student/unit/${unitId}/lesson/${parseInt(lessonOrder || '1') - 1}`)}
+                        >
                             <ArrowLeft size={18} />
                             Previous
                         </button>
-                        <button className="btn btn-primary">
+                        <button
+                            className="btn btn-primary"
+                            disabled={parseInt(lessonOrder || '1') >= allLessons.length}
+                            onClick={() => navigate(`/student/unit/${unitId}/lesson/${parseInt(lessonOrder || '1') + 1}`)}
+                        >
                             Next Lesson
                             <ArrowRight size={18} />
                         </button>
@@ -102,17 +129,13 @@ const LessonViewer: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
                 <div className="card" style={{ minHeight: '500px' }}>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <FileText size={20} className="text-primary" />
+                        <BookOpen size={20} className="text-primary" />
                         Lesson Content
                     </h2>
-                    <div style={{ lineHeight: 1.8, color: 'var(--text-main)' }}>
-                        <p>Welcome to this lesson on {lesson.title}.</p>
-                        <p style={{ marginTop: '1rem' }}>
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                        </p>
-                        {/* Real content would be rendered here, possibly as HTML/Markdown */}
-                    </div>
+                    <div
+                        style={{ lineHeight: 1.8, color: 'var(--text-main)' }}
+                        dangerouslySetInnerHTML={{ __html: lesson.content || '<p>No lecture notes provided for this lesson.</p>' }}
+                    />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -154,7 +177,7 @@ const LessonViewer: React.FC = () => {
                                         {res.resource_type === 'PDF' && <FileText size={20} />}
                                         {res.resource_type === 'Video' && <PlayCircle size={20} />}
                                         {res.resource_type === 'Link' && <LinkIcon size={20} />}
-                                        {res.resource_type === 'PPT' && <FileText size={20} />}
+                                        {res.resource_type === 'PPT' && <Presentation size={20} />}
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>{res.title}</p>
@@ -169,15 +192,44 @@ const LessonViewer: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="card" style={{ background: 'var(--bg-sidebar)', color: 'white' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>Upcoming Assessment</h3>
-                        <p style={{ fontSize: '0.875rem', opacity: 0.8, marginBottom: '1.5rem' }}>
-                            CAT 1 is due in 3 days. Make sure to complete all previous lessons.
-                        </p>
-                        <button className="btn btn-primary" style={{ width: '100%', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            View Assessment
-                        </button>
-                    </div>
+                    {assessments.filter(a => (a as any).lesson === lesson.id).length > 0 ? (
+                        <div className="card" style={{ background: 'var(--bg-sidebar)', color: 'white' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>Lesson Assessments</h3>
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {assessments.filter(a => (a as any).lesson === lesson.id).map(a => (
+                                    <div key={a.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>{a.assessment_type}</div>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem' }}>{a.title}</h4>
+                                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', fontSize: '0.75rem', opacity: 0.8 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Clock size={14} /> {a.duration_minutes || '?'} min</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Star size={14} /> {a.points} pts</div>
+                                        </div>
+                                        <button
+                                            onClick={() => navigate(`/student/assessment/${a.id}`)}
+                                            className="btn btn-primary btn-sm"
+                                            style={{ width: '100%', fontSize: '0.75rem' }}
+                                        >
+                                            Take Now
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="card" style={{ background: 'var(--bg-sidebar)', color: 'white' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>Unit Navigation</h3>
+                            <p style={{ fontSize: '0.875rem', opacity: 0.8, marginBottom: '1.5rem' }}>
+                                Finished with this lesson? You can return to your unit overview or proceed to the next session.
+                            </p>
+                            <button
+                                onClick={() => navigate(`/student`)}
+                                className="btn btn-primary"
+                                style={{ width: '100%', border: '1px solid rgba(255,255,255,0.1)' }}
+                            >
+                                Back to Portfolio
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

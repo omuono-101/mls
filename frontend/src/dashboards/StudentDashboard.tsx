@@ -773,6 +773,20 @@ const StudentDashboard: React.FC = () => {
                                             {lesson.is_taught && (
                                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                                     <button
+                                                        onClick={() => navigate(`/student/unit/${unit.id}/lesson/${lesson.order}`)}
+                                                        className="btn btn-primary"
+                                                        style={{
+                                                            padding: '0.5rem 1.25rem',
+                                                            borderRadius: '12px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.5rem',
+                                                        }}
+                                                    >
+                                                        <BookOpen size={18} />
+                                                        Enter Lesson
+                                                    </button>
+                                                    <button
                                                         onClick={() => toggleLessonCompletion(lesson.id, !!lesson.is_completed, unit.id)}
                                                         className={`btn ${lesson.is_completed ? 'btn-success' : 'btn-outline'}`}
                                                         style={{
