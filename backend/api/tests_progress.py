@@ -85,3 +85,19 @@ class StudentProgressTests(TestCase):
         
         self.assertTrue(lesson1_data['is_completed'])
         self.assertFalse(lesson2_data['is_completed'])
+
+    def test_unit_patch_update(self):
+        """Test that PATCH requests on units work correctly (e.g. for trainer assignment)"""
+        url = f'/api/units/{self.unit.id}/'
+        # Authenticate as trainer to allow updates
+        self.client.force_authenticate(user=self.trainer)
+        
+        # Test updating trainer
+        new_trainer = User.objects.create_user(username='new_trainer', password='password', role='Trainer')
+        response = self.client.patch(url, {'trainer': new_trainer.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify update and that serializers work
+        self.unit.refresh_from_db()
+        self.assertEqual(self.unit.trainer, new_trainer)
+        self.assertEqual(response.data['trainer_name'], new_trainer.username)
