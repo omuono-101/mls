@@ -187,7 +187,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                     .order_by()
                     .values('unit')
                     .annotate(cnt=Count('pk'))
-                    .values('cnt'),
+                    .values('cnt')[:1],
                     output_field=IntegerField()
                 ),
                 Value(0, output_field=IntegerField())
@@ -201,7 +201,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                     .order_by()
                     .values('lesson__unit')
                     .annotate(cnt=Count('pk'))
-                    .values('cnt'),
+                    .values('cnt')[:1],
                     output_field=IntegerField()
                 ),
                 Value(0, output_field=IntegerField())
@@ -216,7 +216,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                     .order_by()
                     .values('unit')
                     .annotate(cnt=Count('pk'))
-                    .values('cnt'),
+                    .values('cnt')[:1],
                     output_field=IntegerField()
                 ),
                 Value(0, output_field=IntegerField())
@@ -250,7 +250,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                         .order_by()
                         .values('lesson__unit')
                         .annotate(cnt=Count('pk'))
-                        .values('cnt'),
+                        .values('cnt')[:1],
                         output_field=IntegerField()
                     ),
                     Value(0, output_field=IntegerField())

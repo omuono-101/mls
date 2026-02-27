@@ -275,13 +275,16 @@ class UnitListSerializer(serializers.ModelSerializer):
         return obj.trainer.username if obj.trainer else "Not Assigned"
 
     def get_lessons_taught(self, obj):
-        return getattr(obj, 'annotated_lessons_taught', 0) or 0
+        val = getattr(obj, 'annotated_lessons_taught', None)
+        return val if val is not None else 0
 
     def get_notes_count(self, obj):
-        return getattr(obj, 'annotated_notes_count', 0) or 0
+        val = getattr(obj, 'annotated_notes_count', None)
+        return val if val is not None else 0
 
     def get_cats_count(self, obj):
-        return getattr(obj, 'annotated_cats_count', 0) or 0
+        val = getattr(obj, 'annotated_cats_count', None)
+        return val if val is not None else 0
 
     def get_student_progress(self, obj):
         completed = self.get_lessons_completed(obj)
@@ -291,7 +294,8 @@ class UnitListSerializer(serializers.ModelSerializer):
         return 0
 
     def get_lessons_completed(self, obj):
-        return getattr(obj, 'annotated_lessons_completed', 0) or 0
+        val = getattr(obj, 'annotated_lessons_completed', None)
+        return val if val is not None else 0
 
 class UnitSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
@@ -344,23 +348,28 @@ class UnitSerializer(serializers.ModelSerializer):
         return obj.trainer.username if obj.trainer else "Not Assigned"
 
     def get_lessons_taught(self, obj):
-        return (getattr(obj, 'annotated_lessons_taught', None) or 
-                obj.lessons.filter(is_taught=True).count())
+        val = getattr(obj, 'annotated_lessons_taught', None)
+        if val is not None:
+            return val
+        return obj.lessons.filter(is_taught=True).count()
 
     def get_notes_count(self, obj):
-        if hasattr(obj, 'annotated_notes_count'):
-            return obj.annotated_notes_count or 0
+        val = getattr(obj, 'annotated_notes_count', None)
+        if val is not None:
+            return val
         from core.models import Resource
         return Resource.objects.filter(lesson__unit=obj).count()
 
     def get_cats_count(self, obj):
-        if hasattr(obj, 'annotated_cats_count'):
-            return obj.annotated_cats_count or 0
+        val = getattr(obj, 'annotated_cats_count', None)
+        if val is not None:
+            return val
         return obj.assessments.filter(assessment_type='CAT').count()
 
     def get_lessons_completed(self, obj):
-        if hasattr(obj, 'annotated_lessons_completed'):
-            return obj.annotated_lessons_completed or 0
+        val = getattr(obj, 'annotated_lessons_completed', None)
+        if val is not None:
+            return val
             
         request = self.context.get('request')
         if request and request.user.is_authenticated:
