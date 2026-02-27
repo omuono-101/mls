@@ -13,6 +13,7 @@ class StudentProgressTests(TestCase):
         # Create users
         self.student = User.objects.create_user(username='student', password='password', role='Student', is_activated=True)
         self.trainer = User.objects.create_user(username='trainer', password='password', role='Trainer', is_activated=True)
+        self.hod = User.objects.create_user(username='hod', password='password', role='HOD', is_activated=True)
         
         # Create School
         self.school = School.objects.create(name='Test School')
@@ -32,9 +33,9 @@ class StudentProgressTests(TestCase):
             total_lessons=10
         )
         
-        # Create Lessons
-        self.lesson1 = Lesson.objects.create(unit=self.unit, title='Lesson 1', order=1, is_taught=True)
-        self.lesson2 = Lesson.objects.create(unit=self.unit, title='Lesson 2', order=2, is_taught=True)
+        # Create Lessons (Approved so students can see them)
+        self.lesson1 = Lesson.objects.create(unit=self.unit, title='Lesson 1', order=1, is_taught=True, is_approved=True)
+        self.lesson2 = Lesson.objects.create(unit=self.unit, title='Lesson 2', order=2, is_taught=True, is_approved=True)
         
         # Enroll student
         StudentEnrollment.objects.create(student=self.student, course_group=self.course_group)
@@ -89,8 +90,8 @@ class StudentProgressTests(TestCase):
     def test_unit_patch_update(self):
         """Test that PATCH requests on units work correctly (e.g. for trainer assignment)"""
         url = f'/api/units/{self.unit.id}/'
-        # Authenticate as trainer to allow updates
-        self.client.force_authenticate(user=self.trainer)
+        # Authenticate as HOD to allow updates
+        self.client.force_authenticate(user=self.hod)
         
         # Test updating trainer
         new_trainer = User.objects.create_user(username='new_trainer', password='password', role='Trainer')

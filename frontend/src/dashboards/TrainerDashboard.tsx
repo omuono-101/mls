@@ -341,7 +341,7 @@ const TrainerDashboard: React.FC = () => {
                                             </thead>
                                             <tbody>
                                                 {submissions.filter(s => s.grade !== null).map(s => {
-                                                    const percentage = s.total_points > 0 ? Math.round((Number(s.grade) / s.total_points) * 100) : 0;
+                                                    const percentage = s.total_points > 0 ? Math.round(((Number(s.grade) || 0) / s.total_points) * 100) : 0;
                                                     return (
                                                         <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                                             <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}>{s.student_name}</td>

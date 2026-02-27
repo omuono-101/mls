@@ -913,9 +913,9 @@ const HODDashboard: React.FC = () => {
                                     const taughtLessons = trainerLessons.filter((l: Lesson) => l.is_taught);
                                     const pendingLessons = taughtLessons.filter((l: Lesson) => !l.is_approved);
                                     const trainerAssessments = assessments.filter((a: Assessment) => trainerUnits.some((u: Unit) => u.id === a.unit));
-                                    const totalLessons = trainerUnits.reduce((sum: number, u: Unit) => sum + u.total_lessons, 0);
-                                    const totalTaughtLessons = trainerUnits.reduce((sum: number, u: Unit) => sum + (u.lessons_taught || 0), 0);
-                                    const totalResources = trainerUnits.reduce((sum: number, u: Unit) => sum + (u.notes_count || 0), 0);
+                                    const totalLessons = trainerUnits.reduce((sum: number, u: Unit) => sum + (Number(u.total_lessons) || 0), 0);
+                                    const totalTaughtLessons = trainerUnits.reduce((sum: number, u: Unit) => sum + (Number(u.lessons_taught) || 0), 0);
+                                    const totalResources = trainerUnits.reduce((sum: number, u: Unit) => sum + (Number(u.notes_count) || 0), 0);
                                     const totalAssessments = trainerAssessments.length;
 
                                     return (

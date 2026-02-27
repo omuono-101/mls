@@ -348,28 +348,18 @@ class UnitSerializer(serializers.ModelSerializer):
         return obj.trainer.username if obj.trainer else "Not Assigned"
 
     def get_lessons_taught(self, obj):
-        val = getattr(obj, 'annotated_lessons_taught', None)
-        if val is not None:
-            return val
-        return obj.lessons.filter(is_taught=True).count()
+        return int(getattr(obj, 'annotated_lessons_taught', 0) or 0)
 
     def get_notes_count(self, obj):
-        val = getattr(obj, 'annotated_notes_count', None)
-        if val is not None:
-            return val
-        from core.models import Resource
-        return Resource.objects.filter(lesson__unit=obj).count()
+        return int(getattr(obj, 'annotated_notes_count', 0) or 0)
 
     def get_cats_count(self, obj):
-        val = getattr(obj, 'annotated_cats_count', None)
-        if val is not None:
-            return val
-        return obj.assessments.filter(assessment_type='CAT').count()
+        return int(getattr(obj, 'annotated_cats_count', 0) or 0)
 
     def get_lessons_completed(self, obj):
         val = getattr(obj, 'annotated_lessons_completed', None)
         if val is not None:
-            return val
+            return int(val or 0)
             
         request = self.context.get('request')
         if request and request.user.is_authenticated:

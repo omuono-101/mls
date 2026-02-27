@@ -159,7 +159,7 @@ const StudentDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
     const [enrolling, setEnrolling] = useState<number | null>(null);
-    
+
     // Contact Trainer state
     const [showContactModal, setShowContactModal] = useState(false);
     const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
@@ -184,7 +184,7 @@ const StudentDashboard: React.FC = () => {
             setUnits(unitsRes.data);
             setAnnouncements(annRes.data);
             setNotifications(notifRes.data);
-            
+
             // Fetch trainers for enrolled units
             const trainerIds = new Set<number>();
             unitsRes.data.forEach((u: Unit) => {
@@ -199,7 +199,7 @@ const StudentDashboard: React.FC = () => {
             setLoading(false);
         }
     };
-    
+
     const fetchTrainers = async (trainerIds: number[]) => {
         try {
             const response = await api.get('users/');
@@ -218,10 +218,10 @@ const StudentDashboard: React.FC = () => {
             setMessageError('Please fill in all required fields');
             return;
         }
-        
+
         setSendingMessage(true);
         setMessageError('');
-        
+
         try {
             await api.post('notifications/send_notification/', {
                 user_ids: [selectedTrainer.id],
@@ -231,7 +231,7 @@ const StudentDashboard: React.FC = () => {
                 is_critical: messageForm.isCritical,
                 is_active: true
             });
-            
+
             setMessageSuccess('Message sent successfully!');
             setMessageForm({ title: '', message: '', isCritical: false });
             setTimeout(() => {
@@ -257,7 +257,9 @@ const StudentDashboard: React.FC = () => {
                         return l;
                     });
                     const completedCount = updatedLessons.filter(l => l.is_completed).length;
-                    const newProgress = Math.round((completedCount / (u.total_lessons || 1)) * 100);
+                    const total = Number(u.total_lessons) || 0;
+                    const count = Number(completedCount) || 0;
+                    const newProgress = total > 0 ? Math.round((count / total) * 100) : 0;
                     return { ...u, lessons: updatedLessons, student_progress: newProgress };
                 }
                 return u;
@@ -813,9 +815,9 @@ const StudentDashboard: React.FC = () => {
                                             </div>
                                         )}
 
-                                        <div style={{ 
-                                            display: 'grid', 
-                                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                                             gap: '2rem'
                                         }}>
                                             {lesson.resources && lesson.resources.filter(r => r.is_approved).length > 0 && (
@@ -1112,7 +1114,7 @@ const StudentDashboard: React.FC = () => {
 
     const renderContactTrainer = () => {
         const enrolledTrainers = getEnrolledTrainers();
-        
+
         return (
             <div className="animate-fade-in">
                 <div style={{ marginBottom: '3.5rem' }}>
@@ -1124,10 +1126,10 @@ const StudentDashboard: React.FC = () => {
                     {enrolledTrainers.map((trainer) => (
                         <div key={trainer.id} className="card-premium" style={{ padding: '2rem', borderRadius: '24px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                                <div style={{ 
-                                    width: '60px', 
-                                    height: '60px', 
-                                    borderRadius: '50%', 
+                                <div style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
                                     background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -1143,12 +1145,12 @@ const StudentDashboard: React.FC = () => {
                                     <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>{trainer.email}</p>
                                 </div>
                             </div>
-                            
+
                             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
                                 <span className="badge badge-primary">Trainer</span>
                             </div>
 
-                            <button 
+                            <button
                                 className="btn btn-primary"
                                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                                 onClick={() => {
@@ -1161,7 +1163,7 @@ const StudentDashboard: React.FC = () => {
                             </button>
                         </div>
                     ))}
-                    
+
                     {enrolledTrainers.length === 0 && (
                         <div style={{ gridColumn: '1 / -1', padding: '5rem 2rem', textAlign: 'center' }}>
                             <User size={64} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 2rem' }} />

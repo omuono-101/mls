@@ -1,0 +1,11 @@
+Creating test database for alias 'default'...
+C:\Python314\Lib\site-packages\django\core\handlers\base.py:61: UserWarning: No directory at: C:\Users\Administrator\OneDrive\Desktop\newlms\lms\backend\staticfiles\
+  mw_instance = middleware(adapted_handler)
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 28.766s
+
+OK
+Destroying test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
