@@ -35,6 +35,9 @@ class UserViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         if self.action == 'register_student':
             return [permissions.AllowAny()]
+        if self.action == 'list' or self.action == 'retrieve':
+            # Allow authenticated users to view users (needed for trainers list)
+            return [permissions.IsAuthenticated()]
         if self.request.method in permissions.SAFE_METHODS:
             return [IsStaff()]
         return super().get_permissions()
