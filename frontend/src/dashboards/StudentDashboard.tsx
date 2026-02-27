@@ -249,7 +249,7 @@ const StudentDashboard: React.FC = () => {
     const toggleLessonCompletion = async (lessonId: number, currentStatus: boolean, unitId: number) => {
         try {
             const updatedUnits = units.map(u => {
-                if (u.id === unitId) {
+                if (u.id === unitId \&\& u.lessons) {
                     const updatedLessons = u.lessons.map(l => {
                         if (l.id === lessonId) {
                             return { ...l, is_completed: !currentStatus };
@@ -582,7 +582,7 @@ const StudentDashboard: React.FC = () => {
     );
 
     const renderUnitContent = (unit: Unit) => {
-        const allLessons = [...unit.lessons].filter(l => l.is_approved).sort((a, b) => a.order - b.order);
+        const allLessons = (unit.lessons || []).filter(l => l.is_approved).sort((a, b) => a.order - b.order);
         const assessmentsByLesson = unit.assessments?.reduce((acc, assessment) => {
             const lessonId = assessment.lesson || 'unit';
             if (!acc[lessonId]) acc[lessonId] = [];
