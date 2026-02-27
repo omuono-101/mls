@@ -285,8 +285,10 @@ class UnitListSerializer(serializers.ModelSerializer):
 
     def get_student_progress(self, obj):
         completed = self.get_lessons_completed(obj)
-        total = obj.total_lessons or 1
-        return round((completed / total) * 100)
+        total = obj.total_lessons or 0
+        if total > 0:
+            return round((completed / total) * 100)
+        return 0
 
     def get_lessons_completed(self, obj):
         return getattr(obj, 'annotated_lessons_completed', 0) or 0
@@ -372,8 +374,10 @@ class UnitSerializer(serializers.ModelSerializer):
 
     def get_student_progress(self, obj):
         completed = self.get_lessons_completed(obj)
-        total = obj.total_lessons or 1
-        return round((completed / total) * 100)
+        total = obj.total_lessons or 0
+        if total > 0:
+            return round((completed / total) * 100)
+        return 0
 
 class StudentAnswerSerializer(serializers.ModelSerializer):
     question_text = serializers.ReadOnlyField(source='question.question_text')
