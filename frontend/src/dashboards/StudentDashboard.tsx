@@ -249,7 +249,7 @@ const StudentDashboard: React.FC = () => {
     const toggleLessonCompletion = async (lessonId: number, currentStatus: boolean, unitId: number) => {
         try {
             const updatedUnits = units.map(u => {
-                if (u.id === unitId \&\& u.lessons) {
+                if (u.id === unitId && u.lessons) {
                     const updatedLessons = u.lessons.map(l => {
                         if (l.id === lessonId) {
                             return { ...l, is_completed: !currentStatus };
