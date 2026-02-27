@@ -163,11 +163,11 @@ const StudentDashboard: React.FC = () => {
     // Contact Trainer state
     const [showContactModal, setShowContactModal] = useState(false);
     const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
-    const messageForm = {
+    const [messageForm, setMessageForm] = useState({
         title: '',
         message: '',
         isCritical: false,
-    };
+    });
     const [sendingMessage, setSendingMessage] = useState(false);
     const [messageSuccess, setMessageSuccess] = useState('');
     const [messageError, setMessageError] = useState('');
