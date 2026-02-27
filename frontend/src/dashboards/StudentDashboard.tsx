@@ -163,11 +163,11 @@ const StudentDashboard: React.FC = () => {
     // Contact Trainer state
     const [showContactModal, setShowContactModal] = useState(false);
     const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
-    const [messageForm, setMessageForm] = useState({
+    const messageForm = {
         title: '',
         message: '',
-        isCritical: false
-    });
+        isCritical: false,
+    };
     const [sendingMessage, setSendingMessage] = useState(false);
     const [messageSuccess, setMessageSuccess] = useState('');
     const [messageError, setMessageError] = useState('');
@@ -333,8 +333,8 @@ const StudentDashboard: React.FC = () => {
         const events: any[] = [];
         const now = new Date();
 
-        units.forEach(unit => {
-            unit.lessons?.filter(l => l.is_approved).forEach(lesson => {
+        units.forEach((unit) => {
+            unit.lessons?.filter((l) => l.is_approved).forEach((lesson) => {
                 if (lesson.session_date) {
                     const sessionDate = new Date(lesson.session_date);
                     if (sessionDate >= now) {
@@ -345,13 +345,13 @@ const StudentDashboard: React.FC = () => {
                             date: lesson.session_date,
                             unitCode: unit.code,
                             icon: <BookOpen size={16} />,
-                            color: '#10b981'
+                            color: '#10b981',
                         });
                     }
                 }
             });
 
-            unit.assessments?.forEach(assessment => {
+            unit.assessments?.forEach((assessment) => {
                 const dateStr = assessment.scheduled_at || assessment.due_date;
                 if (dateStr) {
                     const date = new Date(dateStr);
@@ -362,36 +362,145 @@ const StudentDashboard: React.FC = () => {
                             type: assessment.assessment_type,
                             date: dateStr,
                             unitCode: unit.code,
-                            icon: assessment.assessment_type === 'CAT' ? <Target size={16} /> : <FileText size={16} />,
-                            color: assessment.assessment_type === 'CAT' ? '#f43f5e' : 'var(--primary)'
+                            icon:
+                                assessment.assessment_type === 'CAT' ? (
+                                    <Target size={16} />
+                                ) : (
+                                    <FileText size={16} />
+                                ),
+                            color:
+                                assessment.assessment_type === 'CAT'
+                                    ? '#f43f5e'
+                                    : 'var(--primary)',
                         });
                     }
                 }
             });
         });
 
-        return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 5);
+        return events
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .slice(0, 5);
     };
 
     if (user && !user.is_activated) {
         return (
             <DashboardLayout>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', textAlign: 'center', padding: '2rem' }}>
-                    <div className="card-premium animate-fade-in" style={{ padding: '3rem', borderRadius: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '550px', position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '150px', height: '150px', background: 'var(--primary)', opacity: '0.05', borderRadius: '50%' }} />
-                        <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '1.5rem', borderRadius: '24px', marginBottom: '1.5rem' }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '70vh',
+                        textAlign: 'center',
+                        padding: '2rem',
+                    }}
+                >
+                    <div
+                        className="card-premium animate-fade-in"
+                        style={{
+                            padding: '3rem',
+                            borderRadius: '32px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            maxWidth: '550px',
+                            position: 'relative',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <div
+                            style={{
+                                position: 'absolute',
+                                top: '-20px',
+                                right: '-20px',
+                                width: '150px',
+                                height: '150px',
+                                background: 'var(--primary)',
+                                opacity: '0.05',
+                                borderRadius: '50%',
+                            }}
+                        />
+                        <div
+                            style={{
+                                background: 'rgba(245, 158, 11, 0.1)',
+                                color: '#f59e0b',
+                                padding: '1.5rem',
+                                borderRadius: '24px',
+                                marginBottom: '1.5rem',
+                            }}
+                        >
                             <Lock size={48} className="animate-pulse" />
                         </div>
-                        <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>Account Dormant</h2>
-                        <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                            Welcome to the portal! Your registration is complete, but your account is currently
-                            <span style={{ color: 'var(--primary)', fontWeight: 700 }}> pending activation</span> by the administration.
+                        <h2
+                            style={{
+                                fontSize: '2rem',
+                                fontWeight: 800,
+                                marginBottom: '1rem',
+                                color: 'var(--text-main)',
+                            }}
+                        >
+                            Account Dormant
+                        </h2>
+                        <p
+                            style={{
+                                fontSize: '1.1rem',
+                                lineHeight: 1.6,
+                                color: 'var(--text-muted)',
+                                marginBottom: '2rem',
+                            }}
+                        >
+                            Welcome to the portal! Your registration is complete, but your
+                            account is currently
+                            <span
+                                style={{
+                                    color: 'var(--primary)',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                pending activation
+                            </span>{' '}
+                            by the administration.
                         </p>
-                        <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px', width: '100%', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(0,0,0,0.05)' }}>
-                            <AlertCircle size={24} style={{ color: 'var(--primary)' }} />
-                            <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-main)' }}>Please contact your HOD or Admin for activation.</span>
+                        <div
+                            className="glass"
+                            style={{
+                                padding: '1.25rem',
+                                borderRadius: '16px',
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                border: '1px solid rgba(0,0,0,0.05)',
+                            }}
+                        >
+                            <AlertCircle
+                                size={24}
+                                style={{
+                                    color: 'var(--primary)',
+                                }}
+                            />
+                            <span
+                                style={{
+                                    fontSize: '0.9375rem',
+                                    fontWeight: 600,
+                                    color: 'var(--text-main)',
+                                }}
+                            >
+                                Please contact your HOD or Admin for activation.
+                            </span>
                         </div>
-                        <button onClick={logout} className="btn" style={{ marginTop: '2.5rem', background: '#f1f5f9', color: '#475569', width: '100%' }}>
+                        <button
+                            onClick={logout}
+                            className="btn"
+                            style={{
+                                marginTop: '2.5rem',
+                                background: '#f1f5f9',
+                                color: '#475569',
+                                width: '100%',
+                            }}
+                        >
                             Secure Logout
                         </button>
                     </div>
