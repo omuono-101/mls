@@ -1,4 +1,4 @@
-import re
+import rest_framework
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, LessonPlanActivity, Resource, 
