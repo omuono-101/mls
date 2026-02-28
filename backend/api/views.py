@@ -517,7 +517,7 @@ class ResourceViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
-        return [IsTrainer()]
+        return [IsStaff()]
 
     @action(detail=True, methods=['post'], permission_classes=[IsHOD])
     def activate(self, request, pk=None):
@@ -563,7 +563,7 @@ class AssessmentViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
-        return [IsTrainer()]
+        return [IsStaff()]
 
     @action(detail=True, methods=['post'], permission_classes=[IsHOD])
     def activate(self, request, pk=None):

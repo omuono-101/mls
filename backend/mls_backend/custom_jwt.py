@@ -32,11 +32,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             return super().get_token(user)
 
     def validate(self, attrs):
-        logger.info(f"Token validation attrs: {attrs}")
+        import time
+        start_time = time.time()
+        logger.info(f"Starting token validation for user: {attrs.get('username')}")
         try:
-            return super().validate(attrs)
+            data = super().validate(attrs)
+            duration = time.time() - start_time
+            logger.info(f"Token validation completed successfully in {duration:.2f}s")
+            return data
         except Exception as e:
-            logger.error(f"Token validation error: {e}")
+            duration = time.time() - start_time
+            logger.error(f"Token validation failed after {duration:.2f}s: {e}")
             raise
 
 
