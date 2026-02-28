@@ -6,7 +6,7 @@ from .views import (
     ResourceViewSet, AssessmentViewSet, SubmissionViewSet,
     AttendanceViewSet, StudentEnrollmentViewSet, ModuleViewSet, LearningPathViewSet,
     AnnouncementViewSet, ForumTopicViewSet, ForumMessageViewSet, NotificationViewSet,
-    LessonPlanActivityViewSet
+    LessonPlanActivityViewSet, ActivateLicenseView
 )
 from .question_views import (
     QuestionViewSet, QuestionOptionViewSet, AnswerViewSet, StudentAnswerViewSet
@@ -39,5 +39,6 @@ router.register(r'notifications', NotificationViewSet)
 router.register(r'lesson-plan-activities', LessonPlanActivityViewSet)
 
 urlpatterns = [
+    path('license/activate/', ActivateLicenseView.as_view(), name='activate_license'),
     path('', include(router.urls)),
 ]

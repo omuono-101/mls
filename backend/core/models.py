@@ -469,3 +469,16 @@ class Notification(models.Model):
             return False
         
         return True
+
+class ProjectLicense(models.Model):
+    """Model to store the encrypted project license key"""
+    license_key = models.TextField(help_text="The encrypted/signed license key")
+    activated_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Project License"
+        verbose_name_plural = "Project License"
+
+    def __str__(self):
+        return f"License activated at {self.activated_at}"

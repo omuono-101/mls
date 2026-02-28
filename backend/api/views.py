@@ -4,9 +4,10 @@ from django.db.models import Sum, Q, Count, OuterRef, Exists, Value, IntegerFiel
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 import datetime
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, Resource,
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
@@ -1170,3 +1171,27 @@ class LessonPlanActivityViewSet(viewsets.ModelViewSet):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
         return [IsTrainer()]
+
+class ActivateLicenseView(APIView):
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        key = request.data.get('license_key')
+        if not key:
+            return Response({'error': 'license_key required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from core.utils.licensing import verify_license_key
+        is_valid, expiry, error = verify_license_key(key)
+        
+        if not is_valid:
+            return Response({'error': f'Invalid License: {error}'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from core.models import ProjectLicense
+        ProjectLicense.objects.create(license_key=key, is_active=True)
+        # Deactivate previous licenses if any
+        ProjectLicense.objects.filter(is_active=True).exclude(license_key=key).update(is_active=False)
+        
+        return Response({
+            'status': 'success',
+            'message': f'System reactivated. License valid until {expiry}.'
+        })
