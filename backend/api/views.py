@@ -256,9 +256,14 @@ class UnitViewSet(viewsets.ModelViewSet):
                     Value(0, output_field=IntegerField())
                 )
             )
+        elif user.role == 'Trainer':
+            # Trainers only see units assigned to them
+            queryset = queryset.filter(trainer=user)
+            queryset = queryset.annotate(
+                annotated_lessons_completed=Value(0, output_field=IntegerField())
+            )
         else:
-            # HODs, Trainers, and Admins see more units
-            # For HODs specifically, ensure we don't accidentally filter anything
+            # HODs and Admins see all units
             queryset = queryset.annotate(
                 annotated_lessons_completed=Value(0, output_field=IntegerField())
             )

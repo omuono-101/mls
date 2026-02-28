@@ -251,18 +251,30 @@ const HODDashboard: React.FC = () => {
 
     const handleAssignTrainer = async (e: React.FormEvent) => {
         e.preventDefault();
-        const tid = selectedTrainer ? selectedTrainer.id : trainerId;
-        const uid = selectedUnit ? selectedUnit.id : targetUnitId;
+        // Determine which IDs to use based on which modal is open
+        const tid = isTrainerModalOpen ? trainerId : (selectedTrainer ? selectedTrainer.id : '');
+        const uid = isUnitAssignmentModalOpen ? targetUnitId : (selectedUnit ? selectedUnit.id : '');
 
-        if (!tid || !uid) return;
+        if (!tid || !uid) {
+            alert('Please select both a trainer and a unit.');
+            return;
+        }
+
         setLoading(true);
         try {
             await api.patch(`units/${uid}/`, { trainer: tid });
             alert('Assignment successful');
+
+            // Close both potential modals
             setIsTrainerModalOpen(false);
             setIsUnitAssignmentModalOpen(false);
+
+            // Reset all assignment-related states
             setTrainerId('');
             setTargetUnitId('');
+            setSelectedUnit(null);
+            setSelectedTrainer(null);
+
             fetchData();
         } catch (error) {
             console.error('Failed to assign trainer', error);
@@ -1408,7 +1420,11 @@ const HODDashboard: React.FC = () => {
                                 </select>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                <button type="button" className="btn" style={{ flex: 1, background: 'var(--bg-alt)', borderRadius: '10px' }} onClick={() => setIsTrainerModalOpen(false)}>Cancel</button>
+                                <button type="button" className="btn" style={{ flex: 1, background: 'var(--bg-alt)', borderRadius: '10px' }} onClick={() => {
+                                    setIsTrainerModalOpen(false);
+                                    setSelectedUnit(null);
+                                    setTrainerId('');
+                                }}>Cancel</button>
                                 <button type="submit" className="btn btn-primary" style={{ flex: 1, borderRadius: '10px' }} disabled={loading}>Assign</button>
                             </div>
                         </form>
@@ -1451,7 +1467,11 @@ const HODDashboard: React.FC = () => {
                                 </select>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                <button type="button" className="btn" style={{ flex: 1, background: 'var(--bg-alt)', borderRadius: '10px' }} onClick={() => setIsUnitAssignmentModalOpen(false)}>Cancel</button>
+                                <button type="button" className="btn" style={{ flex: 1, background: 'var(--bg-alt)', borderRadius: '10px' }} onClick={() => {
+                                    setIsUnitAssignmentModalOpen(false);
+                                    setSelectedTrainer(null);
+                                    setTargetUnitId('');
+                                }}>Cancel</button>
                                 <button type="submit" className="btn btn-primary" style={{ flex: 1, borderRadius: '10px' }} disabled={loading}>Assign Unit</button>
                             </div>
                         </form>

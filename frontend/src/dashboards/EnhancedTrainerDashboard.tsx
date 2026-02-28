@@ -145,7 +145,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [user]);
 
     const fetchData = async () => {
         try {
@@ -158,7 +158,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
                 api.get('attendance/')
             ]);
 
-            setUnits(unitsRes.data.filter((u: Unit) => u.trainer === user?.id));
+            setUnits(unitsRes.data.filter((u: Unit) => u.trainer == user?.id));
             setEnrollments(enrollmentsRes.data);
             setAssessments(assessmentsRes.data);
             setSubmissions(submissionsRes.data);
@@ -278,7 +278,7 @@ const EnhancedTrainerDashboard: React.FC = () => {
         }
     };
 
-    const trainerUnits = units.filter(u => u.trainer === user?.id);
+    const trainerUnits = units.filter(u => u.trainer == user?.id);
     const trainerCourseGroups = [...new Set(trainerUnits.map(u => u.course_group))];
     const studentsInTrainerCourses = enrollments.filter(e => trainerCourseGroups.includes(e.course_group));
     const trainerAssessments = assessments.filter(a => trainerUnits.some(u => u.id === a.unit));

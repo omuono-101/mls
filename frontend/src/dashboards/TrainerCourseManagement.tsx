@@ -57,7 +57,7 @@ const TrainerCourseManagement: React.FC = () => {
 
     useEffect(() => {
         fetchUnits();
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (selectedUnit) {
@@ -70,7 +70,7 @@ const TrainerCourseManagement: React.FC = () => {
             const res = await api.get('units/');
             // Filter for units assigned to this trainer
             // In a real app, the API should probably do this filtering or return only assigned units
-            const myUnits = res.data.filter((u: any) => u.trainer === user?.id);
+            const myUnits = res.data.filter((u: any) => u.trainer == user?.id);
             setUnits(myUnits);
         } catch (error) {
             console.error('Failed to fetch units', error);
