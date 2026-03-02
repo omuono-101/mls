@@ -275,13 +275,14 @@ class UnitViewSet(viewsets.ModelViewSet):
 
         if self.action in ['retrieve', 'update', 'partial_update']:
             # Add deep prefetch for detailed view and updates
-            # For students, we ONLY prefetch approved AND taught lessons and approved assessments
+            # For students, we ONLY prefetch approved lessons and approved assessments
             lesson_qs = Lesson.objects.select_related('trainer', 'unit', 'module')
             assessment_qs = Assessment.objects.select_related('unit')
 
             if user.role == 'Student':
-                # Students can only see lessons that are both taught AND approved
-                lesson_qs = lesson_qs.filter(is_taught=True, is_approved=True)
+                # Students can see all approved lessons (not restricted by is_taught)
+                # This ensures students can access content once approved by HOD
+                lesson_qs = lesson_qs.filter(is_approved=True)
                 assessment_qs = assessment_qs.filter(is_approved=True)
 
             queryset = queryset.prefetch_related(
