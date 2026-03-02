@@ -275,12 +275,13 @@ class UnitViewSet(viewsets.ModelViewSet):
 
         if self.action in ['retrieve', 'update', 'partial_update']:
             # Add deep prefetch for detailed view and updates
-            # For students, we ONLY prefetch approved lessons and assessments
+            # For students, we ONLY prefetch approved AND taught lessons and approved assessments
             lesson_qs = Lesson.objects.select_related('trainer', 'unit', 'module')
             assessment_qs = Assessment.objects.select_related('unit')
 
             if user.role == 'Student':
-                lesson_qs = lesson_qs.filter(is_approved=True)
+                # Students can only see lessons that are both taught AND approved
+                lesson_qs = lesson_qs.filter(is_taught=True, is_approved=True)
                 assessment_qs = assessment_qs.filter(is_approved=True)
 
             queryset = queryset.prefetch_related(
@@ -823,7 +824,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     })
                 return Response(report)
             except Lesson.DoesNotExist:
-                return Response({'error': 'lesson not found'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'error': 'Lesson not found'}, status=status.HTTP_404_NOT_FOUND)
 
         if assessment_id:
             try:
