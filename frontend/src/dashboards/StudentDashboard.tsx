@@ -400,7 +400,7 @@ const StudentDashboard: React.FC = () => {
         const events: any[] = [];
         const now = new Date();
         units.forEach((unit) => {
-            unit.lessons?.filter((l) => l.is_approved).forEach((lesson) => {
+            unit.lessons?.filter((l) => l.is_approved && l.is_active).forEach((lesson) => {
                 if (lesson.session_date) {
                     const sessionDate = new Date(lesson.session_date);
                     if (sessionDate >= now) {
@@ -416,7 +416,7 @@ const StudentDashboard: React.FC = () => {
                     }
                 }
             });
-            unit.assessments?.forEach((assessment) => {
+            unit.assessments?.filter(a => a.is_approved && a.is_active).forEach((assessment) => {
                 const dateStr = assessment.scheduled_at || assessment.due_date;
                 if (dateStr) {
                     const date = new Date(dateStr);
@@ -485,7 +485,7 @@ const StudentDashboard: React.FC = () => {
                                 borderRadius: '50%',
                             }}
                         />
-    
+
                         <div
                             style={{
                                 background: 'rgba(245, 158, 11, 0.1)',
@@ -497,7 +497,7 @@ const StudentDashboard: React.FC = () => {
                         >
                             <Lock size={48} className="animate-pulse" />
                         </div>
-    
+
                         <h2
                             style={{
                                 fontSize: '2rem',
@@ -508,7 +508,7 @@ const StudentDashboard: React.FC = () => {
                         >
                             Account Dormant
                         </h2>
-    
+
                         <p
                             style={{
                                 fontSize: '1.1rem',
@@ -520,7 +520,7 @@ const StudentDashboard: React.FC = () => {
                             Welcome to the portal! Your registration is complete, but your account is currently{' '}
                             <span style={{ color: 'var(--primary)', fontWeight: 700 }}>pending activation</span> by the administration.
                         </p>
-    
+
                         <div
                             className="glass"
                             style={{
@@ -544,7 +544,7 @@ const StudentDashboard: React.FC = () => {
                                 Please contact your HOD or Admin for activation.
                             </span>
                         </div>
-    
+
                         <button
                             onClick={logout}
                             className="btn"
@@ -739,8 +739,8 @@ const StudentDashboard: React.FC = () => {
     );
 
     const renderUnitContent = (unit: Unit) => {
-        const allLessons = (unit.lessons || []).filter(l => l.is_approved).sort((a, b) => a.order - b.order);
-        const assessmentsByLesson = unit.assessments?.reduce((acc, assessment) => {
+        const allLessons = (unit.lessons || []).filter(l => l.is_approved && l.is_active).sort((a, b) => a.order - b.order);
+        const assessmentsByLesson = (unit.assessments || []).filter(a => a.is_approved && a.is_active).reduce((acc, assessment) => {
             const lessonId = assessment.lesson || 'unit';
             if (!acc[lessonId]) acc[lessonId] = [];
             acc[lessonId].push(assessment);
@@ -883,7 +883,7 @@ const StudentDashboard: React.FC = () => {
                                             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                                             gap: '2rem'
                                         }}>
-                                            {lesson.resources && lesson.resources.filter(r => r.is_approved).length > 0 && (
+                                            {lesson.resources && lesson.resources.filter(r => r.is_approved && r.is_active).length > 0 && (
                                                 <div style={{
                                                     padding: '1.5rem',
                                                     background: 'var(--bg-alt)',
@@ -894,7 +894,7 @@ const StudentDashboard: React.FC = () => {
                                                         <FileText size={18} className="text-primary" /> Learning Assets
                                                     </h3>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                                        {lesson.resources.filter(r => r.is_approved).map(resource => (
+                                                        {lesson.resources.filter(r => r.is_approved && r.is_active).map(resource => (
                                                             <div
                                                                 key={resource.id}
                                                                 className="glass hover-scale"

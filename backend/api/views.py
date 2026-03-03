@@ -432,13 +432,23 @@ class LessonViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
         if user.is_authenticated and user.role == 'Student':
-            queryset = queryset.filter(is_approved=True, is_active=True)
+            queryset = queryset.filter(
+                is_approved=True, 
+                is_active=True,
+                unit__course_group__enrolled_students__student=user,
+                unit__course_group__enrolled_students__is_active=True
+            ).distinct()
 
         if self.action == 'list':
             # Resources prefetch also needs to be filtered for students
             resource_qs = Resource.objects.all()
             if user.is_authenticated and user.role == 'Student':
-                resource_qs = resource_qs.filter(is_approved=True, is_active=True)
+                resource_qs = resource_qs.filter(
+                    is_approved=True, 
+                    is_active=True,
+                    lesson__unit__course_group__enrolled_students__student=user,
+                    lesson__unit__course_group__enrolled_students__is_active=True
+                ).distinct()
             queryset = queryset.prefetch_related(Prefetch('resources', queryset=resource_qs))
 
         return queryset
@@ -534,7 +544,8 @@ class ResourceViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(
                 is_approved=True, 
                 is_active=True,
-                lesson__unit__enrollments__student=user
+                lesson__unit__course_group__enrolled_students__student=user,
+                lesson__unit__course_group__enrolled_students__is_active=True
             ).distinct()
         return queryset
 
@@ -599,7 +610,12 @@ class AssessmentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_authenticated and user.role == 'Student':
             now = timezone.now()
-            queryset = queryset.filter(is_approved=True, is_active=True)
+            queryset = queryset.filter(
+                is_approved=True, 
+                is_active=True,
+                unit__course_group__enrolled_students__student=user,
+                unit__course_group__enrolled_students__is_active=True
+            ).distinct()
             queryset = queryset.exclude(
                 scheduled_end__isnull=False,
                 scheduled_end__lt=now,
