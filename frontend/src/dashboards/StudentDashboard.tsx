@@ -18,6 +18,7 @@ interface Resource {
     file?: string;
     url?: string;
     is_approved?: boolean;
+    is_active?: boolean;
     is_completed?: boolean;
     created_at?: string;
 }
@@ -71,6 +72,8 @@ interface Assessment {
     duration_minutes: number;
     lesson?: number;
     scheduled_at?: string;
+    is_approved?: boolean;
+    is_active?: boolean;
     is_completed?: boolean;
     created_at?: string;
 }

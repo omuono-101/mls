@@ -4,7 +4,7 @@ import ResourceViewer from '../components/ResourceViewer';
 import api from '../services/api';
 import {
     FileText, Video, Link as LinkIcon, Search,
-    Download, Eye,
+    Download, Eye, Star,
     Layers, Grid, List, FolderOpen
 } from 'lucide-react';
 
@@ -20,6 +20,8 @@ interface Resource {
     unit_name?: string;
     unit_code?: string;
     created_at?: string;
+    is_approved?: boolean;
+    is_active?: boolean;
 }
 
 const MyResources: React.FC = () => {
