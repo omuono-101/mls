@@ -12,7 +12,8 @@ from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, Resource,
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
                           Question, QuestionOption, Answer, StudentAnswer, Announcement, ForumTopic,
-                          ForumMessage, Notification, StudentLessonProgress, LessonPlanActivity)
+                          ForumMessage, Notification, StudentLessonProgress, LessonPlanActivity,
+                          StudentResourceProgress, StudentAssessmentProgress)
 from .serializers import (
     UserSerializer, StudentRegistrationSerializer, SchoolSerializer, CourseSerializer, IntakeSerializer,
     SemesterSerializer, CourseGroupSerializer, UnitListSerializer, UnitSerializer, LessonSerializer,
@@ -520,6 +521,8 @@ class ResourceViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.IsAuthenticated()]
+        if self.action in ['complete', 'incomplete']:
+            return [permissions.IsAuthenticated()]
         return [IsStaff()]
 
     @action(detail=True, methods=['post'], permission_classes=[IsHOD])
@@ -535,6 +538,28 @@ class ResourceViewSet(viewsets.ModelViewSet):
         resource.is_active = False
         resource.save()
         return Response({'status': 'resource deactivated'})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complete(self, request, pk=None):
+        resource = self.get_object()
+        progress, created = StudentResourceProgress.objects.get_or_create(
+            student=request.user,
+            resource=resource
+        )
+        progress.is_completed = True
+        progress.save()
+        return Response({'status': 'resource completed'})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def incomplete(self, request, pk=None):
+        resource = self.get_object()
+        progress, created = StudentResourceProgress.objects.get_or_create(
+            student=request.user,
+            resource=resource
+        )
+        progress.is_completed = False
+        progress.save()
+        return Response({'status': 'resource marked incomplete'})
 
 
 class AssessmentViewSet(viewsets.ModelViewSet):
@@ -581,6 +606,28 @@ class AssessmentViewSet(viewsets.ModelViewSet):
         assessment.is_active = False
         assessment.save()
         return Response({'status': 'assessment deactivated'})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complete(self, request, pk=None):
+        assessment = self.get_object()
+        progress, created = StudentAssessmentProgress.objects.get_or_create(
+            student=request.user,
+            assessment=assessment
+        )
+        progress.is_completed = True
+        progress.save()
+        return Response({'status': 'assessment completed'})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def incomplete(self, request, pk=None):
+        assessment = self.get_object()
+        progress, created = StudentAssessmentProgress.objects.get_or_create(
+            student=request.user,
+            assessment=assessment
+        )
+        progress.is_completed = False
+        progress.save()
+        return Response({'status': 'assessment marked incomplete'})
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
