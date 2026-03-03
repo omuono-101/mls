@@ -185,6 +185,8 @@ class Lesson(models.Model):
     subtopic = models.CharField(max_length=255, blank=True)
     learning_outcomes = models.TextField(blank=True)
     is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['order']
@@ -237,6 +239,8 @@ class Resource(models.Model):
     is_approved = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     audit_feedback = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
@@ -280,6 +284,8 @@ class Assessment(models.Model):
     is_approved = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     audit_feedback = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.assessment_type}: {self.title} for {self.unit.name}"

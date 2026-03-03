@@ -19,6 +19,7 @@ interface Resource {
     url?: string;
     is_approved?: boolean;
     is_completed?: boolean;
+    created_at?: string;
 }
 
 interface Lesson {
@@ -41,6 +42,7 @@ interface Lesson {
     resources?: Resource[];
     content?: string;
     is_completed?: boolean;
+    created_at?: string;
 }
 
 interface LessonPlanActivity {
@@ -70,6 +72,7 @@ interface Assessment {
     lesson?: number;
     scheduled_at?: string;
     is_completed?: boolean;
+    created_at?: string;
 }
 
 interface Unit {
@@ -171,6 +174,14 @@ const StudentDashboard: React.FC = () => {
     const [sendingMessage, setSendingMessage] = useState(false);
     const [messageSuccess, setMessageSuccess] = useState('');
     const [messageError, setMessageError] = useState('');
+
+    const isNewItem = (dateStr?: string) => {
+        if (!dateStr) return false;
+        const itemDate = new Date(dateStr);
+        const now = new Date();
+        const diffHours = (now.getTime() - itemDate.getTime()) / (1000 * 60 * 60);
+        return diffHours < 48; // New if within 48 hours
+    };
 
     const fetchDashboardData = async () => {
         if (!user || !user.is_activated) return;
@@ -815,6 +826,9 @@ const StudentDashboard: React.FC = () => {
                                                             <Lock size={12} /> Locked
                                                         </span>
                                                     )}
+                                                    {isNewItem(lesson.created_at) && (
+                                                        <span className="badge" style={{ background: '#f43f5e', color: 'white', fontWeight: 900, fontSize: '0.65rem' }}>NEW</span>
+                                                    )}
                                                 </div>
                                                 <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>{lesson.title}</h2>
                                             </div>
@@ -917,7 +931,12 @@ const StudentDashboard: React.FC = () => {
                                                                     <FileText size={18} />
                                                                 </div>
                                                                 <div style={{ overflow: 'hidden', flex: 1 }}>
-                                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{resource.title}</div>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{resource.title}</div>
+                                                                        {isNewItem(resource.created_at) && (
+                                                                            <span style={{ fontSize: '0.6rem', background: '#f43f5e', color: 'white', padding: '1px 4px', borderRadius: '3px', fontWeight: 900 }}>NEW</span>
+                                                                        )}
+                                                                    </div>
                                                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{resource.resource_type}</div>
                                                                 </div>
                                                                 <button
@@ -975,7 +994,12 @@ const StudentDashboard: React.FC = () => {
                                                                     <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase' }}>{assessment.assessment_type}</span>
                                                                     <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>{assessment.points} Pts</span>
                                                                 </div>
-                                                                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '1rem' }}>{assessment.title}</h4>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                                                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, flex: 1, margin: 0 }}>{assessment.title}</h4>
+                                                                    {isNewItem(assessment.created_at) && (
+                                                                        <span style={{ fontSize: '0.6rem', background: '#f43f5e', color: 'white', padding: '1px 4px', borderRadius: '3px', fontWeight: 900 }}>NEW</span>
+                                                                    )}
+                                                                </div>
 
                                                                 {assessment.scheduled_at && new Date(assessment.scheduled_at) > new Date() ? (
                                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.5rem', background: 'rgba(0,0,0,0.03)', borderRadius: '8px' }}>

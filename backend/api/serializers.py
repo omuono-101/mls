@@ -133,6 +133,7 @@ class ResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resource
         fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at']
     
     def get_file(self, obj):
         if obj.file:
@@ -159,7 +160,7 @@ class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = '__all__'
-        read_only_fields = ['trainer']
+        read_only_fields = ['trainer', 'created_at', 'updated_at']
 
     def get_trainer_name(self, obj):
         return obj.trainer.username if obj.trainer else "Not Assigned"
@@ -234,6 +235,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assessment
         fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at']
     
     def get_question_count(self, obj):
         return obj.questions.count()
