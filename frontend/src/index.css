@@ -301,7 +301,59 @@ a {
   min-width: 600px;
 }
 
-/* Sidebar Responsive Container */
+/* Content Components */
+.rich-text-content {
+  line-height: 1.8 !important;
+  color: #334155;
+  font-size: 1.05rem;
+}
+
+.rich-text-content * {
+  margin-bottom: 1rem;
+}
+
+.rich-text-content h1, .rich-text-content h2, .rich-text-content h3 {
+  color: var(--text-main);
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.rich-text-content p {
+  margin-bottom: 1.25rem;
+}
+
+.rich-text-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 1.5rem 0;
+}
+
+.rich-text-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rich-text-content th, .rich-text-content td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.rich-text-content blockquote {
+  border-left: 4px solid var(--primary);
+  padding-left: 1.5rem;
+  font-style: italic;
+  margin: 1.5rem 0;
+  color: var(--text-muted);
+}
+
 .sidebar-container {
   width: var(--sidebar-width);
   height: 100vh;

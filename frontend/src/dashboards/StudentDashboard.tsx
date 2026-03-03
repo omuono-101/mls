@@ -872,21 +872,28 @@ const StudentDashboard: React.FC = () => {
 
                                         {lesson.content && (
                                             <div style={{
-                                                marginBottom: '2.5rem',
-                                                padding: '2rem',
+                                                marginBottom: '3rem',
+                                                padding: '2.5rem',
                                                 background: 'var(--bg-main)',
-                                                borderRadius: '20px',
-                                                border: '1px solid rgba(0,0,0,0.02)'
+                                                borderRadius: '24px',
+                                                border: '1px solid rgba(0,0,0,0.05)',
+                                                display: 'flow-root',
+                                                width: '100%',
+                                                position: 'relative',
+                                                overflow: 'hidden'
                                             }}>
-                                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary)' }}>
-                                                    <ScrollText size={20} /> Lecture Material
+                                                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--primary)' }}>
+                                                    <ScrollText size={24} /> Lecture Material
                                                 </h3>
                                                 <div
                                                     style={{
                                                         fontSize: '1.05rem',
-                                                        lineHeight: 1.8,
-                                                        color: '#334155'
+                                                        lineHeight: '1.8',
+                                                        color: '#334155',
+                                                        wordBreak: 'break-word',
+                                                        overflowWrap: 'break-word'
                                                     }}
+                                                    className="rich-text-content"
                                                     dangerouslySetInnerHTML={{ __html: lesson.content }}
                                                 />
                                             </div>
