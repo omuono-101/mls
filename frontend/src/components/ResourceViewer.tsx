@@ -58,19 +58,19 @@ const ResourceViewer: React.FC<ResourceViewerProps> = ({ resource, onClose }) =>
     };
 
     const handleDownload = () => {
-        if (resource.file) {
+        const downloadUrl = resource.file || resource.url;
+        if (downloadUrl) {
             const link = document.createElement('a');
-            link.href = resource.file;
+            link.href = downloadUrl;
             link.download = resource.title;
             link.click();
         }
     };
 
     const handleOpenExternal = () => {
-        if (resource.file) {
-            window.open(resource.file, '_blank');
-        } else if (resource.url) {
-            window.open(resource.url, '_blank');
+        const externalUrl = resource.file || resource.url;
+        if (externalUrl) {
+            window.open(externalUrl, '_blank');
         }
     };
 
@@ -187,9 +187,9 @@ const ResourceViewer: React.FC<ResourceViewerProps> = ({ resource, onClose }) =>
 
                     {/* PDF Viewer */}
                     <div style={{ flex: 1, overflow: 'auto', background: '#525659' }}>
-                        {resource.file ? (
+                        {(resource.file || resource.url) ? (
                             <iframe
-                                src={`${resource.file}#zoom=${zoom}`}
+                                src={`${resource.file || resource.url}#zoom=${zoom}`}
                                 style={{
                                     width: '100%',
                                     height: '100%',
@@ -275,7 +275,7 @@ const ResourceViewer: React.FC<ResourceViewerProps> = ({ resource, onClose }) =>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    {resource.file && (
+                    {(resource.file || resource.url) && (
                         <>
                             <button
                                 onClick={handleOpenExternal}
