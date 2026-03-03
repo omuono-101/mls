@@ -33,18 +33,16 @@ class User(AbstractUser):
 
 
 class Badge(models.Model):
-    """Model for student achievement badges"""
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    icon = models.CharField(max_length=50, blank=True, help_text="Icon name for display")
-    color = models.CharField(max_length=20, default='#6366f1', help_text="Hex color code")
-    points_required = models.IntegerField(default=0, help_text="Minimum points to earn this badge")
+    icon = models.CharField(max_length=50, blank=True)
+    color = models.CharField(max_length=20, default='#6366f1')
+    points_required = models.IntegerField(default=0)
     
     def __str__(self):
         return self.name
 
 class StudentBadge(models.Model):
-    """Model linking students to badges they've earned"""
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='earned_badges')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='earners')
     earned_at = models.DateTimeField(auto_now_add=True)
@@ -56,10 +54,9 @@ class StudentBadge(models.Model):
         return f"{self.student.username} earned {self.badge.name}"
 
 class StudentRating(models.Model):
-    """Model for live student ratings based on performance"""
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ratings')
-    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0, help_text="Rating score (0-5)")
-    total_points = models.IntegerField(default=0, help_text="Total points earned")
+    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
+    total_points = models.IntegerField(default=0)
     completed_lessons = models.IntegerField(default=0)
     completed_assessments = models.IntegerField(default=0)
     average_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
@@ -177,7 +174,7 @@ class Lesson(models.Model):
     is_taught = models.BooleanField(default=False)
     has_cat = models.BooleanField(default=False)
     has_assessment = models.BooleanField(default=True)
-    content = models.TextField(blank=True, help_text="Rich text content for the lesson lecture notes.")
+    content = models.TextField(blank=True)
     audit_feedback = models.TextField(blank=True)
     week = models.PositiveIntegerField(null=True, blank=True)
     session_date = models.DateField(null=True, blank=True)
@@ -198,7 +195,7 @@ class Lesson(models.Model):
 class LessonPlanActivity(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='plan_activities', null=True, blank=True)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='lesson_plan_activities', null=True, blank=True)
-    title = models.CharField(max_length=255, blank=True, help_text="Title of the lesson plan (optional - for standalone plans)")
+    title = models.CharField(max_length=255, blank=True)
     time = models.CharField(max_length=50)
     activity = models.TextField()
     content = models.TextField(blank=True)
@@ -229,6 +226,7 @@ class StudentLessonProgress(models.Model):
     class Meta:
         unique_together = ['student', 'lesson']
 
+
 class Resource(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources')
     title = models.CharField(max_length=255)
@@ -242,6 +240,21 @@ class Resource(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class StudentResourceProgress(models.Model):
+    """Model to track student progress on resources"""
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='resource_progress')
+    resource = models.ForeignKey('Resource', on_delete=models.CASCADE, related_name='student_progress')
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['student', 'resource']
+
+    def __str__(self):
+        return f"{self.student.username} - {self.resource.title}: {'Completed' if self.is_completed else 'Incomplete'}"
+
 
 class Assessment(models.Model):
     TYPE_CHOICES = [
@@ -297,6 +310,21 @@ class Assessment(models.Model):
         if self.scheduled_end and now > self.scheduled_end:
             return self.allow_late_submission
         return True
+
+
+class StudentAssessmentProgress(models.Model):
+    """Model to track student progress on assessments"""
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='assessment_progress')
+    assessment = models.ForeignKey('Assessment', on_delete=models.CASCADE, related_name='student_progress')
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['student', 'assessment']
+
+    def __str__(self):
+        return f"{self.student.username} - {self.assessment.title}: {'Completed' if self.is_completed else 'Incomplete'}"
+
 
 class Question(models.Model):
     QUESTION_TYPES = [
@@ -471,8 +499,7 @@ class Notification(models.Model):
         return True
 
 class ProjectLicense(models.Model):
-    """Model to store the encrypted project license key"""
-    license_key = models.TextField(help_text="The encrypted/signed license key")
+    license_key = models.TextField()
     activated_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 

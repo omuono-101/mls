@@ -18,6 +18,7 @@ interface Resource {
     file?: string;
     url?: string;
     is_approved?: boolean;
+    is_completed?: boolean;
 }
 
 interface Lesson {
@@ -68,6 +69,7 @@ interface Assessment {
     duration_minutes: number;
     lesson?: number;
     scheduled_at?: string;
+    is_completed?: boolean;
 }
 
 interface Unit {
@@ -122,7 +124,6 @@ interface Notification {
 
 const CountdownTimer: React.FC<{ targetDate: string }> = ({ targetDate }) => {
     const [timeLeft, setTimeLeft] = useState('');
-
     useEffect(() => {
         const calculateTimeLeft = () => {
             const difference = +new Date(targetDate) - +new Date();
@@ -135,11 +136,9 @@ const CountdownTimer: React.FC<{ targetDate: string }> = ({ targetDate }) => {
             }
             return 'Starting...';
         };
-
         const timer = setInterval(() => {
             setTimeLeft(calculateTimeLeft());
         }, 1000);
-
         return () => clearInterval(timer);
     }, [targetDate]);
 
@@ -171,7 +170,6 @@ const StudentDashboard: React.FC = () => {
     const [sendingMessage, setSendingMessage] = useState(false);
     const [messageSuccess, setMessageSuccess] = useState('');
     const [messageError, setMessageError] = useState('');
-    
 
     const fetchDashboardData = async () => {
         if (!user || !user.is_activated) return;
@@ -219,10 +217,8 @@ const StudentDashboard: React.FC = () => {
             setMessageError('Please fill in all required fields');
             return;
         }
-
         setSendingMessage(true);
         setMessageError('');
-
         try {
             await api.post('notifications/send_notification/', {
                 user_ids: [selectedTrainer.id],
@@ -232,7 +228,6 @@ const StudentDashboard: React.FC = () => {
                 is_critical: messageForm.isCritical,
                 is_active: true
             });
-
             setMessageSuccess('Message sent successfully!');
             setMessageForm({ title: '', message: '', isCritical: false });
             setTimeout(() => {
@@ -265,16 +260,70 @@ const StudentDashboard: React.FC = () => {
                 }
                 return u;
             });
-
             setUnits(updatedUnits);
             if (selectedUnit && selectedUnit.id === unitId) {
                 setSelectedUnit(updatedUnits.find(u => u.id === unitId) || null);
             }
-
             await api.post(`lessons/${lessonId}/${!currentStatus ? 'complete' : 'incomplete'}/`);
             fetchDashboardData();
         } catch (error) {
             console.error('Failed to toggle lesson completion', error);
+            fetchDashboardData();
+        }
+    };
+
+    const toggleResourceCompletion = async (resourceId: number, currentStatus: boolean, unitId: number) => {
+        try {
+            const updatedUnits = units.map(u => {
+                if (u.id === unitId && u.lessons) {
+                    const updatedLessons = u.lessons.map(l => {
+                        if (l.resources) {
+                            const updatedResources = l.resources.map(r => {
+                                if (r.id === resourceId) {
+                                    return { ...r, is_completed: !currentStatus };
+                                }
+                                return r;
+                            });
+                            return { ...l, resources: updatedResources };
+                        }
+                        return l;
+                    });
+                    return { ...u, lessons: updatedLessons };
+                }
+                return u;
+            });
+            setUnits(updatedUnits);
+            if (selectedUnit && selectedUnit.id === unitId) {
+                setSelectedUnit(updatedUnits.find(u => u.id === unitId) || null);
+            }
+            await api.post(`resources/${resourceId}/${!currentStatus ? 'complete' : 'incomplete'}/`);
+        } catch (error) {
+            console.error('Failed to toggle resource completion', error);
+            fetchDashboardData();
+        }
+    };
+
+    const toggleAssessmentCompletion = async (assessmentId: number, currentStatus: boolean, unitId: number) => {
+        try {
+            const updatedUnits = units.map(u => {
+                if (u.id === unitId && u.assessments) {
+                    const updatedAssessments = u.assessments.map(a => {
+                        if (a.id === assessmentId) {
+                            return { ...a, is_completed: !currentStatus };
+                        }
+                        return a;
+                    });
+                    return { ...u, assessments: updatedAssessments };
+                }
+                return u;
+            });
+            setUnits(updatedUnits);
+            if (selectedUnit && selectedUnit.id === unitId) {
+                setSelectedUnit(updatedUnits.find(u => u.id === unitId) || null);
+            }
+            await api.post(`assessments/${assessmentId}/${!currentStatus ? 'complete' : 'incomplete'}/`);
+        } catch (error) {
+            console.error('Failed to toggle assessment completion', error);
             fetchDashboardData();
         }
     };
@@ -335,7 +384,6 @@ const StudentDashboard: React.FC = () => {
     const getUpcomingEvents = () => {
         const events: any[] = [];
         const now = new Date();
-
         units.forEach((unit) => {
             unit.lessons?.filter((l) => l.is_approved).forEach((lesson) => {
                 if (lesson.session_date) {
@@ -353,7 +401,6 @@ const StudentDashboard: React.FC = () => {
                     }
                 }
             });
-
             unit.assessments?.forEach((assessment) => {
                 const dateStr = assessment.scheduled_at || assessment.due_date;
                 if (dateStr) {
@@ -380,12 +427,10 @@ const StudentDashboard: React.FC = () => {
                 }
             });
         });
-
         return events
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .slice(0, 5);
     };
-
     if (user && !user.is_activated) {
         return (
             <DashboardLayout>
@@ -421,10 +466,11 @@ const StudentDashboard: React.FC = () => {
                                 width: '150px',
                                 height: '150px',
                                 background: 'var(--primary)',
-                                opacity: '0.05',
+                                opacity: 0.05,
                                 borderRadius: '50%',
                             }}
                         />
+    
                         <div
                             style={{
                                 background: 'rgba(245, 158, 11, 0.1)',
@@ -436,6 +482,7 @@ const StudentDashboard: React.FC = () => {
                         >
                             <Lock size={48} className="animate-pulse" />
                         </div>
+    
                         <h2
                             style={{
                                 fontSize: '2rem',
@@ -446,6 +493,7 @@ const StudentDashboard: React.FC = () => {
                         >
                             Account Dormant
                         </h2>
+    
                         <p
                             style={{
                                 fontSize: '1.1rem',
@@ -454,18 +502,10 @@ const StudentDashboard: React.FC = () => {
                                 marginBottom: '2rem',
                             }}
                         >
-                            Welcome to the portal! Your registration is complete, but your
-                            account is currently
-                            <span
-                                style={{
-                                    color: 'var(--primary)',
-                                    fontWeight: 700,
-                                }}
-                            >
-                                pending activation
-                            </span>{' '}
-                            by the administration.
+                            Welcome to the portal! Your registration is complete, but your account is currently{' '}
+                            <span style={{ color: 'var(--primary)', fontWeight: 700 }}>pending activation</span> by the administration.
                         </p>
+    
                         <div
                             className="glass"
                             style={{
@@ -478,12 +518,7 @@ const StudentDashboard: React.FC = () => {
                                 border: '1px solid rgba(0,0,0,0.05)',
                             }}
                         >
-                            <AlertCircle
-                                size={24}
-                                style={{
-                                    color: 'var(--primary)',
-                                }}
-                            />
+                            <AlertCircle size={24} style={{ color: 'var(--primary)' }} />
                             <span
                                 style={{
                                     fontSize: '0.9375rem',
@@ -494,6 +529,7 @@ const StudentDashboard: React.FC = () => {
                                 Please contact your HOD or Admin for activation.
                             </span>
                         </div>
+    
                         <button
                             onClick={logout}
                             className="btn"
@@ -532,7 +568,6 @@ const StudentDashboard: React.FC = () => {
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Units</p>
                     </div>
                 </div>
-
                 <div className="card-premium animate-fade-in" style={{ padding: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'center', borderBottom: '4px solid #10b981', animationDelay: '0.1s' }}>
                     <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1.25rem', borderRadius: '20px' }}>
                         <Star size={32} />
@@ -542,7 +577,6 @@ const StudentDashboard: React.FC = () => {
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Average</p>
                     </div>
                 </div>
-
                 <div className="card-premium animate-fade-in" style={{ padding: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'center', borderBottom: '4px solid #f59e0b', animationDelay: '0.2s' }}>
                     <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '1.25rem', borderRadius: '20px' }}>
                         <Clock size={32} />
@@ -566,7 +600,6 @@ const StudentDashboard: React.FC = () => {
                                 <BarChart3 size={20} className="text-primary" />
                             </div>
                         </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                             {units.map((unit, idx) => {
                                 const progress = unit.student_progress || 0;
@@ -611,7 +644,6 @@ const StudentDashboard: React.FC = () => {
                                 <Calendar size={20} />
                             </div>
                         </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {getUpcomingEvents().map((event, idx) => (
                                 <div key={event.id} className="glass animate-fade-in" style={{ padding: '1rem', borderRadius: '16px', display: 'flex', gap: '1rem', alignItems: 'center', border: '1px solid rgba(0,0,0,0.03)', animationDelay: `${idx * 0.1}s` }}>
@@ -649,7 +681,6 @@ const StudentDashboard: React.FC = () => {
                             <Bell size={20} />
                         </div>
                     </div>
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
                         {getUnifiedFeed().map((item, idx) => (
                             <div key={`${item.type}-${item.id}`} className="animate-fade-in" style={{ display: 'flex', gap: '1rem', animationDelay: `${idx * 0.1}s` }}>
@@ -680,7 +711,6 @@ const StudentDashboard: React.FC = () => {
                             </div>
                         )}
                     </div>
-
                     <button
                         className="btn glass"
                         style={{ marginTop: '2rem', width: '100%', justifyContent: 'center', padding: '0.75rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 700 }}
@@ -731,7 +761,6 @@ const StudentDashboard: React.FC = () => {
                         background: 'linear-gradient(to bottom, var(--primary) 0%, #e2e8f0 100%)',
                         opacity: 0.3
                     }} />
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                         {allLessons.map((lesson, idx) => {
                             const lessonAssessments = assessmentsByLesson[lesson.id] || [];
@@ -764,13 +793,17 @@ const StudentDashboard: React.FC = () => {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
                                                     <span className="badge badge-primary">Module {lesson.order}</span>
                                                     {isLocked && (
-                                                        <span className="badge badge-warning" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                        <span
+                                                            className="badge badge-warning"
+                                                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                                        >
                                                             <Lock size={12} /> Locked
                                                         </span>
                                                     )}
                                                 </div>
                                                 <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>{lesson.title}</h2>
                                             </div>
+
                                             {lesson.is_taught && (
                                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                                     <button
@@ -872,6 +905,28 @@ const StudentDashboard: React.FC = () => {
                                                                     <div style={{ fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{resource.title}</div>
                                                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{resource.resource_type}</div>
                                                                 </div>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleResourceCompletion(resource.id, !!resource.is_completed, unit.id);
+                                                                    }}
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.4rem',
+                                                                        padding: '0.4rem 0.75rem',
+                                                                        borderRadius: '8px',
+                                                                        border: 'none',
+                                                                        cursor: 'pointer',
+                                                                        background: resource.is_completed ? '#10b981' : 'rgba(0,0,0,0.05)',
+                                                                        color: resource.is_completed ? 'white' : 'var(--text-muted)',
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: 700
+                                                                    }}
+                                                                >
+                                                                    {resource.is_completed ? <CheckCircle2 size={14} /> : <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid currentColor' }} />}
+                                                                    {resource.is_completed ? 'Done' : 'Mark Done'}
+                                                                </button>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -913,13 +968,37 @@ const StudentDashboard: React.FC = () => {
                                                                         <CountdownTimer targetDate={assessment.scheduled_at} />
                                                                     </div>
                                                                 ) : (
-                                                                    <button
-                                                                        className="btn btn-primary btn-sm"
-                                                                        style={{ width: '100%', padding: '0.6rem' }}
-                                                                        onClick={() => navigate(`/student/assessment/${assessment.id}`)}
-                                                                    >
-                                                                        Dive In
-                                                                    </button>
+                                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                                        <button
+                                                                            className="btn btn-primary btn-sm"
+                                                                            style={{ flex: 1, padding: '0.6rem' }}
+                                                                            onClick={() => navigate(`/student/assessment/${assessment.id}`)}
+                                                                        >
+                                                                            Dive In
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                toggleAssessmentCompletion(assessment.id, !!assessment.is_completed, unit.id);
+                                                                            }}
+                                                                            style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '0.3rem',
+                                                                                padding: '0.5rem 0.75rem',
+                                                                                borderRadius: '8px',
+                                                                                border: 'none',
+                                                                                cursor: 'pointer',
+                                                                                background: assessment.is_completed ? '#10b981' : 'rgba(0,0,0,0.05)',
+                                                                                color: assessment.is_completed ? 'white' : 'var(--text-muted)',
+                                                                                fontSize: '0.7rem',
+                                                                                fontWeight: 700
+                                                                            }}
+                                                                        >
+                                                                            {assessment.is_completed ? <CheckCircle2 size={14} /> : <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid currentColor' }} />}
+                                                                            {assessment.is_completed ? 'Done' : 'Mark Done'}
+                                                                        </button>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         ))}
@@ -948,7 +1027,6 @@ const StudentDashboard: React.FC = () => {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={16} /> {assessment.duration_minutes || 'Flexible'}</div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Star size={16} /> {assessment.points} Pts</div>
                                     </div>
-
                                     {assessment.scheduled_at && new Date(assessment.scheduled_at) > new Date() ? (
                                         <div style={{ textAlign: 'center', padding: '0.75rem', background: 'rgba(0,0,0,0.03)', borderRadius: '12px' }}>
                                             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Available In</div>
@@ -1024,7 +1102,6 @@ const StudentDashboard: React.FC = () => {
                                     <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700 }}>{u.course_group_code}</span>
                                 </div>
                             </div>
-
                             <div className="glass" style={{ padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.02)' }}>
                                 <div style={{ display: 'flex', gap: '1.25rem' }}>
                                     <div style={{ fontSize: '0.8125rem', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="Lessons Covered">
@@ -1034,7 +1111,6 @@ const StudentDashboard: React.FC = () => {
                                         <BarChart3 size={16} className="text-primary" /> {u.cats_count || 0}
                                     </div>
                                 </div>
-
                                 {u.is_enrolled ? (
                                     <button onClick={() => setSelectedUnit(u)} className="btn btn-primary" style={{ borderRadius: '14px', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {u.is_current_semester ? <CheckCircle2 size={16} /> : <Clock size={16} />}
@@ -1129,7 +1205,6 @@ const StudentDashboard: React.FC = () => {
 
     const renderContactTrainer = () => {
         const enrolledTrainers = getEnrolledTrainers();
-
         return (
             <div className="animate-fade-in">
                 <div style={{ marginBottom: '3.5rem' }}>
@@ -1160,11 +1235,9 @@ const StudentDashboard: React.FC = () => {
                                     <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 }}>{trainer.email}</p>
                                 </div>
                             </div>
-
                             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
                                 <span className="badge badge-primary">Trainer</span>
                             </div>
-
                             <button
                                 className="btn btn-primary"
                                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
@@ -1178,7 +1251,6 @@ const StudentDashboard: React.FC = () => {
                             </button>
                         </div>
                     ))}
-
                     {enrolledTrainers.length === 0 && (
                         <div style={{ gridColumn: '1 / -1', padding: '5rem 2rem', textAlign: 'center' }}>
                             <User size={64} style={{ color: 'var(--text-muted)', opacity: 0.1, margin: '0 auto 2rem' }} />
@@ -1375,10 +1447,8 @@ const StudentDashboard: React.FC = () => {
                         </div>
                         <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: '#10b981', width: '28px', height: '28px', borderRadius: '50%', border: '4px solid white' }} />
                     </div>
-
                     <h2 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '0.5rem' }}>{user?.first_name} {user?.last_name}</h2>
                     <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '2.5rem' }}>@{user?.username}</p>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'var(--bg-main)', padding: '1.5rem', borderRadius: '24px' }}>
                         <div>
                             <div style={{ fontSize: '1.25rem', fontWeight: 900 }}>4.8</div>
@@ -1395,7 +1465,6 @@ const StudentDashboard: React.FC = () => {
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <FileText size={24} className="text-primary" /> Personal Information
                     </h3>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Email Address</label>
@@ -1414,7 +1483,6 @@ const StudentDashboard: React.FC = () => {
                             <span className="badge badge-primary">Student Ambassador</span>
                         </div>
                     </div>
-
                     <div style={{ marginTop: '4rem', paddingTop: '2.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                         <button className="btn btn-primary" style={{ padding: '0.8rem 2rem' }}>Edit Account Details</button>
                     </div>
@@ -1518,7 +1586,6 @@ const StudentDashboard: React.FC = () => {
                     <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Browse our extensive library of guides, tutorials, and frequently asked questions.</p>
                     <button className="btn btn-primary" style={{ width: '100%' }}>Explore Guides</button>
                 </div>
-
                 <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
                     <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
                         <MessageSquare size={32} />
@@ -1527,7 +1594,6 @@ const StudentDashboard: React.FC = () => {
                     <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.95rem' }}>Our support team is available Monday to Friday, 8am - 5pm to help with any technical issues.</p>
                     <button className="btn btn-primary" style={{ width: '100%', background: '#10b981' }}>Start Conversing</button>
                 </div>
-
                 <div className="card-premium" style={{ padding: '2.5rem', borderRadius: '28px' }}>
                     <div style={{ background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', padding: '1rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem' }}>
                         <AlertCircle size={32} />

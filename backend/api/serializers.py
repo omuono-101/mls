@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from core.models import (School, Course, Intake, Semester, CourseGroup, Unit, Lesson, LessonPlanActivity, Resource, 
                           Assessment, Submission, Attendance, StudentEnrollment, Module, LearningPath,
                           Question, QuestionOption, Answer, StudentAnswer, Announcement, ForumTopic, 
-                          ForumMessage, Notification)
+                          ForumMessage, Notification, StudentResourceProgress, StudentAssessmentProgress)
 
 User = get_user_model()
 
@@ -124,6 +124,7 @@ class LessonPlanActivitySerializer(serializers.ModelSerializer):
 
 class ResourceSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
+    is_completed = serializers.SerializerMethodField()
     
     class Meta:
         model = Resource
@@ -136,6 +137,12 @@ class ResourceSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.file.url)
             return obj.file.url
         return None
+
+    def get_is_completed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.student_progress.filter(student=request.user, is_completed=True).exists()
+        return False
 
 class LessonSerializer(serializers.ModelSerializer):
     resources = ResourceSerializer(many=True, read_only=True)
@@ -218,6 +225,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
     is_available = serializers.SerializerMethodField()
     is_expired = serializers.SerializerMethodField()
     can_submit = serializers.SerializerMethodField()
+    is_completed = serializers.SerializerMethodField()
     
     class Meta:
         model = Assessment
@@ -234,6 +242,12 @@ class AssessmentSerializer(serializers.ModelSerializer):
     
     def get_can_submit(self, obj):
         return obj.can_submit()
+
+    def get_is_completed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.student_progress.filter(student=request.user, is_completed=True).exists()
+        return False
 
 class UnitListSerializer(serializers.ModelSerializer):
     course_group_name = serializers.ReadOnlyField(source='course_group.course.name')
