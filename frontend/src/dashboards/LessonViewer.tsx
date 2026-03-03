@@ -127,13 +127,27 @@ const LessonViewer: React.FC = () => {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-                <div className="card" style={{ minHeight: '500px' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <BookOpen size={20} className="text-primary" />
+                <div className="card-premium" style={{
+                    minHeight: '600px',
+                    padding: '3rem',
+                    borderRadius: '32px',
+                    display: 'flow-root',
+                    background: 'white',
+                    border: '1px solid rgba(0,0,0,0.05)'
+                }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--primary)' }}>
+                        <BookOpen size={28} />
                         Lesson Content
                     </h2>
                     <div
-                        style={{ lineHeight: 1.8, color: 'var(--text-main)' }}
+                        style={{
+                            fontSize: '1.1rem',
+                            lineHeight: '1.8',
+                            color: '#334155',
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word'
+                        }}
+                        className="rich-text-content"
                         dangerouslySetInnerHTML={{ __html: lesson.content || '<p>No lecture notes provided for this lesson.</p>' }}
                     />
                 </div>
