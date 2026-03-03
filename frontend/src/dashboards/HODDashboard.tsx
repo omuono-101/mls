@@ -52,6 +52,7 @@ interface Lesson {
     title: string;
     is_taught: boolean;
     is_approved: boolean;
+    is_active: boolean;
     order: number;
     audit_feedback: string;
     resources?: Resource[];
@@ -345,9 +346,9 @@ const HODDashboard: React.FC = () => {
 
     const pendingLessons = lessons.filter((l: Lesson) => l.is_taught && !l.is_approved);
 
-    const handleActivateDeactivate = async (type: 'resource' | 'assessment', id: number, isActive: boolean) => {
+    const handleActivateDeactivate = async (type: 'lesson' | 'resource' | 'assessment', id: number, isActive: boolean) => {
         setLoading(true);
-        const endpoint = type === 'resource' ? 'resources' : 'assessments';
+        const endpoint = type === 'lesson' ? 'lessons' : type === 'resource' ? 'resources' : 'assessments';
         try {
             await api.patch(`${endpoint}/${id}/`, {
                 is_active: isActive
@@ -518,6 +519,26 @@ const HODDashboard: React.FC = () => {
                                                     >
                                                         <Edit2 size={18} />
                                                     </button>
+                                                    {l.is_approved && (
+                                                        <button
+                                                            className="btn btn-sm"
+                                                            title={l.is_active ? 'Deactivate Lesson' : 'Activate Lesson'}
+                                                            style={{
+                                                                padding: '0.4rem 0.6rem',
+                                                                minWidth: 'auto',
+                                                                background: l.is_active ? '#fef3c7' : '#dcfce7',
+                                                                color: l.is_active ? '#92400e' : '#15803d',
+                                                                borderRadius: '8px',
+                                                                border: 'none',
+                                                                fontSize: '0.7rem',
+                                                                fontWeight: 700
+                                                            }}
+                                                            onClick={() => handleActivateDeactivate('lesson', l.id, !l.is_active)}
+                                                            disabled={loading}
+                                                        >
+                                                            {l.is_active ? 'Deactivate' : 'Activate'}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

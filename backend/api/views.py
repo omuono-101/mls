@@ -184,7 +184,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                     Lesson.objects.filter(
                         unit=OuterRef('pk'),
                         is_taught=True,
-                        **({'is_approved': True} if is_student else {})
+                        **({'is_approved': True, 'is_active': True} if is_student else {})
                     )
                     .order_by()
                     .values('unit')
@@ -198,7 +198,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                 Subquery(
                     Resource.objects.filter(
                         lesson__unit=OuterRef('pk'),
-                        **({'is_approved': True} if is_student else {})
+                        **({'is_approved': True, 'is_active': True} if is_student else {})
                     )
                     .order_by()
                     .values('lesson__unit')
@@ -213,7 +213,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                     Assessment.objects.filter(
                         unit=OuterRef('pk'),
                         assessment_type='CAT',
-                        **({'is_approved': True} if is_student else {})
+                        **({'is_approved': True, 'is_active': True} if is_student else {})
                     )
                     .order_by()
                     .values('unit')
@@ -279,16 +279,19 @@ class UnitViewSet(viewsets.ModelViewSet):
             # For students, we ONLY prefetch approved lessons and approved assessments
             lesson_qs = Lesson.objects.select_related('trainer', 'unit', 'module')
             assessment_qs = Assessment.objects.select_related('unit')
+            resource_qs = Resource.objects.all()
 
             if user.role == 'Student':
                 # Students can see all approved lessons (not restricted by is_taught)
                 # This ensures students can access content once approved by HOD
-                lesson_qs = lesson_qs.filter(is_approved=True)
-                assessment_qs = assessment_qs.filter(is_approved=True)
+                lesson_qs = lesson_qs.filter(is_approved=True, is_active=True)
+                assessment_qs = assessment_qs.filter(is_approved=True, is_active=True)
+                resource_qs = resource_qs.filter(is_approved=True, is_active=True)
 
             queryset = queryset.prefetch_related(
                 'modules',
                 Prefetch('lessons', queryset=lesson_qs),
+                Prefetch('lessons__resources', queryset=resource_qs),
                 Prefetch('assessments', queryset=assessment_qs)
             )
 
@@ -427,16 +430,15 @@ class LessonViewSet(viewsets.ModelViewSet):
         if module_id is not None:
             queryset = queryset.filter(module_id=module_id)
 
-        # Security: Students only see approved lessons
         user = self.request.user
         if user.is_authenticated and user.role == 'Student':
-            queryset = queryset.filter(is_approved=True)
+            queryset = queryset.filter(is_approved=True, is_active=True)
 
         if self.action == 'list':
             # Resources prefetch also needs to be filtered for students
             resource_qs = Resource.objects.all()
             if user.is_authenticated and user.role == 'Student':
-                resource_qs = resource_qs.filter(is_approved=True)
+                resource_qs = resource_qs.filter(is_approved=True, is_active=True)
             queryset = queryset.prefetch_related(Prefetch('resources', queryset=resource_qs))
 
         return queryset
@@ -505,6 +507,20 @@ class LessonViewSet(viewsets.ModelViewSet):
         progress.save()
         return Response({'status': 'lesson marked incomplete'})
 
+    @action(detail=True, methods=['post'], permission_classes=[IsHOD])
+    def activate(self, request, pk=None):
+        lesson = self.get_object()
+        lesson.is_active = True
+        lesson.save()
+        return Response({'status': 'lesson activated'})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsHOD])
+    def deactivate(self, request, pk=None):
+        lesson = self.get_object()
+        lesson.is_active = False
+        lesson.save()
+        return Response({'status': 'lesson deactivated'})
+
 
 class ResourceViewSet(viewsets.ModelViewSet):
     queryset = Resource.objects.all()
@@ -515,7 +531,7 @@ class ResourceViewSet(viewsets.ModelViewSet):
         # Security: Students only see approved resources
         user = self.request.user
         if user.is_authenticated and user.role == 'Student':
-            queryset = queryset.filter(is_approved=True)
+            queryset = queryset.filter(is_approved=True, is_active=True)
         return queryset
 
     def get_permissions(self):
@@ -579,7 +595,7 @@ class AssessmentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_authenticated and user.role == 'Student':
             now = timezone.now()
-            queryset = queryset.filter(is_approved=True)
+            queryset = queryset.filter(is_approved=True, is_active=True)
             queryset = queryset.exclude(
                 scheduled_end__isnull=False,
                 scheduled_end__lt=now,

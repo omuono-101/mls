@@ -3,7 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import ResourceViewer from '../components/ResourceViewer';
 import api from '../services/api';
 import {
-    FileText, Video, Link as LinkIcon, Search, 
+    FileText, Video, Link as LinkIcon, Search,
     Download, Eye,
     Layers, Grid, List, FolderOpen
 } from 'lucide-react';
@@ -53,10 +53,10 @@ const MyResources: React.FC = () => {
         try {
             const response = await api.get('units/');
             const unitsData = response.data.results || response.data;
-            
-            // Fetch detailed unit info to get resources
+
+            // Fetch detailed unit info to get resources for ALL units
             const detailedUnits = await Promise.all(
-                (unitsData as Unit[]).slice(0, 5).map(async (unit: any) => {
+                (unitsData as Unit[]).map(async (unit: any) => {
                     try {
                         const detailRes = await api.get(`units/${unit.id}/`);
                         return detailRes.data;
@@ -65,7 +65,7 @@ const MyResources: React.FC = () => {
                     }
                 })
             );
-            
+
             setUnits(detailedUnits);
         } catch (error) {
             console.error('Failed to fetch resources', error);
@@ -80,12 +80,15 @@ const MyResources: React.FC = () => {
         units.forEach(unit => {
             (unit.lessons || []).forEach((lesson: Lesson) => {
                 (lesson.resources || []).forEach(resource => {
-                    resources.push({
-                        ...resource,
-                        lesson_title: lesson.title,
-                        unit_name: unit.name,
-                        unit_code: unit.code
-                    });
+                    // Only add resources that have some content
+                    if (resource.file || resource.url) {
+                        resources.push({
+                            ...resource,
+                            lesson_title: lesson.title,
+                            unit_name: unit.name,
+                            unit_code: unit.code
+                        });
+                    }
                 });
             });
         });
@@ -199,7 +202,7 @@ const MyResources: React.FC = () => {
                             style={{ paddingLeft: '3rem', width: '100%' }}
                         />
                     </div>
-                    
+
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                         {(['all', 'PDF', 'Video', 'PPT', 'Link'] as const).map(type => (
                             <button
@@ -258,7 +261,7 @@ const MyResources: React.FC = () => {
                         <FolderOpen size={48} style={{ color: 'var(--text-muted)', opacity: 0.2, margin: '0 auto 1rem' }} />
                         <h3 style={{ fontWeight: 800, marginBottom: '0.5rem' }}>No Resources Found</h3>
                         <p style={{ color: 'var(--text-muted)' }}>
-                            {searchTerm || filterType !== 'all' 
+                            {searchTerm || filterType !== 'all'
                                 ? 'Try adjusting your search or filters'
                                 : 'Resources from your enrolled units will appear here'}
                         </p>
@@ -288,10 +291,10 @@ const MyResources: React.FC = () => {
                                             }}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
-                                                <div style={{ 
-                                                    background: `${getResourceColor(resource.resource_type)}15`, 
-                                                    padding: '0.75rem', 
-                                                    borderRadius: '12px', 
+                                                <div style={{
+                                                    background: `${getResourceColor(resource.resource_type)}15`,
+                                                    padding: '0.75rem',
+                                                    borderRadius: '12px',
                                                     color: getResourceColor(resource.resource_type),
                                                     display: 'flex',
                                                     flexShrink: 0
@@ -311,8 +314,8 @@ const MyResources: React.FC = () => {
                                                 <button
                                                     onClick={() => setSelectedResource(resource)}
                                                     className="btn"
-                                                    style={{ 
-                                                        flex: 1, 
+                                                    style={{
+                                                        flex: 1,
                                                         justifyContent: 'center',
                                                         padding: '0.5rem',
                                                         borderRadius: '8px',
@@ -328,8 +331,8 @@ const MyResources: React.FC = () => {
                                                     <button
                                                         onClick={() => handleDownload(resource)}
                                                         className="btn btn-primary"
-                                                        style={{ 
-                                                            flex: 1, 
+                                                        style={{
+                                                            flex: 1,
                                                             justifyContent: 'center',
                                                             padding: '0.5rem',
                                                             borderRadius: '8px',
@@ -366,10 +369,10 @@ const MyResources: React.FC = () => {
                                 }}
                                 onClick={() => setSelectedResource(resource)}
                             >
-                                <div style={{ 
-                                    background: `${getResourceColor(resource.resource_type)}15`, 
-                                    padding: '0.75rem', 
-                                    borderRadius: '12px', 
+                                <div style={{
+                                    background: `${getResourceColor(resource.resource_type)}15`,
+                                    padding: '0.75rem',
+                                    borderRadius: '12px',
                                     color: getResourceColor(resource.resource_type),
                                     display: 'flex'
                                 }}>

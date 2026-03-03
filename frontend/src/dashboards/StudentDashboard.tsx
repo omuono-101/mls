@@ -157,6 +157,7 @@ const StudentDashboard: React.FC = () => {
     const [trainers, setTrainers] = useState<Trainer[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+    const [unitDetailLoading, setUnitDetailLoading] = useState<number | null>(null);
     const [enrolling, setEnrolling] = useState<number | null>(null);
 
     // Contact Trainer state
@@ -325,6 +326,20 @@ const StudentDashboard: React.FC = () => {
         } catch (error) {
             console.error('Failed to toggle assessment completion', error);
             fetchDashboardData();
+        }
+    };
+
+    const handleLaunchUnit = async (unit: Unit) => {
+        setUnitDetailLoading(unit.id);
+        try {
+            const res = await api.get(`units/${unit.id}/`);
+            setSelectedUnit(res.data);
+        } catch (error) {
+            console.error('Failed to fetch unit detail', error);
+            // Fallback to the list data so the UI still opens
+            setSelectedUnit(unit);
+        } finally {
+            setUnitDetailLoading(null);
         }
     };
 
@@ -1112,9 +1127,18 @@ const StudentDashboard: React.FC = () => {
                                     </div>
                                 </div>
                                 {u.is_enrolled ? (
-                                    <button onClick={() => setSelectedUnit(u)} className="btn btn-primary" style={{ borderRadius: '14px', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        {u.is_current_semester ? <CheckCircle2 size={16} /> : <Clock size={16} />}
-                                        {u.is_current_semester ? 'Launch Unit' : 'Preview Unit'}
+                                    <button
+                                        onClick={() => handleLaunchUnit(u)}
+                                        className="btn btn-primary"
+                                        disabled={unitDetailLoading === u.id}
+                                        style={{ borderRadius: '14px', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    >
+                                        {unitDetailLoading === u.id ? (
+                                            <div className="animate-spin" style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                                        ) : (
+                                            u.is_current_semester ? <CheckCircle2 size={16} /> : <Clock size={16} />
+                                        )}
+                                        {unitDetailLoading === u.id ? 'Loading...' : (u.is_current_semester ? 'Launch Unit' : 'Preview Unit')}
                                     </button>
                                 ) : (
                                     <button
