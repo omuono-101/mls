@@ -531,7 +531,11 @@ class ResourceViewSet(viewsets.ModelViewSet):
         # Security: Students only see approved resources
         user = self.request.user
         if user.is_authenticated and user.role == 'Student':
-            queryset = queryset.filter(is_approved=True, is_active=True)
+            queryset = queryset.filter(
+                is_approved=True, 
+                is_active=True,
+                lesson__unit__enrollments__student=user
+            ).distinct()
         return queryset
 
     def get_permissions(self):

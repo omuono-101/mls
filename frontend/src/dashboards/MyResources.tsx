@@ -21,23 +21,10 @@ interface Resource {
     unit_code?: string;
 }
 
-interface Lesson {
-    id: number;
-    title: string;
-    unit_name?: string;
-    unit_code?: string;
-    resources?: Resource[];
-}
 
-interface Unit {
-    id: number;
-    name: string;
-    code: string;
-    lessons: Lesson[];
-}
 
 const MyResources: React.FC = () => {
-    const [units, setUnits] = useState<Unit[]>([]);
+    const [allResources, setAllResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'PDF' | 'Video' | 'PPT' | 'Link'>('all');
@@ -51,22 +38,9 @@ const MyResources: React.FC = () => {
     const fetchResources = async () => {
         setLoading(true);
         try {
-            const response = await api.get('units/');
-            const unitsData = response.data.results || response.data;
-
-            // Fetch detailed unit info to get resources for ALL units
-            const detailedUnits = await Promise.all(
-                (unitsData as Unit[]).map(async (unit: any) => {
-                    try {
-                        const detailRes = await api.get(`units/${unit.id}/`);
-                        return detailRes.data;
-                    } catch {
-                        return unit;
-                    }
-                })
-            );
-
-            setUnits(detailedUnits);
+            const response = await api.get('resources/');
+            const resourcesData = response.data.results || response.data;
+            setAllResources(resourcesData);
         } catch (error) {
             console.error('Failed to fetch resources', error);
         } finally {
@@ -74,31 +48,9 @@ const MyResources: React.FC = () => {
         }
     };
 
-    // Flatten all resources from all units
-    const getAllResources = (): Resource[] => {
-        const resources: Resource[] = [];
-        units.forEach(unit => {
-            (unit.lessons || []).forEach((lesson: Lesson) => {
-                (lesson.resources || []).forEach(resource => {
-                    // Only add resources that have some content
-                    if (resource.file || resource.url) {
-                        resources.push({
-                            ...resource,
-                            lesson_title: lesson.title,
-                            unit_name: unit.name,
-                            unit_code: unit.code
-                        });
-                    }
-                });
-            });
-        });
-        return resources;
-    };
-
-    const allResources = getAllResources();
 
     // Filter resources
-    const filteredResources = allResources.filter(resource => {
+    const filteredResources = allResources.filter((resource: Resource) => {
         const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             resource.description?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesType = filterType === 'all' || resource.resource_type === filterType;
@@ -108,7 +60,7 @@ const MyResources: React.FC = () => {
     // Group resources by unit
     const getResourcesByUnit = () => {
         const grouped: Record<string, Resource[]> = {};
-        filteredResources.forEach(resource => {
+        filteredResources.forEach((resource: Resource) => {
             const key = resource.unit_name || 'Unknown Unit';
             if (!grouped[key]) grouped[key] = [];
             grouped[key].push(resource);

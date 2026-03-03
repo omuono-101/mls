@@ -126,6 +126,10 @@ class ResourceSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
     
+    lesson_title = serializers.ReadOnlyField(source='lesson.title')
+    unit_name = serializers.ReadOnlyField(source='lesson.unit.name')
+    unit_code = serializers.ReadOnlyField(source='lesson.unit.code')
+    
     class Meta:
         model = Resource
         fields = '__all__'
